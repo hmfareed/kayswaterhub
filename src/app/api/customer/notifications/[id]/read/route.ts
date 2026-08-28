@@ -1,0 +1,42 @@
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth";
+import { connectDB } from "@/lib/db/mongoose";
+import Notification from "@/models/Notification";
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id && !session?.user?.email) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+    await connectDB();
+
+    const notif = await Notification.findById(id);
+    if (!notif) {
+      return NextResponse.json(
+        { success: false, error: "Notification not found" },
+        { status: 404 }
+      );
+    }
+
+    notif.isRead = true;
+    notif.readAt = new Date();
+    await notif.save();
+
+    return NextResponse.json({ success: true, data: notif });
+  } catch (error: any) {
+    console.error("[api/customer/notifications/[id]/read PATCH]", error);
+    return NextResponse.json(
+      { success: false, error: error.message || "Failed to mark notification as read" },
+      { status: 500 }
+    );
+  }
+}
