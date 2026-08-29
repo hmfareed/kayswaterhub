@@ -81,8 +81,20 @@ export async function getAdminCustomerById(id: string) {
   const customer = await User.findById(id).populate("addresses");
   if (!customer) return null;
 
+  const orderConditions: any[] = [{ customerId: customer._id }];
+  if (customer.email) {
+    orderConditions.push({
+      "guestInformation.email": {
+        $regex: new RegExp(`^${customer.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+      },
+    });
+  }
+  if (customer.phone) {
+    orderConditions.push({ "guestInformation.phone": customer.phone });
+  }
+
   const [orders, reviews, addresses] = await Promise.all([
-    Order.find({ customerId: customer._id }).sort({ createdAt: -1 }),
+    Order.find({ $or: orderConditions }).sort({ createdAt: -1 }),
     Review.find({ customerId: customer._id }).sort({ createdAt: -1 }),
     Address.find({ userId: customer._id }),
   ]);

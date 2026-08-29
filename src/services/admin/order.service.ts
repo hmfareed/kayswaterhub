@@ -35,7 +35,26 @@ export async function getAdminOrders(params: GetOrdersParams) {
   const query: Record<string, unknown> = {};
 
   if (status && status !== "all") {
-    query.status = status.toUpperCase();
+    const s = status.toLowerCase();
+    if (s === "pending" || s === "pending_payment") {
+      query.status = { $in: ["PENDING_PAYMENT", "PENDING"] };
+    } else if (s === "paid" || s === "confirmed") {
+      query.status = { $in: ["PAID", "CONFIRMED"] };
+    } else if (s === "processing") {
+      query.status = "PROCESSING";
+    } else if (s === "ready" || s === "ready_for_delivery") {
+      query.status = { $in: ["READY_FOR_DELIVERY", "READY"] };
+    } else if (s === "out_for_delivery" || s === "in_transit") {
+      query.status = { $in: ["OUT_FOR_DELIVERY", "IN_TRANSIT"] };
+    } else if (s === "delivered") {
+      query.status = { $in: ["DELIVERED", "COMPLETED"] };
+    } else if (s === "cancelled") {
+      query.status = { $in: ["CANCELLED", "FAILED_DELIVERY"] };
+    } else if (s === "refunded" || s === "refund_pending") {
+      query.status = { $in: ["REFUND_PENDING", "REFUNDED"] };
+    } else {
+      query.status = status.toUpperCase();
+    }
   }
 
   if (search && search.trim()) {
@@ -89,9 +108,16 @@ export async function getAdminOrders(params: GetOrdersParams) {
 export async function getAdminOrderById(orderIdOrNumber: string) {
   await connectDB();
 
-  let query: any = { orderNumber: orderIdOrNumber };
+  const clean = (orderIdOrNumber || "").trim().replace(/^#/, "");
+  let query: any = { orderNumber: { $regex: new RegExp(`^#?${clean}$`, "i") } };
+
   if (mongoose.Types.ObjectId.isValid(orderIdOrNumber)) {
-    query = { $or: [{ _id: orderIdOrNumber }, { orderNumber: orderIdOrNumber }] };
+    query = {
+      $or: [
+        { _id: new mongoose.Types.ObjectId(orderIdOrNumber) },
+        { orderNumber: { $regex: new RegExp(`^#?${clean}$`, "i") } },
+      ],
+    };
   }
 
   const order = await Order.findOne(query)

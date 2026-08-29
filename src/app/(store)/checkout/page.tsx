@@ -166,11 +166,15 @@ export default function CheckoutPage() {
     fetch("/api/account/addresses")
       .then((res) => res.json())
       .then((data) => {
-        if (data.success && Array.isArray(data.addresses) && data.addresses.length > 0) {
+        if (data.success && Array.isArray(data.addresses)) {
           setSavedAddresses(data.addresses);
-          const defaultAddr = data.addresses.find((a: SavedAddress) => a.isDefault) || data.addresses[0];
-          if (defaultAddr) {
-            applySavedAddress(defaultAddr);
+          if (data.addresses.length > 0) {
+            const defaultAddr = data.addresses.find((a: SavedAddress) => a.isDefault) || data.addresses[0];
+            if (defaultAddr) {
+              applySavedAddress(defaultAddr);
+            }
+          } else {
+            setSelectedAddressId("NEW");
           }
         }
       })

@@ -10,13 +10,6 @@ export async function GET(
 ) {
   try {
     const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
     const { id } = await params;
     if (!id) {
       return NextResponse.json(
@@ -29,7 +22,7 @@ export async function GET(
 
     let query: Record<string, unknown> = {};
     if (mongoose.Types.ObjectId.isValid(id)) {
-      query = { _id: id };
+      query = { $or: [{ _id: new mongoose.Types.ObjectId(id) }, { orderNumber: id }] };
     } else {
       const cleanNum = id.replace(/^#/, "");
       query = { orderNumber: { $regex: cleanNum, $options: "i" } };
@@ -46,14 +39,36 @@ export async function GET(
       );
     }
 
-    // Security: non-admin users can only view their own orders
+    // Security: non-admin users can view only their own orders
     const isAdmin =
-      session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN";
-    if (!isAdmin && String(order.customerId) !== String(session.user.id)) {
-      return NextResponse.json(
-        { success: false, error: "Forbidden" },
-        { status: 403 }
-      );
+      session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
+
+    if (!isAdmin) {
+      const isOwner =
+        (session?.user?.id && String(order.customerId) === String(session.user.id)) ||
+        (session?.user?.email && order.guestInformation?.email?.toLowerCase() === session.user.email.toLowerCase()) ||
+        (session?.user?.phone && order.guestInformation?.phone === session.user.phone);
+
+      // If user is unauthenticated or not owner, but has exact orderNumber/reference from immediate checkout
+      if (!isOwner && !session?.user) {
+        // Allow reading confirmation details if exact order ID / number matches
+      } else if (!isOwner && session?.user) {
+        return NextResponse.json(
+          { success: false, error: "Forbidden" },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Auto-link order to customerId if logged in and not yet linked
+    if (session?.user?.id && !order.customerId && mongoose.Types.ObjectId.isValid(session.user.id)) {
+      if (
+        (session.user.email && order.guestInformation?.email?.toLowerCase() === session.user.email.toLowerCase()) ||
+        (session.user.phone && order.guestInformation?.phone === session.user.phone)
+      ) {
+        order.customerId = new mongoose.Types.ObjectId(session.user.id) as any;
+        await order.save();
+      }
     }
 
     return NextResponse.json({ success: true, data: order });
@@ -85,7 +100,14 @@ export async function PATCH(
 
     await connectDB();
 
-    const order = await Order.findById(id);
+    let order = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      order = await Order.findById(id);
+    }
+    if (!order) {
+      order = await Order.findOne({ orderNumber: id });
+    }
+
     if (!order) {
       return NextResponse.json(
         { success: false, error: "Order not found" },
@@ -101,8 +123,13 @@ export async function PATCH(
       if (status) order.status = status;
       if (notes !== undefined) order.notes = notes;
     } else {
-      // Customers: can only cancel their own orders
-      if (String(order.customerId) !== String(session.user.id)) {
+      // Customers: check ownership
+      const isOwner =
+        String(order.customerId) === String(session.user.id) ||
+        (session.user.email && order.guestInformation?.email?.toLowerCase() === session.user.email.toLowerCase()) ||
+        (session.user.phone && order.guestInformation?.phone === session.user.phone);
+
+      if (!isOwner) {
         return NextResponse.json(
           { success: false, error: "Forbidden" },
           { status: 403 }

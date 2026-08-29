@@ -5,6 +5,7 @@ import Order from "@/models/Order";
 import Payment from "@/models/Payment";
 import ProductVariant from "@/models/ProductVariant";
 import PricingRule from "@/models/PricingRule";
+import User from "@/models/User";
 import { PricingService } from "@/services/pricing/PricingService";
 import { resolveDeliveryFee } from "@/lib/delivery/delivery-engine";
 import { OrderService } from "@/services/order/OrderService";
@@ -146,12 +147,38 @@ export async function POST(req: NextRequest) {
     const onlineTotal = Math.max(0, subtotal - discount);
 
     // 4. Create Pending Order
-    const customerId = session?.user?.id;
+    let customerId = session?.user?.id;
     const guestInformation = {
       name: customerInfo?.name || session?.user?.name || "Customer",
       email: customerInfo?.email || session?.user?.email || "customer@khadyswater.com",
       phone: customerInfo?.phone || session?.user?.phone || deliveryAddress?.phone || "",
     };
+
+    // If not signed in via session, look up if a registered user account exists with this email or phone
+    if (!customerId && (guestInformation.email || guestInformation.phone)) {
+      try {
+        const lookupOr: any[] = [];
+        if (guestInformation.email && !guestInformation.email.includes("@khadyswater.com")) {
+          const escaped = guestInformation.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          lookupOr.push({ email: { $regex: new RegExp(`^${escaped}$`, "i") } });
+        }
+        if (guestInformation.phone) {
+          lookupOr.push({ phone: guestInformation.phone });
+          const clean = guestInformation.phone.replace(/[\s-]/g, "");
+          if (clean.length >= 9) {
+            lookupOr.push({ phone: { $regex: new RegExp(clean.slice(-9), "i") } });
+          }
+        }
+        if (lookupOr.length > 0) {
+          const existingUser = await User.findOne({ $or: lookupOr });
+          if (existingUser) {
+            customerId = existingUser._id.toString();
+          }
+        }
+      } catch (userErr) {
+        console.warn("[checkout] User auto-match non-blocking error:", userErr);
+      }
+    }
 
     const pendingOrderResult = await OrderService.createPendingOrder({
       customerId: customerId || undefined,

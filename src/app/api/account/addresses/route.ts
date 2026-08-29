@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth/auth";
 import { connectDB } from "@/lib/db/mongoose";
 import Address from "@/models/Address";
 import User from "@/models/User";
+import mongoose from "mongoose";
 
 export async function GET() {
   try {
@@ -29,7 +30,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { label, region, city, area, houseOrBuilding, landmark, deliveryInstructions, isDefault } = body;
+    const {
+      label,
+      fullName,
+      phone,
+      region,
+      city,
+      area,
+      street,
+      houseNumber,
+      houseOrBuilding,
+      digitalAddress,
+      landmark,
+      deliveryInstructions,
+      coordinates,
+      gpsAccuracy,
+      addressSource,
+      isDefault,
+    } = body;
 
     if (!region || !city) {
       return NextResponse.json({ error: "Region and city are required." }, { status: 400 });
@@ -43,14 +61,20 @@ export async function POST(req: NextRequest) {
     }
 
     const newAddress = await Address.create({
-      userId: session.user.id,
+      userId: new mongoose.Types.ObjectId(session.user.id),
       label: label || "HOME",
+      fullName: fullName || session.user.name,
+      phone: phone || (session.user as any).phone || "",
       region,
       city,
       area: area || "",
-      houseOrBuilding: houseOrBuilding || "",
+      houseOrBuilding: houseOrBuilding || [houseNumber, street].filter(Boolean).join(" ") || street || houseNumber || "",
+      digitalAddress: digitalAddress || "",
       landmark: landmark || "",
       deliveryInstructions: deliveryInstructions || "",
+      coordinates: coordinates || undefined,
+      gpsAccuracy: gpsAccuracy || undefined,
+      addressSource: addressSource || "MANUAL",
       isDefault: Boolean(isDefault),
     });
 
@@ -63,6 +87,54 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[account/addresses POST]", error);
     return NextResponse.json({ success: false, error: "Failed to save address" }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { id, isDefault, ...updateFields } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "Address ID required" }, { status: 400 });
+    }
+
+    await connectDB();
+
+    if (isDefault) {
+      // Clear other defaults for this user
+      await Address.updateMany({ userId: session.user.id }, { isDefault: false });
+    }
+
+    const updatePayload: Record<string, unknown> = { ...updateFields };
+    if (isDefault !== undefined) {
+      updatePayload.isDefault = Boolean(isDefault);
+    }
+    if (updateFields.street || updateFields.houseNumber) {
+      updatePayload.houseOrBuilding =
+        updateFields.houseOrBuilding ||
+        [updateFields.houseNumber, updateFields.street].filter(Boolean).join(" ");
+    }
+
+    const updatedAddress = await Address.findOneAndUpdate(
+      { _id: id, userId: session.user.id },
+      { $set: updatePayload },
+      { new: true }
+    );
+
+    if (!updatedAddress) {
+      return NextResponse.json({ error: "Address not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, address: updatedAddress });
+  } catch (error) {
+    console.error("[account/addresses PATCH]", error);
+    return NextResponse.json({ success: false, error: "Failed to update address" }, { status: 500 });
   }
 }
 

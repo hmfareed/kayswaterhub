@@ -21,7 +21,8 @@ import { formatCurrency } from "@/lib/constants";
 
 const ORDER_STATUS_OPTIONS = [
   { value: "PENDING_PAYMENT", label: "Pending Payment" },
-  { value: "CONFIRMED", label: "Confirmed (Paid)" },
+  { value: "PAID", label: "Paid (Confirmed)" },
+  { value: "CONFIRMED", label: "Confirmed" },
   { value: "PROCESSING", label: "Processing & Packing" },
   { value: "READY_FOR_DELIVERY", label: "Ready for Delivery" },
   { value: "OUT_FOR_DELIVERY", label: "Out for Delivery" },
@@ -100,9 +101,10 @@ export default function AdminOrdersPage() {
 
   const tabs = [
     { label: "All Orders", value: "all" },
-    { label: "Pending", value: "pending_payment" },
+    { label: "Pending Payment", value: "pending_payment" },
+    { label: "Paid / Confirmed", value: "paid" },
     { label: "Processing", value: "processing" },
-    { label: "Ready", value: "ready_for_delivery" },
+    { label: "Ready for Dispatch", value: "ready_for_delivery" },
     { label: "Out for Delivery", value: "out_for_delivery" },
     { label: "Delivered", value: "delivered" },
     { label: "Cancelled", value: "cancelled" },

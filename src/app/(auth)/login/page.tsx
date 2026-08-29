@@ -85,10 +85,9 @@ function LoginForm() {
       <Link
         href="/"
         aria-label="Back to Store"
-        className="absolute top-4 left-4 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-xs backdrop-blur-md transition-all text-xs font-bold hover:bg-white active:scale-95 group"
+        className="absolute top-4 left-4 z-30 inline-flex items-center justify-center p-2.5 rounded-full bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-xs backdrop-blur-md transition-all hover:bg-white active:scale-95 group"
       >
-        <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
-        <span>Back to Store</span>
+        <ArrowLeft className="w-5 h-5 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
       </Link>
       {/* ── Left decorative panel (hidden on mobile) ─────────────────────── */}
       <div

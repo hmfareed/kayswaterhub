@@ -108,6 +108,7 @@ function formatRelativeTime(dateInput?: string | Date): string {
 
 interface Address {
   id: string;
+  _id?: string;
   label: AddrLabel;
   fullName: string;
   phone: string;
@@ -142,6 +143,7 @@ interface OrderItem {
 interface Order {
   id: string;
   _id?: string;
+  rawStatus?: string;
   date: string;
   status: OrderStatus;
   statusLabel: string;
@@ -155,6 +157,86 @@ interface Order {
   parcelStation?: string;
   items: OrderItem[];
   rider?: { name: string; phone: string; eta: string; vehicle: string };
+}
+
+function getStatusDetails(rawStatus?: string): {
+  normalized: OrderStatus;
+  label: string;
+  color: string;
+} {
+  const norm = (rawStatus || "").toUpperCase();
+  switch (norm) {
+    case "PENDING_PAYMENT":
+    case "PENDING":
+      return {
+        normalized: "pending",
+        label: "Pending Payment",
+        color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60",
+      };
+    case "PAID":
+      return {
+        normalized: "confirmed",
+        label: "Paid (Confirmed)",
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60",
+      };
+    case "CONFIRMED":
+      return {
+        normalized: "confirmed",
+        label: "Order Confirmed",
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60",
+      };
+    case "PROCESSING":
+      return {
+        normalized: "confirmed",
+        label: "Processing & Packing",
+        color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60",
+      };
+    case "READY_FOR_DELIVERY":
+      return {
+        normalized: "confirmed",
+        label: "Ready for Dispatch",
+        color: "bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-300 dark:border-cyan-800/60",
+      };
+    case "OUT_FOR_DELIVERY":
+    case "IN_TRANSIT":
+      return {
+        normalized: "out_for_delivery",
+        label: "Out for Delivery",
+        color: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60",
+      };
+    case "DELIVERED":
+    case "COMPLETED":
+      return {
+        normalized: "delivered",
+        label: "Delivered",
+        color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60",
+      };
+    case "CANCELLED":
+    case "FAILED_DELIVERY":
+      return {
+        normalized: "cancelled",
+        label: "Cancelled",
+        color: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60",
+      };
+    case "REFUND_PENDING":
+      return {
+        normalized: "cancelled",
+        label: "Refund Pending",
+        color: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+      };
+    case "REFUNDED":
+      return {
+        normalized: "cancelled",
+        label: "Refunded",
+        color: "bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700",
+      };
+    default:
+      return {
+        normalized: "pending",
+        label: rawStatus || "Order Placed",
+        color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60",
+      };
+  }
 }
 
 const INITIAL_ADDRESSES: Address[] = [];
@@ -293,35 +375,25 @@ function AccountContent() {
 
   // Load addresses and orders — ONLY from server API after session is confirmed.
   // Never read from localStorage for user-specific data to prevent cross-account leakage.
-  useEffect(() => {
-    if (!session?.user?.id) return;
-
-    // Fetch user addresses (server-scoped to the logged-in user)
-    fetch("/api/account/addresses")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.addresses)) {
-          setAddresses(data.addresses);
-        }
-      })
-      .catch(() => {});
-
-    // Fetch user orders from API
-    fetch("/api/orders")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success && Array.isArray(data.data)) {
-          const mappedOrders: Order[] = data.data.map((o: any) => ({
+  const fetchUserOrders = async () => {
+    try {
+      const res = await fetch("/api/orders");
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        const mappedOrders: Order[] = data.data.map((o: any) => {
+          const statusInfo = getStatusDetails(o.status);
+          return {
             id: o.orderNumber || o._id,
             _id: o._id,
+            rawStatus: o.status,
             date: new Date(o.createdAt || Date.now()).toLocaleDateString("en-GB", {
               day: "numeric",
               month: "short",
               year: "numeric",
             }),
-            status: (o.status || "PENDING").toLowerCase() as OrderStatus,
-            statusLabel: o.status || "Order Placed",
-            statusColor: "bg-blue-50 text-blue-700 border-blue-200",
+            status: statusInfo.normalized,
+            statusLabel: statusInfo.label,
+            statusColor: statusInfo.color,
             total: o.total || 0,
             subtotal: o.subtotal || o.total || 0,
             deliveryFee: o.deliveryFee || 0,
@@ -342,11 +414,48 @@ function AccountContent() {
               quantity: i.quantity || 1,
               price: i.unitPrice || i.price || 0,
             })),
+          };
+        });
+        setOrders(mappedOrders);
+      }
+    } catch (err) {
+      console.error("Failed to fetch customer orders:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+
+    // Fetch user addresses (server-scoped to the logged-in user)
+    fetch("/api/account/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.addresses)) {
+          const mapped: Address[] = data.addresses.map((a: any) => ({
+            id: a._id || a.id || `addr-${Math.random().toString(36).substring(2, 9)}`,
+            _id: a._id || a.id,
+            label: a.label || "HOME",
+            fullName: a.fullName || "",
+            phone: a.phone || "",
+            region: a.region || "Greater Accra",
+            city: a.city || "Accra",
+            area: a.area || "",
+            street: a.houseOrBuilding || a.street || "",
+            houseNumber: a.houseNumber || "",
+            digitalAddress: a.digitalAddress || "",
+            landmark: a.landmark || "",
+            deliveryInstructions: a.deliveryInstructions || "",
+            lat: a.coordinates?.lat,
+            lng: a.coordinates?.lng,
+            isDefault: Boolean(a.isDefault),
           }));
-          setOrders(mappedOrders);
+          setAddresses(mapped);
         }
       })
       .catch(() => {});
+
+    // Fetch user orders from API
+    fetchUserOrders();
   }, [session]);
 
   // ── Notification filter ───────────────────────────────────────────────────
@@ -589,9 +698,10 @@ function AccountContent() {
   };
 
   // Refresh orders
-  const handleRefreshOrders = () => {
+  const handleRefreshOrders = async () => {
     setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 1200);
+    await fetchUserOrders();
+    setTimeout(() => setIsRefreshing(false), 800);
   };
 
   // ── Order actions ─────────────────────────────────────────────────────────
@@ -779,32 +889,117 @@ function AccountContent() {
     );
   };
 
-  const handleSaveAddress = (e: React.FormEvent) => {
+  const handleSaveAddress = async (e: React.FormEvent) => {
     e.preventDefault();
     if (editingAddress) {
+      const addrId = editingAddress._id || editingAddress.id;
+      // Optimistic update
       setAddresses((prev) =>
         prev.map((a) =>
-          a.id === editingAddress.id ? { ...editingAddress, ...addrForm } : a
+          (a._id || a.id) === addrId ? { ...a, ...addrForm } : a
         )
       );
+
+      try {
+        const res = await fetch("/api/account/addresses", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: addrId,
+            ...addrForm,
+          }),
+        });
+        const json = await res.json();
+        if (json.success && json.address) {
+          const updated = json.address;
+          setAddresses((prev) =>
+            prev.map((a) =>
+              (a._id || a.id) === addrId
+                ? {
+                    ...a,
+                    ...addrForm,
+                    id: updated._id || updated.id || addrId,
+                    _id: updated._id || updated.id || addrId,
+                  }
+                : a
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Failed to update address:", err);
+      }
     } else {
+      const tempId = `addr-${Date.now()}`;
       const newAddr: Address = {
-        id: `addr-${Date.now()}`,
+        id: tempId,
+        _id: tempId,
         ...addrForm,
         isDefault: addresses.length === 0,
       };
       setAddresses((prev) => [...prev, newAddr]);
+
+      try {
+        const res = await fetch("/api/account/addresses", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...addrForm,
+            isDefault: addresses.length === 0,
+          }),
+        });
+        const json = await res.json();
+        if (json.success && json.address) {
+          const created = json.address;
+          setAddresses((prev) =>
+            prev.map((a) =>
+              a.id === tempId
+                ? {
+                    ...a,
+                    id: created._id || created.id,
+                    _id: created._id || created.id,
+                    isDefault: Boolean(created.isDefault),
+                  }
+                : a
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Failed to save new address:", err);
+      }
     }
     setShowAddAddress(false);
     setEditingAddress(null);
     setAddrForm(blankAddr());
   };
 
-  const handleSetDefaultAddress = (id: string) =>
-    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
+  const handleSetDefaultAddress = async (id: string) => {
+    if (!id) return;
+    setAddresses((prev) =>
+      prev.map((a) => ({ ...a, isDefault: (a._id || a.id) === id }))
+    );
+    try {
+      await fetch("/api/account/addresses", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, isDefault: true }),
+      });
+    } catch (err) {
+      console.error("Failed to set default address:", err);
+    }
+  };
 
-  const handleDeleteAddress = (id: string) =>
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
+  const handleDeleteAddress = async (id: string) => {
+    if (!id) return;
+    setAddresses((prev) => prev.filter((a) => (a._id || a.id) !== id));
+    setAddrMenuId(null);
+    try {
+      await fetch(`/api/account/addresses?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+    } catch (err) {
+      console.error("Failed to delete address on server:", err);
+    }
+  };
 
   const handleEditAddress = (addr: Address) => {
     setEditingAddress(addr);
@@ -1690,44 +1885,47 @@ function AccountContent() {
                         <p className="text-sm font-bold">No saved addresses</p>
                       </div>
                     )}
-                    {addresses.map((addr) => (
-                      <div key={addr.id} className={`p-4 rounded-2xl border relative ${addr.isDefault ? "border-blue-500 bg-blue-50/20" : isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md uppercase ${isDarkMode ? "bg-slate-800 text-slate-300" : "bg-blue-100 text-blue-800"}`}>
-                              {addrLabelIcon[addr.label]}{addr.label}
-                            </span>
-                            {addr.isDefault && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">Default</span>}
-                          </div>
-                          <div className="relative">
-                            <button onClick={() => setAddrMenuId(addrMenuId === addr.id ? null : addr.id)}
-                              className={`p-1.5 rounded-full transition-colors ${isDarkMode ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-200 text-slate-500"}`}>
-                              <MoreHorizontal className="w-4 h-4" />
-                            </button>
-                            {addrMenuId === addr.id && (
-                              <div className={`absolute right-0 top-8 z-10 min-w-[150px] rounded-xl shadow-lg border overflow-hidden ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
-                                <button onClick={() => handleEditAddress(addr)} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-slate-200" : "hover:bg-slate-50 text-slate-700"}`}>
-                                  <Edit3 className="w-3.5 h-3.5" /> Edit Address
-                                </button>
-                                {!addr.isDefault && (
-                                  <button onClick={() => { handleSetDefaultAddress(addr.id); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-blue-400" : "hover:bg-blue-50 text-blue-600"}`}>
-                                    <Star className="w-3.5 h-3.5" /> Set as Default
+                    {addresses.map((addr) => {
+                      const addrId = addr._id || addr.id;
+                      return (
+                        <div key={addrId} className={`p-4 rounded-2xl border relative ${addr.isDefault ? "border-blue-500 bg-blue-50/20" : isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md uppercase ${isDarkMode ? "bg-slate-800 text-slate-300" : "bg-blue-100 text-blue-800"}`}>
+                                {addrLabelIcon[addr.label]}{addr.label}
+                              </span>
+                              {addr.isDefault && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">Default</span>}
+                            </div>
+                            <div className="relative">
+                              <button onClick={() => setAddrMenuId(addrMenuId === addrId ? null : addrId)}
+                                className={`p-1.5 rounded-full transition-colors ${isDarkMode ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-200 text-slate-500"}`}>
+                                <MoreHorizontal className="w-4 h-4" />
+                              </button>
+                              {addrMenuId === addrId && (
+                                <div className={`absolute right-0 top-8 z-10 min-w-[150px] rounded-xl shadow-lg border overflow-hidden ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
+                                  <button onClick={() => handleEditAddress(addr)} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-slate-200" : "hover:bg-slate-50 text-slate-700"}`}>
+                                    <Edit3 className="w-3.5 h-3.5" /> Edit Address
                                   </button>
-                                )}
-                                <button onClick={() => { handleDeleteAddress(addr.id); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-rose-400" : "hover:bg-rose-50 text-rose-600"}`}>
-                                  <Trash2 className="w-3.5 h-3.5" /> Delete
-                                </button>
-                              </div>
-                            )}
+                                  {!addr.isDefault && (
+                                    <button onClick={() => { handleSetDefaultAddress(addrId); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-blue-400" : "hover:bg-blue-50 text-blue-600"}`}>
+                                      <Star className="w-3.5 h-3.5" /> Set as Default
+                                    </button>
+                                  )}
+                                  <button onClick={() => { handleDeleteAddress(addrId); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-rose-400" : "hover:bg-rose-50 text-rose-600"}`}>
+                                    <Trash2 className="w-3.5 h-3.5" /> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </div>
+                          <p className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{[addr.houseNumber, addr.street, addr.area].filter(Boolean).join(", ")}</p>
+                          <p className="text-xs text-slate-400 mt-0.5">{[addr.city, addr.region, "Ghana"].filter(Boolean).join(", ")}</p>
+                          {addr.digitalAddress && <p className="text-[11px] text-blue-600 font-mono mt-1">📍 {addr.digitalAddress}</p>}
+                          {addr.landmark && <p className="text-[11px] text-slate-400 mt-0.5">Landmark: {addr.landmark}</p>}
+                          {addr.fullName && <p className="text-[11px] text-slate-400 mt-0.5">{addr.fullName} · {addr.phone}</p>}
                         </div>
-                        <p className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{[addr.houseNumber, addr.street, addr.area].filter(Boolean).join(", ")}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">{[addr.city, addr.region, "Ghana"].filter(Boolean).join(", ")}</p>
-                        {addr.digitalAddress && <p className="text-[11px] text-blue-600 font-mono mt-1">📍 {addr.digitalAddress}</p>}
-                        {addr.landmark && <p className="text-[11px] text-slate-400 mt-0.5">Landmark: {addr.landmark}</p>}
-                        {addr.fullName && <p className="text-[11px] text-slate-400 mt-0.5">{addr.fullName} · {addr.phone}</p>}
-                      </div>
-                    ))}
+                      );
+                    })}
                     <button onClick={() => { setAddrForm(blankAddr()); setShowAddAddress(true); }} id="btn-add-address"
                       className={`w-full py-3.5 rounded-2xl border-2 border-dashed text-blue-600 font-bold text-xs flex items-center justify-center gap-2 transition-colors ${isDarkMode ? "border-slate-700 hover:border-blue-500" : "border-slate-200 hover:border-blue-500"}`}>
                       <Plus className="w-4 h-4" /> Add New Address
