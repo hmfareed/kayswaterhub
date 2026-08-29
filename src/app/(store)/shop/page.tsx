@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { STORE_PRODUCTS, WATER_BRANDS, StoreProduct } from "@/lib/constants";
 import { StoreNavbar } from "@/components/store/navbar";
-import { StoreFooter } from "@/components/store/footer";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { ProductCard } from "@/components/products/product-card";
 
@@ -414,9 +413,6 @@ function ShopContent() {
           </div>
         </div>
       )}
-
-      {/* Footer */}
-      <StoreFooter />
 
       {/* Mobile Bottom Nav */}
       <MobileBottomNav />

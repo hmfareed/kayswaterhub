@@ -71,9 +71,9 @@ export function StoreNavbar() {
 
   const headerBgClass = isHome
     ? isScrolled
-      ? "bg-white/90 backdrop-blur-md border-b border-blue-100/60 shadow-2xs"
+      ? "bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs"
       : "bg-transparent border-b border-transparent shadow-none"
-    : "bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs";
+    : "bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs";
 
   const firstName = user?.name ? user.name.split(" ")[0] : "Account";
   const initial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
@@ -81,7 +81,7 @@ export function StoreNavbar() {
   return (
     <>
       <header
-        className={`sticky top-0 z-50 transition-all duration-300 ease-in-out ${headerBgClass}`}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${headerBgClass}`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 lg:h-20 flex items-center justify-between gap-4">
           {/* Left: Compact Elegant Logo */}
@@ -249,6 +249,7 @@ export function StoreNavbar() {
           </div>
         </div>
       </header>
+      {!isHome && <div className="h-16 sm:h-18 lg:h-20 shrink-0" aria-hidden="true" />}
 
       {/* Slide-in Drawer on Mobile & Tablet */}
       {mobileMenuOpen && (

@@ -29,7 +29,7 @@ export default function HomePage() {
         {/* Main Clean Seamless Navbar */}
         <StoreNavbar />
 
-        <section className="relative overflow-hidden pt-1 pb-14 sm:pt-4 sm:pb-16 lg:pt-8 lg:pb-20">
+        <section className="relative overflow-hidden pt-20 pb-14 sm:pt-24 sm:pb-16 lg:pt-28 lg:pb-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-8 lg:gap-10 items-center min-h-[520px]">
               
@@ -263,18 +263,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-
-      {/* Floating WhatsApp Action Button in Bottom Right */}
-      <a
-        href={STORE_WHATSAPP_LINK}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Order on WhatsApp"
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#25D366] hover:bg-[#20ba59] text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 group"
-      >
-        <WhatsAppBrandIcon className="w-7 h-7 fill-white" />
-        <span className="sr-only">Order on WhatsApp</span>
-      </a>
 
       {/* Footer */}
       <StoreFooter />

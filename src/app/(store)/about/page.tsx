@@ -4,7 +4,6 @@ import React from "react";
 import Link from "next/link";
 import { Droplets, ShieldCheck, Truck, Clock, HeartHandshake, Phone, ArrowRight, MessageCircle } from "lucide-react";
 import { StoreNavbar } from "@/components/store/navbar";
-import { StoreFooter } from "@/components/store/footer";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { STORE_PHONE_DISPLAY, STORE_WHATSAPP_LINK } from "@/lib/constants";
 
@@ -99,7 +98,6 @@ export default function AboutPage() {
         </section>
       </main>
 
-      <StoreFooter />
       <MobileBottomNav />
     </div>
   );

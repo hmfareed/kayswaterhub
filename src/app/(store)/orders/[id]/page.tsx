@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/constants";
 import { StoreNavbar } from "@/components/store/navbar";
-import { StoreFooter } from "@/components/store/footer";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { RealProductImage } from "@/components/products/real-product-image";
 
@@ -237,7 +236,6 @@ export default function OrderConfirmationPage() {
             <p className="text-xs font-bold text-slate-600">Retrieving order details...</p>
           </div>
         </main>
-        <StoreFooter />
       </div>
     );
   }
@@ -477,7 +475,6 @@ export default function OrderConfirmationPage() {
         </div>
       </main>
 
-      <StoreFooter />
       <MobileBottomNav />
     </div>
   );

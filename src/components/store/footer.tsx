@@ -130,10 +130,16 @@ export function StoreFooter() {
           </div>
         </div>
 
-        {/* Bottom copyright & legal */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} Kay&apos;s Packs. All rights reserved.</p>
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+        {/* Bottom copyright, developer credits & legal */}
+        <div className="pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 text-center sm:text-left">
+            <p>© {new Date().getFullYear()} Kay&apos;s Packs. All rights reserved.</p>
+            <span className="hidden sm:inline text-slate-700">•</span>
+            <p className="text-slate-400 font-medium">
+              Built by <span className="text-blue-400 font-bold tracking-wider">FAREED CORE TECH</span>
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6">
             <Link href="/faq" className="hover:text-slate-400 transition-colors">FAQ</Link>
             <Link href="/refund-policy" className="hover:text-slate-400 transition-colors">Refund Policy</Link>
             <Link href="/terms" className="hover:text-slate-400 transition-colors">Terms of Service</Link>

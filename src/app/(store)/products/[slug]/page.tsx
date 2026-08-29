@@ -18,7 +18,6 @@ import {
 import { STORE_PRODUCTS, formatCurrency } from "@/lib/constants";
 import { useCart } from "@/context/cart-context";
 import { StoreNavbar } from "@/components/store/navbar";
-import { StoreFooter } from "@/components/store/footer";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { WaterBottleGraphic } from "@/components/ui/water-bottle-graphics";
 import { ProductCard } from "@/components/products/product-card";
@@ -279,7 +278,6 @@ export default function ProductDetailPage() {
         )}
       </main>
 
-      <StoreFooter />
       <MobileBottomNav />
     </div>
   );

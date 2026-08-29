@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { GHANA_REGIONS, WATER_BRANDS } from "@/lib/constants";
 import { StoreNavbar } from "@/components/store/navbar";
-import { StoreFooter } from "@/components/store/footer";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 
 export default function BulkOrdersPage() {
@@ -250,7 +249,6 @@ export default function BulkOrdersPage() {
         )}
       </main>
 
-      <StoreFooter />
       <MobileBottomNav />
     </div>
   );

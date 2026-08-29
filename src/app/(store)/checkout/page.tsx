@@ -30,7 +30,6 @@ import {
 import { GHANA_REGIONS, formatCurrency } from "@/lib/constants";
 import { useCart } from "@/context/cart-context";
 import { StoreNavbar } from "@/components/store/navbar";
-import { StoreFooter } from "@/components/store/footer";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { RealProductImage } from "@/components/products/real-product-image";
 import { PaymentMethodBadge } from "@/components/ui/brand-logos";
@@ -1285,7 +1284,6 @@ export default function CheckoutPage() {
         )}
       </main>
 
-      <StoreFooter />
       <MobileBottomNav />
     </div>
   );

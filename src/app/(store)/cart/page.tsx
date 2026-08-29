@@ -19,7 +19,6 @@ import {
 import { useCart } from "@/context/cart-context";
 import { formatCurrency, STORE_WHATSAPP_LINK } from "@/lib/constants";
 import { StoreNavbar } from "@/components/store/navbar";
-import { StoreFooter } from "@/components/store/footer";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { RealProductImage } from "@/components/products/real-product-image";
 
@@ -296,7 +295,6 @@ export default function CartPage() {
         )}
       </main>
 
-      <StoreFooter />
       <MobileBottomNav />
     </div>
   );
