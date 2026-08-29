@@ -13,6 +13,7 @@ import {
   Eye,
   EyeOff,
   ArrowRight,
+  ArrowLeft,
   Loader2,
   AlertCircle,
   CheckCircle2,
@@ -140,7 +141,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex relative">
+      {/* ── Top Left Back Button ─────────────────────────────────────────── */}
+      <Link
+        href="/"
+        aria-label="Back to Store"
+        className="absolute top-4 left-4 z-30 inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-xs backdrop-blur-md transition-all text-xs font-bold hover:bg-white active:scale-95 group"
+      >
+        <ArrowLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
+        <span>Back to Store</span>
+      </Link>
       {/* ── Left decorative panel (Blue theme matching login) ─────────────── */}
       <div
         className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col justify-between p-12"

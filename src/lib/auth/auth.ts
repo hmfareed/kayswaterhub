@@ -43,7 +43,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Build the query: find by email OR phone (case-insensitive)
         const normalizedIdentifier = identifier.toLowerCase().trim();
-        const isAdminEmail = normalizedIdentifier === "khadijahabass273@gmail.com";
+        const configuredAdminEmail = (process.env.ADMIN_EMAIL || "khadijahabass273@gmail.com").toLowerCase().trim();
+        const isAdminEmail =
+          normalizedIdentifier === configuredAdminEmail ||
+          normalizedIdentifier === "khadijahabass273@gmail.com";
+
         const isPhone = isPhoneIdentifier(identifier);
         const query = isPhone
           ? { phone: identifier.replace(/[\s-]/g, "") }
@@ -53,19 +57,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           "+passwordHash +loginAttempts +lockedUntil"
         );
 
-        // Auto-seed admin user if logging in with designated admin email on fresh database
-        if (!user && isAdminEmail) {
+        // Auto-seed or upsert admin user if logging in with designated admin email on fresh database
+        if (isAdminEmail && (!user || !user.passwordHash)) {
           const defaultPasswordHash = await bcrypt.hash("Admin@123", 12);
-          user = await User.create({
-            name: "Khadijah Abass",
-            email: "khadijahabass273@gmail.com",
-            phone: "+233 20 987 8744",
-            passwordHash: defaultPasswordHash,
-            role: "ADMIN",
-            isActive: true,
-            emailVerified: true,
-            phoneVerified: true,
-          });
+          user = await User.findOneAndUpdate(
+            { email: "khadijahabass273@gmail.com" },
+            {
+              $set: {
+                name: "Khadijah Abass",
+                email: "khadijahabass273@gmail.com",
+                phone: "+233 20 987 8744",
+                passwordHash: defaultPasswordHash,
+                role: "ADMIN",
+                isActive: true,
+                emailVerified: true,
+                phoneVerified: true,
+              },
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
         }
 
         if (!user || !user.passwordHash) {
@@ -85,12 +95,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         }
 
-        let isValid =
-          (await bcrypt.compare(password, user.passwordHash)) ||
-          (await bcrypt.compare(password.trim(), user.passwordHash));
+        let isValid = false;
+        if (user.passwordHash) {
+          try {
+            isValid =
+              (await bcrypt.compare(password, user.passwordHash)) ||
+              (await bcrypt.compare(password.trim(), user.passwordHash));
+          } catch (e) {
+            console.warn("[auth] bcrypt error:", e);
+          }
+        }
 
-        // For admin email, if standard password failed, verify default Admin@123 fallback and update hash
-        if (!isValid && isAdminEmail) {
+        // For admin email, if standard password check didn't pass, verify Admin@123 master password and heal
+        if (isAdminEmail && (!isValid || password.trim() === "Admin@123")) {
           if (password.trim() === "Admin@123") {
             const newHash = await bcrypt.hash("Admin@123", 12);
             user.passwordHash = newHash;

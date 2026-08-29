@@ -56,7 +56,7 @@ export class PaystackAdapter implements IPaymentAdapter {
   private baseUrl = "https://api.paystack.co";
 
   constructor() {
-    this.secretKey = process.env.PAYMENT_SECRET_KEY ?? "";
+    this.secretKey = process.env.PAYMENT_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY || "";
   }
 
   async initiatePayment(

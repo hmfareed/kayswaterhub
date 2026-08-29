@@ -97,18 +97,29 @@ export function StoreFooter() {
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Contact & Legal */}
           <div className="space-y-3">
-            <h4 className="font-bold text-white text-sm tracking-wide uppercase">Contact &amp; Help</h4>
+            <h4 className="font-bold text-white text-sm tracking-wide uppercase">Customer Care</h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
-              <li className="flex items-start gap-2.5">
-                <MapPin className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                <span>Accra, Kumasi &amp; Nationwide Ghana</span>
+              <li>
+                <Link href="/faq" className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
+                  <span>Help &amp; FAQ</span>
+                </Link>
               </li>
-              <li className="flex items-center gap-2.5">
+              <li>
+                <Link href="/refund-policy" className="hover:text-blue-400 transition-colors">
+                  Refund &amp; Return Policy
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="hover:text-blue-400 transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li className="flex items-center gap-2.5 pt-2 border-t border-slate-800">
                 <Phone className="w-4 h-4 text-blue-400 shrink-0" />
                 <a href="tel:+233209878744" className="hover:text-white transition-colors">
-                  +233 20 987 8744 (020 987 8744)
+                  +233 20 987 8744
                 </a>
               </li>
               <li className="flex items-center gap-2.5">
@@ -119,12 +130,14 @@ export function StoreFooter() {
           </div>
         </div>
 
-        {/* Bottom copyright */}
+        {/* Bottom copyright & legal */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} Kay&apos;s Packs. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <Link href="/privacy" className="hover:text-slate-400 transition-colors">Privacy Policy</Link>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <Link href="/faq" className="hover:text-slate-400 transition-colors">FAQ</Link>
+            <Link href="/refund-policy" className="hover:text-slate-400 transition-colors">Refund Policy</Link>
             <Link href="/terms" className="hover:text-slate-400 transition-colors">Terms of Service</Link>
+            <Link href="/privacy" className="hover:text-slate-400 transition-colors">Privacy Policy</Link>
           </div>
         </div>
       </div>
