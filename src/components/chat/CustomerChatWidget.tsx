@@ -185,38 +185,11 @@ export function CustomerChatWidget() {
 
   return (
     <>
-      {/* ─── Floating Launcher Trigger Button ──────────────────────────────── */}
-      {!isOpen && (
-        <div className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-50 flex items-center">
-          <button
-            id="open-ai-chat-btn"
-            onClick={toggleChat}
-            className="group relative flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white pl-4 pr-5 py-3.5 rounded-full shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-300 border border-white/20"
-            aria-label="Open AI Hydration Assistant"
-          >
-            {/* Pulsing glow ring */}
-            <span className="absolute -inset-1 rounded-full bg-blue-500/30 blur-sm group-hover:opacity-100 opacity-60 transition duration-500 animate-pulse" />
-
-            <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-white/20">
-              <Sparkles className="w-4 h-4 text-white animate-spin-slow" />
-            </div>
-
-            <div className="relative flex flex-col text-left">
-              <span className="text-[13px] font-bold tracking-tight leading-tight flex items-center gap-1.5">
-                AI Assistant
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              </span>
-              <span className="text-[10px] text-blue-100 font-medium">Ask prices &amp; delivery</span>
-            </div>
-          </button>
-        </div>
-      )}
-
       {/* ─── Expandable Chat Modal Window ─────────────────────────────────── */}
       {isOpen && (
-        <div className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[410px] max-w-[430px] h-[580px] max-h-[calc(100vh-100px)] flex flex-col bg-white rounded-3xl shadow-2xl shadow-slate-950/25 border border-slate-200/80 overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-300">
+        <div className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[410px] max-w-[430px] h-[580px] max-h-[calc(100vh-100px)] flex flex-col bg-white dark:bg-neutral-950 rounded-3xl shadow-2xl shadow-slate-950/25 dark:shadow-black border border-slate-200/80 dark:border-neutral-800 overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-300">
           {/* Header */}
-          <div className="shrink-0 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white p-4 flex items-center justify-between shadow-md">
+          <div className="shrink-0 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 dark:from-neutral-950 dark:via-blue-950 dark:to-neutral-900 text-white p-4 flex items-center justify-between shadow-md border-b border-white/10 dark:border-neutral-800">
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 rounded-2xl bg-blue-600/40 border border-blue-400/30 flex items-center justify-center shadow-inner">
                 <Bot className="w-5 h-5 text-blue-200" />
@@ -239,14 +212,14 @@ export function CustomerChatWidget() {
               <button
                 onClick={handleResetChat}
                 title="Restart conversation"
-                className="p-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Restart chat"
               >
                 <RefreshCw className="w-4 h-4" />
               </button>
               <button
                 onClick={closeChat}
-                className="p-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Close chat"
               >
                 <X className="w-4 h-4" />
@@ -256,9 +229,9 @@ export function CustomerChatWidget() {
 
           {/* Cart Quick Summary Bar (if user has items) */}
           {itemCount > 0 && (
-            <div className="shrink-0 bg-blue-50/90 border-b border-blue-100 px-4 py-2 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-2 text-blue-900 font-medium">
-                <ShoppingBag className="w-3.5 h-3.5 text-blue-600" />
+            <div className="shrink-0 bg-blue-50/90 dark:bg-neutral-900 border-b border-blue-100 dark:border-neutral-800 px-4 py-2 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2 text-blue-900 dark:text-blue-300 font-medium">
+                <ShoppingBag className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>
                   Cart: <strong>{itemCount} {itemCount === 1 ? "pack" : "packs"}</strong> (GH₵{total.toFixed(2)})
                 </span>
@@ -266,7 +239,7 @@ export function CustomerChatWidget() {
               <Link
                 href="/checkout"
                 onClick={closeChat}
-                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 hover:underline"
+                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1 hover:underline"
               >
                 Checkout <ChevronRight className="w-3 h-3" />
               </Link>
@@ -274,21 +247,25 @@ export function CustomerChatWidget() {
           )}
 
           {/* Message Stream */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50/70 to-white text-slate-800 text-xs">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-slate-50/70 to-white dark:from-black dark:to-neutral-950 text-slate-800 dark:text-neutral-100 text-xs">
             {messages.map((m) => {
               const isBot = m.role === "assistant";
               return (
-                <div key={m.id} className={`flex flex-col ${isBot ? "items-start" : "items-end"}`}>
-                  <div className="flex items-end gap-2 max-w-[88%]">
-                    {isBot && (
-                      <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 mb-1 text-[11px] font-bold shadow-xs">
+                <div key={m.id} className={`flex flex-col ${isBot ? "items-start" : "items-end"} animate-fade-in`}>
+                  <div className={`flex items-start gap-2 max-w-[86%] ${isBot ? "" : "flex-row-reverse"}`}>
+                    {isBot ? (
+                      <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold shadow-xs">
                         K
+                      </div>
+                    ) : (
+                      <div className="w-7 h-7 rounded-full bg-slate-700 dark:bg-neutral-800 text-white flex items-center justify-center shrink-0 mt-0.5 text-[11px]">
+                        <User className="w-3.5 h-3.5" />
                       </div>
                     )}
                     <div
                       className={`p-3.5 rounded-2xl leading-relaxed whitespace-pre-wrap break-words ${
                         isBot
-                          ? "bg-white border border-slate-200/90 text-slate-800 rounded-bl-xs shadow-xs"
+                          ? "bg-white dark:bg-neutral-900 border border-slate-200/90 dark:border-neutral-800 text-slate-800 dark:text-neutral-100 rounded-bl-xs shadow-xs"
                           : "bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-br-xs shadow-sm shadow-blue-600/20"
                       }`}
                     >
@@ -296,12 +273,12 @@ export function CustomerChatWidget() {
                       <FormattedMarkdown text={m.content} isBot={isBot} />
                     </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 mt-1 px-9">{m.timestamp}</span>
+                  <span className="text-[10px] text-slate-400 dark:text-neutral-500 mt-1 px-9">{m.timestamp}</span>
 
                   {/* Suggested Product Cards embedded if returned */}
                   {isBot && m.suggestedProducts && m.suggestedProducts.length > 0 && (
                     <div className="mt-2 pl-9 w-full space-y-2">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <p className="text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                         Matched Products:
                       </p>
                       <div className="grid grid-cols-1 gap-2">
@@ -310,9 +287,9 @@ export function CustomerChatWidget() {
                           return (
                             <div
                               key={prod.id}
-                              className="flex items-center gap-3 p-2.5 rounded-xl bg-white border border-slate-200/80 hover:border-blue-300 transition-all shadow-xs"
+                              className="flex items-center gap-3 p-2.5 rounded-xl bg-white dark:bg-neutral-900/90 border border-slate-200/80 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-blue-500/50 transition-all shadow-xs"
                             >
-                              <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 overflow-hidden relative">
+                              <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 overflow-hidden relative">
                                 {prod.images && prod.images[0] ? (
                                   <Image
                                     src={prod.images[0]}
@@ -327,17 +304,17 @@ export function CustomerChatWidget() {
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <h4 className="font-bold text-xs text-slate-900 truncate">{prod.name}</h4>
-                                <p className="text-[11px] text-slate-500">{prod.packSize}</p>
+                                <h4 className="font-bold text-xs text-slate-900 dark:text-neutral-100 truncate">{prod.name}</h4>
+                                <p className="text-[11px] text-slate-500 dark:text-neutral-400">{prod.packSize}</p>
                                 <div className="flex items-center gap-2 mt-0.5">
-                                  <span className="font-bold text-blue-600 text-xs">
+                                  <span className="font-bold text-blue-600 dark:text-blue-400 text-xs">
                                     GH₵{prod.price.toFixed(2)}
                                   </span>
                                   <span
                                     className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
                                       prod.inStock
-                                        ? "bg-emerald-50 text-emerald-700"
-                                        : "bg-rose-50 text-rose-700"
+                                        ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/50"
+                                        : "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-800/50"
                                     }`}
                                   >
                                     {prod.inStock ? "In Stock" : "Out of stock"}
@@ -349,12 +326,12 @@ export function CustomerChatWidget() {
                                 <button
                                   onClick={() => handleProductAdd(prod)}
                                   disabled={!prod.inStock}
-                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
+                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
                                     isAdded
                                       ? "bg-emerald-600 text-white"
                                       : prod.inStock
                                       ? "bg-blue-600 hover:bg-blue-700 text-white active:scale-95"
-                                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                      : "bg-slate-100 dark:bg-neutral-800 text-slate-400 dark:text-neutral-600 cursor-not-allowed"
                                   }`}
                                 >
                                   {isAdded ? (
@@ -384,11 +361,11 @@ export function CustomerChatWidget() {
                 <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 mb-1 text-[11px] font-bold">
                   K
                 </div>
-                <div className="p-3.5 rounded-2xl bg-white border border-slate-200/90 text-slate-500 rounded-bl-xs shadow-xs flex items-center gap-1.5">
+                <div className="p-3.5 rounded-2xl bg-white dark:bg-neutral-900 border border-slate-200/90 dark:border-neutral-800 text-slate-500 dark:text-neutral-400 rounded-bl-xs shadow-xs flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" />
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.2s]" />
                   <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.4s]" />
-                  <span className="text-[11px] text-slate-400 font-medium ml-1.5">Checking store data...</span>
+                  <span className="text-[11px] text-slate-400 dark:text-neutral-400 font-medium ml-1.5">Checking store data...</span>
                 </div>
               </div>
             )}
@@ -397,41 +374,41 @@ export function CustomerChatWidget() {
           </div>
 
           {/* Quick Suggestion Chips */}
-          <div className="shrink-0 p-2 border-t border-slate-100 bg-white flex gap-1.5 overflow-x-auto text-[11px] scrollbar-none">
+          <div className="shrink-0 p-2 border-t border-slate-100 dark:border-neutral-850 bg-white dark:bg-neutral-950 flex gap-1.5 overflow-x-auto text-[11px] scrollbar-none">
             <button
               onClick={() => handleSend("Do you have Voltic 500ml in stock and how much is it?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition-colors"
+              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-700 dark:text-blue-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-blue-800/40"
             >
               💧 Voltic 500ml price
             </button>
             <button
               onClick={() => handleSend("How much is delivery to Greater Accra and when does it arrive?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
             >
               🚚 Delivery fee
             </button>
             <button
               onClick={() => handleSend("What are the best selling water packs?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
             >
               ⭐ Best sellers
             </button>
             <button
               onClick={() => handleSend("What payment methods do you accept?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
             >
               💳 MoMo payment
             </button>
             <button
               onClick={() => handleSend("Where is my order?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition-colors"
+              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
             >
               📦 Track order
             </button>
           </div>
 
           {/* Chat Input Bar */}
-          <div className="shrink-0 p-3 bg-white border-t border-slate-200/80 flex items-center gap-2">
+          <div className="shrink-0 p-3 bg-white dark:bg-neutral-950 border-t border-slate-200/80 dark:border-neutral-850 flex items-center gap-2">
             <input
               ref={inputRef}
               type="text"
@@ -444,14 +421,14 @@ export function CustomerChatWidget() {
                 }
               }}
               placeholder="Ask about water, prices, orders..."
-              className="flex-1 p-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:border-blue-500 focus:bg-white outline-none transition-colors"
+              className="flex-1 p-2.5 rounded-xl text-xs bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-neutral-900 outline-none transition-colors"
               disabled={isLoading}
             />
 
             <button
               onClick={() => handleSend()}
               disabled={!input.trim() || isLoading}
-              className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white disabled:bg-slate-200 disabled:text-slate-400 transition-all"
+              className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white disabled:bg-slate-200 dark:disabled:bg-neutral-800 disabled:text-slate-400 dark:disabled:text-neutral-600 transition-all cursor-pointer"
               aria-label="Send message"
             >
               <Send className="w-4 h-4" />
@@ -459,13 +436,13 @@ export function CustomerChatWidget() {
           </div>
 
           {/* Footer Human Escalation Link */}
-          <div className="shrink-0 bg-slate-50 px-3 py-1.5 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+          <div className="shrink-0 bg-slate-50 dark:bg-neutral-950 px-3 py-1.5 border-t border-slate-100 dark:border-neutral-850 flex items-center justify-between text-[10px] text-slate-500 dark:text-neutral-400">
             <span>Powered by Google Gemini</span>
             <a
               href={STORE_WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-emerald-600 font-semibold hover:underline flex items-center gap-1"
+              className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1"
             >
               <PhoneCall className="w-3 h-3" /> Speak with human agent
             </a>
@@ -477,23 +454,151 @@ export function CustomerChatWidget() {
 }
 
 /**
- * Lightweight helper to format bolding and linebreaks nicely
+ * Rich markdown helper to format bullet lists, numbered lists, bolding, italics, links, and currency
  */
-function FormattedMarkdown({ text, isBot }: { text: string; isBot: boolean }) {
-  const parts = text.split(/(\*\*.*?\*\*)/g);
+function parseInlineFormatting(text: string, isBot: boolean): React.ReactNode[] {
+  // Matches markdown links [text](url), bold **text**, italic *text* or _text_, and Ghanaian currency GH₵ 45
+  const regex = /(\[.*?\]\(.*?\)|\*\*.*?\*\*|\*[^*]+?\*|_.*?_|GH₵\s*\d+(?:\.\d{2})?)/g;
+  const parts = text.split(regex);
 
-  return (
-    <span>
-      {parts.map((part, idx) => {
-        if (part.startsWith("**") && part.endsWith("**")) {
-          return (
-            <strong key={idx} className={isBot ? "font-bold text-slate-900" : "font-bold text-white"}>
-              {part.slice(2, -2)}
-            </strong>
-          );
-        }
-        return part;
-      })}
-    </span>
-  );
+  return parts.map((part, idx) => {
+    if (!part) return null;
+
+    // Link: [label](url)
+    const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+    if (linkMatch) {
+      return (
+        <a
+          key={idx}
+          href={linkMatch[2]}
+          target={linkMatch[2].startsWith("http") ? "_blank" : undefined}
+          rel={linkMatch[2].startsWith("http") ? "noopener noreferrer" : undefined}
+          className="text-blue-600 dark:text-blue-400 font-semibold underline hover:text-blue-700 dark:hover:text-blue-300 inline-flex items-center gap-0.5"
+        >
+          {linkMatch[1]}
+        </a>
+      );
+    }
+
+    // Bold: **text**
+    if (part.startsWith("**") && part.endsWith("**") && part.length >= 4) {
+      return (
+        <strong key={idx} className={isBot ? "font-bold text-slate-900 dark:text-white" : "font-bold text-white"}>
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+
+    // Italic: *text* or _text_
+    if (
+      (part.startsWith("*") && part.endsWith("*") && part.length >= 2 && !part.startsWith("**")) ||
+      (part.startsWith("_") && part.endsWith("_") && part.length >= 2)
+    ) {
+      return (
+        <em key={idx} className="italic opacity-90">
+          {part.slice(1, -1)}
+        </em>
+      );
+    }
+
+    // Currency highlight: GH₵ xx
+    if (part.startsWith("GH₵")) {
+      return (
+        <span key={idx} className={`font-semibold ${isBot ? "text-blue-700 dark:text-blue-300" : "text-white"}`}>
+          {part}
+        </span>
+      );
+    }
+
+    return <span key={idx}>{part}</span>;
+  });
+}
+
+function FormattedMarkdown({ text, isBot }: { text: string; isBot: boolean }) {
+  if (!text) return null;
+
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  let currentList: React.ReactNode[] = [];
+  let isNumbered = false;
+
+  const flushList = (key: number) => {
+    if (currentList.length > 0) {
+      if (isNumbered) {
+        elements.push(
+          <ol key={`ol-${key}`} className="list-decimal list-outside pl-4 my-1 space-y-0.5">
+            {currentList}
+          </ol>
+        );
+      } else {
+        elements.push(
+          <ul key={`ul-${key}`} className="list-disc list-outside pl-4 my-1 space-y-0.5">
+            {currentList}
+          </ul>
+        );
+      }
+      currentList = [];
+    }
+  };
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+
+    // Empty line
+    if (!trimmed) {
+      flushList(idx);
+      elements.push(<div key={`gap-${idx}`} className="h-1" />);
+      return;
+    }
+
+    // Bullet list item (* or -)
+    const bulletMatch = line.match(/^(\s*)[*-]\s+(.*)$/);
+    if (bulletMatch) {
+      if (isNumbered && currentList.length > 0) flushList(idx);
+      isNumbered = false;
+      currentList.push(
+        <li key={`li-${idx}`} className="leading-relaxed">
+          {parseInlineFormatting(bulletMatch[2], isBot)}
+        </li>
+      );
+      return;
+    }
+
+    // Numbered list item (1. or 2.)
+    const numMatch = line.match(/^(\s*)\d+\.\s+(.*)$/);
+    if (numMatch) {
+      if (!isNumbered && currentList.length > 0) flushList(idx);
+      isNumbered = true;
+      currentList.push(
+        <li key={`nli-${idx}`} className="leading-relaxed">
+          {parseInlineFormatting(numMatch[2], isBot)}
+        </li>
+      );
+      return;
+    }
+
+    // Header (### or ##)
+    const headerMatch = line.match(/^#{1,4}\s+(.*)$/);
+    if (headerMatch) {
+      flushList(idx);
+      elements.push(
+        <div key={`h-${idx}`} className="font-bold text-xs mt-1.5 mb-0.5 text-slate-900 dark:text-white uppercase tracking-wider">
+          {parseInlineFormatting(headerMatch[1], isBot)}
+        </div>
+      );
+      return;
+    }
+
+    // Regular line
+    flushList(idx);
+    elements.push(
+      <p key={`p-${idx}`} className="leading-relaxed my-0.5">
+        {parseInlineFormatting(line, isBot)}
+      </p>
+    );
+  });
+
+  flushList(lines.length);
+
+  return <div className="space-y-0.5 text-xs">{elements}</div>;
 }

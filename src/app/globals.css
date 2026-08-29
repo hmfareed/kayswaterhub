@@ -34,6 +34,35 @@
   --shadow-xl:  0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
+/* ─── AMOLED Black Tokens ─────────────────────────────────────────────────────── */
+.dark {
+  /* Brand palette in Dark Mode */
+  --color-primary:        210 100% 52%;
+  --color-primary-light:  210 100% 64%;
+  --color-primary-dark:   210 100% 40%;
+  --color-accent:         190 95% 50%;
+
+  /* Pure AMOLED Black Neutrals */
+  --color-bg:             0 0% 0%;       /* Pure AMOLED #000000 */
+  --color-surface:        0 0% 5%;      /* Dark surface #0d0d0d */
+  --color-border:         0 0% 16%;     /* Subtle border #292929 */
+  --color-muted:          0 0% 40%;     /* Muted #666666 */
+  --color-text:           0 0% 98%;     /* Crisp white text #fafafa */
+  --color-text-secondary: 215 15% 65%;  /* Secondary text #94a3b8 */
+
+  /* Status colours with high contrast */
+  --color-success:        142 70% 45%;
+  --color-warning:        38 92% 55%;
+  --color-error:          0 84% 65%;
+  --color-info:           201 90% 55%;
+
+  /* Dark mode elevation shadows */
+  --shadow-sm:  0 1px 2px 0 rgb(0 0 0 / 0.6);
+  --shadow:     0 4px 12px -2px rgb(0 0 0 / 0.8), 0 2px 6px -2px rgb(0 0 0 / 0.6);
+  --shadow-lg:  0 12px 24px -4px rgb(0 0 0 / 0.9), 0 4px 10px -4px rgb(0 0 0 / 0.7);
+  --shadow-xl:  0 20px 32px -6px rgb(0 0 0 / 0.95), 0 8px 16px -6px rgb(0 0 0 / 0.8);
+}
+
 /* ─── Base resets ────────────────────────────────────────────────────────────── */
 *,
 *::before,
@@ -44,6 +73,13 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+}
+
+.dark html,
+.dark body {
+  background-color: #000000 !important;
+  color: #f8fafc;
+  color-scheme: dark;
 }
 
 body {
@@ -80,6 +116,10 @@ textarea::placeholder {
 ::-webkit-scrollbar-track  { background: hsl(var(--color-bg)); }
 ::-webkit-scrollbar-thumb  { background: hsl(var(--color-border)); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--color-muted)); }
+
+.dark ::-webkit-scrollbar-track { background: #000000; }
+.dark ::-webkit-scrollbar-thumb { background: #262626; border-radius: 3px; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #404040; }
 
 /* ─── Typography utilities ────────────────────────────────────────────────────── */
 .text-balance { text-wrap: balance; }
@@ -123,12 +163,29 @@ textarea::placeholder {
   border-radius: var(--radius);
 }
 
+.dark .skeleton {
+  background: linear-gradient(
+    90deg,
+    #141414 25%,
+    #262626 50%,
+    #141414 75%
+  );
+  background-size: 200% 100%;
+}
+
 /* ─── Glassmorphism utility ──────────────────────────────────────────────────── */
 .glass {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass {
+  background: rgba(12, 12, 14, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* ─── Container ──────────────────────────────────────────────────────────────── */

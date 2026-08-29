@@ -48,6 +48,8 @@ import {
   Ban,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useChat } from "@/context/chat-context";
+import { useTheme } from "@/context/theme-context";
 import {
   STORE_PRODUCTS,
   STORE_WHATSAPP_LINK,
@@ -352,6 +354,8 @@ function AccountContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { itemCount, wishlist, toggleWishlist, recentlyViewed, addItem } = useCart();
+  const { openChat } = useChat();
+  const { isDarkMode, toggleDarkMode } = useTheme();
 
   // Redirect unauthenticated visitors to signup
   useEffect(() => {
@@ -362,9 +366,6 @@ function AccountContent() {
 
   // ── Modal/Drawer state ────────────────────────────────────────────────────
   const [activeModal, setActiveModal] = useState<string | null>(null);
-
-  // ── Dark mode ─────────────────────────────────────────────────────────────
-  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // ── Core data ─────────────────────────────────────────────────────────────
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -638,31 +639,11 @@ function AccountContent() {
   });
   const [showNotifPrefs, setShowNotifPrefs] = useState(false);
 
-  // ── Live Chat ─────────────────────────────────────────────────────────────
-  const [chatMessages, setChatMessages] = useState<
-    { sender: "user" | "bot"; text: string; time: string }[]
-  >([
-    {
-      sender: "bot",
-      text: "Hello! Welcome to Kay's Packs Support. How can we help you with your water orders today?",
-      time: "Just now",
-    },
-  ]);
-  const [inputMessage, setInputMessage] = useState("");
-  const [isBotTyping, setIsBotTyping] = useState(false);
-
   // ── Misc ──────────────────────────────────────────────────────────────────
   const [signingOut, setSigningOut] = useState(false);
   const [quickAddedId, setQuickAddedId] = useState<string | null>(null);
 
   // ── Init ──────────────────────────────────────────────────────────────────
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("kays_theme");
-      if (saved === "dark") setIsDarkMode(true);
-    } catch {}
-  }, []);
-
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab && ["notifications","orders","address","payment","wishlist","recent","settings"].includes(tab)) {
@@ -680,11 +661,7 @@ function AccountContent() {
   };
 
   const handleToggleDarkMode = () => {
-    setIsDarkMode((prev) => {
-      const next = !prev;
-      try { localStorage.setItem("kays_theme", next ? "dark" : "light"); } catch {}
-      return next;
-    });
+    toggleDarkMode();
   };
 
   const handleSignOut = async () => {
@@ -1146,31 +1123,31 @@ function AccountContent() {
   const orderCount = orders.length;
 
   // ── Shared class helpers ──────────────────────────────────────────────────
-  const cardBase = `rounded-2xl border transition-colors ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`;
-  const inputCls = `w-full p-2.5 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/40 ${isDarkMode ? "bg-slate-800 border border-slate-700 text-white placeholder:text-slate-500" : "bg-slate-50 border border-slate-200 text-slate-900"}`;
-  const labelCls = "block text-[11px] font-bold text-slate-500 mb-1";
+  const cardBase = `rounded-2xl border transition-colors ${isDarkMode ? "bg-neutral-900/90 border-neutral-800 text-neutral-100" : "bg-white border-slate-100 text-slate-900"}`;
+  const inputCls = `w-full p-2.5 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-blue-500/40 ${isDarkMode ? "bg-neutral-900 border border-neutral-800 text-white placeholder:text-neutral-500 focus:bg-neutral-900" : "bg-slate-50 border border-slate-200 text-slate-900"}`;
+  const labelCls = "block text-[11px] font-bold text-slate-500 dark:text-neutral-400 mb-1";
 
   // Notif category icons
   const getNotifIcon = (cat: string) => {
     const c = cat.toLowerCase();
-    if (c.includes("order")) return <Package className="w-4 h-4 text-blue-600" />;
-    if (c.includes("pay") || c.includes("refund")) return <CreditCard className="w-4 h-4 text-emerald-600" />;
-    if (c.includes("deliver") || c.includes("truck")) return <Truck className="w-4 h-4 text-amber-600" />;
-    if (c.includes("promo") || c.includes("discount")) return <Tag className="w-4 h-4 text-purple-600" />;
-    if (c.includes("secur") || c.includes("auth")) return <Shield className="w-4 h-4 text-rose-600" />;
-    if (c.includes("product") || c.includes("stock")) return <Package className="w-4 h-4 text-indigo-600" />;
-    return <Bell className="w-4 h-4 text-blue-600" />;
+    if (c.includes("order")) return <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
+    if (c.includes("pay") || c.includes("refund")) return <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
+    if (c.includes("deliver") || c.includes("truck")) return <Truck className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+    if (c.includes("promo") || c.includes("discount")) return <Tag className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
+    if (c.includes("secur") || c.includes("auth")) return <Shield className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
+    if (c.includes("product") || c.includes("stock")) return <Package className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />;
+    return <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
   };
 
   const getNotifIconBg = (cat: string) => {
     const c = cat.toLowerCase();
-    if (c.includes("order")) return "bg-blue-50";
-    if (c.includes("pay") || c.includes("refund")) return "bg-emerald-50";
-    if (c.includes("deliver") || c.includes("truck")) return "bg-amber-50";
-    if (c.includes("promo") || c.includes("discount")) return "bg-purple-50";
-    if (c.includes("secur") || c.includes("auth")) return "bg-rose-50";
-    if (c.includes("product") || c.includes("stock")) return "bg-indigo-50";
-    return "bg-blue-50";
+    if (c.includes("order")) return isDarkMode ? "bg-blue-950/60" : "bg-blue-50";
+    if (c.includes("pay") || c.includes("refund")) return isDarkMode ? "bg-emerald-950/60" : "bg-emerald-50";
+    if (c.includes("deliver") || c.includes("truck")) return isDarkMode ? "bg-amber-950/60" : "bg-amber-50";
+    if (c.includes("promo") || c.includes("discount")) return isDarkMode ? "bg-purple-950/60" : "bg-purple-50";
+    if (c.includes("secur") || c.includes("auth")) return isDarkMode ? "bg-rose-950/60" : "bg-rose-50";
+    if (c.includes("product") || c.includes("stock")) return isDarkMode ? "bg-indigo-950/60" : "bg-indigo-50";
+    return isDarkMode ? "bg-blue-950/60" : "bg-blue-50";
   };
 
   const addrLabelIcon: Record<AddrLabel, React.ReactNode> = {
@@ -1183,23 +1160,23 @@ function AccountContent() {
   return (
     <div
       className={`min-h-screen pb-24 transition-colors duration-200 ${
-        isDarkMode ? "bg-slate-950 text-white" : "bg-[#F8FAFC] text-slate-900"
+        isDarkMode ? "bg-black text-neutral-100" : "bg-[#F8FAFC] text-slate-900"
       }`}
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <header
         className={`sticky top-0 z-30 transition-colors ${
           isDarkMode
-            ? "bg-slate-900/95 border-b border-slate-800"
+            ? "bg-black/95 border-b border-neutral-800"
             : "bg-white/95 border-b border-slate-100 shadow-2xs"
         } backdrop-blur-md`}
       >
         <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
           <button
             onClick={() => router.back()}
-            className={`p-2 -ml-2 rounded-xl transition-colors ${
+            className={`p-2 -ml-2 rounded-xl transition-colors cursor-pointer ${
               isDarkMode
-                ? "text-slate-300 hover:text-white hover:bg-slate-800"
+                ? "text-neutral-300 hover:text-white hover:bg-neutral-900"
                 : "text-slate-700 hover:text-slate-900 hover:bg-slate-100"
             }`}
             aria-label="Go back"
@@ -1218,23 +1195,23 @@ function AccountContent() {
         {/* ── Profile Card ──────────────────────────────────────────────────── */}
         <div
           className={`rounded-3xl p-5 border transition-all shadow-xs flex items-center gap-4 ${
-            isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+            isDarkMode ? "bg-neutral-900/90 border-neutral-800" : "bg-white border-slate-100"
           }`}
         >
           <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-900 border-2 border-blue-100 flex items-center justify-center text-white shadow-sm">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-slate-900 dark:bg-black border-2 border-blue-100 dark:border-neutral-700 flex items-center justify-center text-white shadow-sm">
               <span className="font-serif font-bold text-2xl tracking-tighter">
                 {displayName.charAt(0).toUpperCase()}
               </span>
             </div>
-            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-blue-600 border-2 border-white rounded-full" />
+            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-blue-600 border-2 border-white dark:border-neutral-900 rounded-full" />
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="font-serif font-bold text-xl tracking-tight truncate leading-tight">
               {displayName}
             </h2>
-            <p className="text-xs text-slate-400 font-medium truncate mt-0.5">{displayEmail}</p>
-            <div className="mt-1.5 inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-100 font-bold text-[10px] tracking-widest uppercase px-3 py-0.5 rounded-full">
+            <p className="text-xs text-slate-400 dark:text-neutral-400 font-medium truncate mt-0.5">{displayEmail}</p>
+            <div className="mt-1.5 inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/50 font-bold text-[10px] tracking-widest uppercase px-3 py-0.5 rounded-full">
               CUSTOMER
             </div>
           </div>
@@ -1245,36 +1222,36 @@ function AccountContent() {
           <Link
             href="/cart"
             className={`rounded-2xl p-4 border text-center transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center ${
-              isDarkMode ? "bg-slate-900 border-slate-800 hover:border-blue-500/30" : "bg-white border-slate-100 hover:border-blue-100 shadow-2xs"
+              isDarkMode ? "bg-neutral-900/90 border-neutral-800 hover:border-blue-500/30 text-neutral-100" : "bg-white border-slate-100 hover:border-blue-100 shadow-2xs text-slate-900"
             }`}
           >
-            <div className="w-6 h-6 flex items-center justify-center mb-1 text-blue-600">
+            <div className="w-6 h-6 flex items-center justify-center mb-1 text-blue-600 dark:text-blue-400">
               <ShoppingBag className="w-5 h-5 stroke-[1.8]" />
             </div>
             <span className="text-xl font-black tracking-tight leading-tight">{itemCount}</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">IN BAG</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mt-0.5">IN BAG</span>
           </Link>
 
           <button
             onClick={() => setActiveModal("wishlist")}
-            className={`rounded-2xl p-4 border text-center transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center ${
-              isDarkMode ? "bg-slate-900 border-slate-800 hover:border-blue-500/30" : "bg-white border-slate-100 hover:border-blue-100 shadow-2xs"
+            className={`rounded-2xl p-4 border text-center transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center cursor-pointer ${
+              isDarkMode ? "bg-neutral-900/90 border-neutral-800 hover:border-blue-500/30 text-neutral-100" : "bg-white border-slate-100 hover:border-blue-100 shadow-2xs text-slate-900"
             }`}
           >
-            <div className="w-6 h-6 flex items-center justify-center mb-1 text-blue-600">
+            <div className="w-6 h-6 flex items-center justify-center mb-1 text-blue-600 dark:text-blue-400">
               <Heart className="w-5 h-5 stroke-[1.8]" />
             </div>
             <span className="text-xl font-black tracking-tight leading-tight">{wishlist.length}</span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">SAVED</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mt-0.5">SAVED</span>
           </button>
 
           <button
             onClick={() => setActiveModal("orders")}
-            className={`rounded-2xl p-4 border text-center transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center ${
-              isDarkMode ? "bg-slate-900 border-slate-800 hover:border-blue-500/30" : "bg-white border-slate-100 hover:border-blue-100 shadow-2xs"
+            className={`rounded-2xl p-4 border text-center transition-all hover:scale-[1.02] active:scale-[0.98] flex flex-col items-center justify-center cursor-pointer ${
+              isDarkMode ? "bg-neutral-900/90 border-neutral-800 hover:border-blue-500/30 text-neutral-100" : "bg-white border-slate-100 hover:border-blue-100 shadow-2xs text-slate-900"
             }`}
           >
-            <div className="w-6 h-6 flex items-center justify-center mb-1 text-blue-600">
+            <div className="w-6 h-6 flex items-center justify-center mb-1 text-blue-600 dark:text-blue-400">
               <Package className="w-5 h-5 stroke-[1.8]" />
             </div>
             {loadingOrders ? (
@@ -1284,29 +1261,29 @@ function AccountContent() {
             ) : (
               <span className="text-xl font-black tracking-tight leading-tight">{orderCount}</span>
             )}
-            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">ORDERS</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-neutral-500 mt-0.5">ORDERS</span>
           </button>
         </div>
 
         {/* ── Menu List ─────────────────────────────────────────────────────── */}
         <div
           className={`rounded-3xl border shadow-xs overflow-hidden divide-y transition-colors ${
-            isDarkMode ? "bg-slate-900 border-slate-800 divide-slate-800/80" : "bg-white border-slate-100 divide-slate-100/90"
+            isDarkMode ? "bg-neutral-900/90 border-neutral-800 divide-neutral-800" : "bg-white border-slate-100 divide-slate-100/90"
           }`}
         >
           {/* Notifications */}
           <button
             onClick={() => setActiveModal("notifications")}
             id="menu-notifications"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Bell className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
                 <p className="font-bold text-sm leading-snug">Notifications</p>
-                <p className="text-xs text-slate-400">Updates on your orders &amp; account</p>
+                <p className="text-xs text-slate-400 dark:text-neutral-500">Updates on your orders &amp; account</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -1315,7 +1292,7 @@ function AccountContent() {
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
-              <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
+              <ChevronRight className="w-4 h-4 text-slate-300 dark:text-neutral-600 stroke-[2]" />
             </div>
           </button>
 
@@ -1323,10 +1300,10 @@ function AccountContent() {
           <button
             onClick={() => setActiveModal("orders")}
             id="menu-orders"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Package className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
@@ -1348,108 +1325,108 @@ function AccountContent() {
           <button
             onClick={() => setActiveModal("address")}
             id="menu-address"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <MapPin className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
                 <p className="font-bold text-sm leading-snug">Delivery Address</p>
-                <p className="text-xs text-slate-400">Manage shipping addresses</p>
+                <p className="text-xs text-slate-400 dark:text-neutral-500">Manage shipping addresses</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-neutral-600 stroke-[2]" />
           </button>
 
           {/* Payment Methods */}
           <button
             onClick={() => setActiveModal("payment")}
             id="menu-payment"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <CreditCard className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
                 <p className="font-bold text-sm leading-snug">Payment Methods</p>
-                <p className="text-xs text-slate-400">MoMo, bank transfer &amp; more</p>
+                <p className="text-xs text-slate-400 dark:text-neutral-500">MoMo, bank transfer &amp; more</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-neutral-600 stroke-[2]" />
           </button>
 
           {/* My Cart */}
           <Link
             href="/cart"
             id="menu-cart"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <ShoppingBag className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
                 <p className="font-bold text-sm leading-snug">My Cart</p>
-                <p className="text-xs text-slate-400">View your shopping bag</p>
+                <p className="text-xs text-slate-400 dark:text-neutral-500">View your shopping bag</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-neutral-600 stroke-[2]" />
           </Link>
 
           {/* Wishlist */}
           <button
             onClick={() => setActiveModal("wishlist")}
             id="menu-wishlist"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Heart className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
                 <p className="font-bold text-sm leading-snug">Wishlist</p>
-                <p className="text-xs text-slate-400">Your saved pieces</p>
+                <p className="text-xs text-slate-400 dark:text-neutral-500">Your saved pieces</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-neutral-600 stroke-[2]" />
           </button>
 
           {/* Recently Viewed */}
           <button
             onClick={() => setActiveModal("recent")}
             id="menu-recent"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <Clock className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
                 <p className="font-bold text-sm leading-snug">Recently Viewed</p>
-                <p className="text-xs text-slate-400">Pieces you looked at</p>
+                <p className="text-xs text-slate-400 dark:text-neutral-500">Pieces you looked at</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-neutral-600 stroke-[2]" />
           </button>
 
           {/* Settings */}
           <button
             onClick={() => setActiveModal("settings")}
             id="menu-settings"
-            className={`w-full p-4 flex items-center justify-between text-left transition-colors ${isDarkMode ? "hover:bg-slate-800/50" : "hover:bg-slate-50"}`}
+            className={`w-full p-4 flex items-center justify-between text-left transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800/50" : "hover:bg-slate-50"}`}
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                 <SettingsIcon className="w-5 h-5 stroke-[2]" />
               </div>
               <div>
                 <p className="font-bold text-sm leading-snug">Settings</p>
-                <p className="text-xs text-slate-400">Dark mode, password &amp; more</p>
+                <p className="text-xs text-slate-400 dark:text-neutral-500">Dark mode, password &amp; more</p>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
+            <ChevronRight className="w-4 h-4 text-slate-300 dark:text-neutral-600 stroke-[2]" />
           </button>
         </div>
 
@@ -1458,7 +1435,7 @@ function AccountContent() {
           <h3 className="font-serif font-black text-xl tracking-tight">Need Assistance?</h3>
           <div className="grid grid-cols-2 gap-3">
             <button
-              onClick={() => setActiveModal("chat")}
+              onClick={() => openChat()}
               id="btn-live-chat"
               className="bg-[#FF7A00] hover:bg-[#E86E00] active:scale-98 text-white font-bold text-base py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-md shadow-orange-500/20 transition-all cursor-pointer"
             >
@@ -1481,16 +1458,16 @@ function AccountContent() {
         {/* ── Dark Mode Card ─────────────────────────────────────────────────── */}
         <div
           className={`rounded-2xl p-4 border flex items-center justify-between transition-colors shadow-2xs ${
-            isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+            isDarkMode ? "bg-neutral-900/90 border-neutral-800 text-neutral-100" : "bg-white border-slate-100 text-slate-900"
           }`}
         >
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               {isDarkMode ? <Moon className="w-5 h-5 stroke-[2]" /> : <Sun className="w-5 h-5 stroke-[2]" />}
             </div>
             <div>
               <p className="font-bold text-sm leading-snug">Dark Mode</p>
-              <p className="text-xs text-slate-400">Toggle appearance</p>
+              <p className="text-xs text-slate-400 dark:text-neutral-500">AMOLED Black system-wide</p>
             </div>
           </div>
           <Toggle checked={isDarkMode} onChange={handleToggleDarkMode} id="dark-mode-main-toggle" />
@@ -1528,7 +1505,7 @@ function AccountContent() {
       {activeModal && (
         <div
           className={`fixed inset-0 z-50 flex flex-col transition-colors duration-200 ${
-            isDarkMode ? "bg-slate-950 text-white" : "bg-[#F8FAFC] text-slate-900"
+            isDarkMode ? "bg-black text-neutral-100" : "bg-[#F8FAFC] text-slate-900"
           }`}
           style={{ animation: "slideInRight 220ms cubic-bezier(0.25,0.46,0.45,0.94) both" }}
         >
@@ -1536,15 +1513,15 @@ function AccountContent() {
           <header
             className={`shrink-0 sticky top-0 z-10 flex items-center gap-3 px-4 h-14 border-b ${
               isDarkMode
-                ? "bg-slate-900/95 border-slate-800"
-                : "bg-white/95 border-slate-100 shadow-2xs"
+                ? "bg-black/95 border-neutral-800 text-white"
+                : "bg-white/95 border-slate-100 shadow-2xs text-slate-900"
             } backdrop-blur-md`}
           >
             <button
               onClick={closeModal}
-              className={`p-2 -ml-2 rounded-xl transition-colors ${
+              className={`p-2 -ml-2 rounded-xl transition-colors cursor-pointer ${
                 isDarkMode
-                  ? "text-slate-300 hover:text-white hover:bg-slate-800"
+                  ? "text-neutral-300 hover:text-white hover:bg-neutral-900"
                   : "text-slate-700 hover:text-slate-900 hover:bg-slate-100"
               }`}
               aria-label="Go back"
@@ -1645,12 +1622,12 @@ function AccountContent() {
                       ))}
                     </div>
                   ) : filteredNotifs.length === 0 ? (
-                    <div className="text-center py-16 text-slate-400 space-y-2">
-                      <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-900 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
+                    <div className="text-center py-16 text-slate-400 dark:text-neutral-500 space-y-2">
+                      <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-neutral-900 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
                         <Bell className="w-6 h-6 stroke-[1.8]" />
                       </div>
-                      <p className="text-sm font-bold">You're all caught up!</p>
-                      <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                      <p className="text-sm font-bold text-slate-800 dark:text-neutral-200">You're all caught up!</p>
+                      <p className="text-xs text-slate-400 dark:text-neutral-500 max-w-xs mx-auto">
                         No notifications in this category. You will receive real-time updates when orders are placed and updated.
                       </p>
                     </div>
@@ -1662,10 +1639,10 @@ function AccountContent() {
                         className={`p-3.5 rounded-2xl border transition-all cursor-pointer active:scale-[0.99] ${
                           n.read
                             ? isDarkMode
-                              ? "bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700"
+                              ? "bg-neutral-900/90 border-neutral-800 text-neutral-400 hover:border-neutral-700"
                               : "bg-white border-slate-100 text-slate-600 hover:border-slate-200 shadow-2xs"
                             : isDarkMode
-                            ? "bg-blue-950/30 border-blue-900/50 text-slate-100 hover:border-blue-800"
+                            ? "bg-blue-950/40 border-blue-900/50 text-neutral-100 hover:border-blue-800"
                             : "bg-blue-50/70 border-blue-100 text-slate-900 hover:border-blue-200 shadow-2xs"
                         }`}
                       >
@@ -1690,11 +1667,11 @@ function AccountContent() {
                                 <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-1 shadow-xs" />
                               )}
                             </div>
-                            <p className="text-[11px] mt-1 text-slate-500 dark:text-slate-400 leading-relaxed">
+                            <p className="text-[11px] mt-1 text-slate-500 dark:text-neutral-400 leading-relaxed">
                               {n.message}
                             </p>
-                            <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100/60 dark:border-slate-800/60">
-                              <span className="text-[10px] text-slate-400 font-medium">{n.time}</span>
+                            <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100/60 dark:border-neutral-800/80">
+                              <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">{n.time}</span>
                               <div
                                 className="flex items-center gap-1"
                                 onClick={(e) => e.stopPropagation()}
@@ -1702,14 +1679,14 @@ function AccountContent() {
                                 {!n.read && (
                                   <button
                                     onClick={() => markNotifRead(n.id)}
-                                    className="text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-md hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
+                                    className="text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-md hover:bg-blue-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                                   >
                                     Mark read
                                   </button>
                                 )}
                                 <button
                                   onClick={() => deleteNotif(n.id)}
-                                  className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-slate-800 transition-colors"
+                                  className="p-1 rounded-md text-slate-400 dark:text-neutral-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
                                   title="Remove notification"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1741,10 +1718,10 @@ function AccountContent() {
                     <button
                       key={tab.key}
                       onClick={() => setOrderFilter(tab.key)}
-                      className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors ${
+                      className={`whitespace-nowrap px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors cursor-pointer ${
                         orderFilter === tab.key
                           ? "bg-blue-600 text-white"
-                          : isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                          : isDarkMode ? "bg-neutral-900 text-neutral-300 hover:bg-neutral-800 border border-neutral-800" : "bg-slate-100 text-slate-500 hover:bg-slate-200"
                       }`}
                     >
                       {tab.label}
@@ -1754,14 +1731,14 @@ function AccountContent() {
 
                 {/* Cancel confirmation banner */}
                 {cancelSuccessMsg && (
-                  <div className="mx-4 mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-2xs animate-fadeIn">
+                  <div className="mx-4 mt-3 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between shadow-2xs animate-fadeIn">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
                       <span>{cancelSuccessMsg}</span>
                     </div>
                     <button
                       onClick={() => setCancelSuccessMsg(null)}
-                      className="text-emerald-600 hover:text-emerald-900 p-1"
+                      className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-200 p-1 cursor-pointer"
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
@@ -1775,28 +1752,28 @@ function AccountContent() {
                         <div
                           key={i}
                           className={`p-4 rounded-2xl border animate-pulse space-y-3 ${
-                            isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+                            isDarkMode ? "bg-neutral-900/90 border-neutral-800" : "bg-white border-slate-100"
                           }`}
                         >
                           <div className="flex items-center justify-between">
                             <div className="space-y-1.5 w-1/3">
-                              <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full" />
-                              <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded w-2/3" />
+                              <div className="h-3 bg-slate-200 dark:bg-neutral-800 rounded w-full" />
+                              <div className="h-2 bg-slate-200 dark:bg-neutral-800 rounded w-2/3" />
                             </div>
-                            <div className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                            <div className="h-5 w-20 bg-slate-200 dark:bg-neutral-800 rounded-full" />
                           </div>
-                          <div className="h-10 bg-slate-100 dark:bg-slate-800/60 rounded-xl" />
+                          <div className="h-10 bg-slate-100 dark:bg-neutral-850 rounded-xl" />
                         </div>
                       ))}
                     </div>
                   ) : filteredOrders.length === 0 ? (
-                    <div className="text-center py-16 px-4 text-slate-400 space-y-3">
-                      <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-slate-900 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
+                    <div className="text-center py-16 px-4 text-slate-400 dark:text-neutral-500 space-y-3">
+                      <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-neutral-900 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
                         <Package className="w-8 h-8 stroke-[1.8]" />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">No orders placed yet</p>
-                        <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                        <p className="text-sm font-bold text-slate-800 dark:text-neutral-200">No orders placed yet</p>
+                        <p className="text-xs text-slate-400 dark:text-neutral-500 max-w-xs mx-auto">
                           When you place orders, you can track real-time delivery and rider details here.
                         </p>
                       </div>
@@ -1817,34 +1794,34 @@ function AccountContent() {
                         <div
                           key={ord.id}
                           className={`rounded-2xl border overflow-hidden transition-all duration-300 ease-out transform ${
-                            isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+                            isDarkMode ? "bg-neutral-900/90 border-neutral-800" : "bg-white border-slate-100"
                           } ${cancellingOrderId === ord.id ? "opacity-60 scale-[0.99]" : "opacity-100 scale-100"}`}
                         >
                           <div className="p-4 space-y-3">
                             <div className="flex items-center justify-between">
                               <div>
-                                <span className="font-mono font-bold text-xs text-blue-600">{ord.id}</span>
-                                <p className="text-[11px] text-slate-400">{ord.date}</p>
+                                <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">{ord.id}</span>
+                                <p className="text-[11px] text-slate-400 dark:text-neutral-500">{ord.date}</p>
                               </div>
                               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${ord.statusColor}`}>{ord.statusLabel}</span>
                             </div>
                             <div className="space-y-1.5">
                               {ord.items.map((item, i) => (
                                 <div key={i} className="flex items-center justify-between text-xs">
-                                  <span className={`font-medium truncate pr-2 ${isDarkMode ? "text-slate-300" : "text-slate-700"}`}>{item.quantity}x {item.name}</span>
+                                  <span className={`font-medium truncate pr-2 ${isDarkMode ? "text-neutral-300" : "text-slate-700"}`}>{item.quantity}x {item.name}</span>
                                   <span className={`font-bold shrink-0 ${isDarkMode ? "text-white" : "text-slate-900"}`}>GH₵{(item.price * item.quantity).toFixed(2)}</span>
                                 </div>
                               ))}
                             </div>
-                            <div className={`flex items-center justify-between pt-2 border-t text-xs ${isDarkMode ? "border-slate-800" : "border-slate-200/60"}`}>
-                              <span className="text-slate-500 font-medium">Total Paid:</span>
+                            <div className={`flex items-center justify-between pt-2 border-t text-xs ${isDarkMode ? "border-neutral-800" : "border-slate-200/60"}`}>
+                              <span className="text-slate-500 dark:text-neutral-400 font-medium">Total Paid:</span>
                               <span className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>GH₵{ord.total.toFixed(2)}</span>
                             </div>
                             <OrderTimeline status={ord.status} />
                             {ord.status !== "cancelled" && (
                               <button
                                 onClick={() => setExpandedOrder(isExpanded ? null : ord.id)}
-                                className="w-full py-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors mt-1"
+                                className="w-full py-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors mt-1 cursor-pointer border border-transparent dark:border-blue-800/40"
                               >
                                 <Truck className="w-3.5 h-3.5" />
                                 <span>Track Order</span>
@@ -1854,7 +1831,7 @@ function AccountContent() {
                             {/* Cancel Order — only for cancellable statuses */}
                             {CANCELLABLE_STATUSES.includes(ord.status) && (
                               cancelConfirmId === ord.id ? (
-                                <div className={`mt-1 p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-rose-50 border-rose-200"}`}>
+                                <div className={`mt-1 p-3 rounded-xl border ${isDarkMode ? "bg-neutral-900 border-neutral-800" : "bg-rose-50 border-rose-200"}`}>
                                   <p className={`text-xs font-bold mb-2 ${isDarkMode ? "text-rose-400" : "text-rose-700"}`}>
                                     Are you sure you want to cancel this order?
                                   </p>
@@ -1864,14 +1841,14 @@ function AccountContent() {
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => { setCancelConfirmId(null); setCancelError(null); }}
-                                      className={`flex-1 py-2 rounded-lg text-xs font-bold ${isDarkMode ? "bg-slate-700 text-slate-300" : "bg-white text-slate-600 border border-slate-200"}`}
+                                      className={`flex-1 py-2 rounded-lg text-xs font-bold cursor-pointer ${isDarkMode ? "bg-neutral-800 text-neutral-300" : "bg-white text-slate-600 border border-slate-200"}`}
                                     >
                                       Keep Order
                                     </button>
                                     <button
                                       onClick={() => handleCancelOrder(ord.id)}
                                       disabled={cancellingOrderId === ord.id}
-                                      className="flex-1 py-2 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5"
+                                      className="flex-1 py-2 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                                     >
                                       {cancellingOrderId === ord.id ? (
                                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1885,9 +1862,9 @@ function AccountContent() {
                               ) : (
                                 <button
                                   onClick={() => { setCancelConfirmId(ord.id); setCancelError(null); }}
-                                  className={`w-full py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors mt-1 border ${
+                                  className={`w-full py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors mt-1 border cursor-pointer ${
                                     isDarkMode
-                                      ? "border-rose-800 text-rose-400 hover:bg-rose-900/30"
+                                      ? "border-rose-900/60 text-rose-400 hover:bg-rose-950/40"
                                       : "border-rose-200 text-rose-600 hover:bg-rose-50"
                                   }`}
                                 >
@@ -1898,18 +1875,18 @@ function AccountContent() {
                             )}
                           </div>
                           {isExpanded && (
-                            <div className={`border-t px-4 pb-4 pt-3 space-y-2.5 ${isDarkMode ? "border-slate-800 bg-slate-900/60" : "border-slate-100 bg-slate-50"}`}>
+                            <div className={`border-t px-4 pb-4 pt-3 space-y-2.5 ${isDarkMode ? "border-neutral-800 bg-neutral-950/60" : "border-slate-100 bg-slate-50"}`}>
                               {/* Delivery Method & Fee breakdown */}
-                              <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 text-xs space-y-1">
+                              <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-neutral-900 border border-blue-100 dark:border-neutral-800 text-xs space-y-1">
                                 <div className="flex items-center justify-between">
-                                  <span className="font-bold text-slate-700 dark:text-slate-200">
+                                  <span className="font-bold text-slate-700 dark:text-neutral-200">
                                     {ord.deliveryMethod === "YANGO_DOOR"
                                       ? "Yango Door Delivery"
                                       : ord.deliveryMethod === "NATIONWIDE_PARCEL"
                                       ? "Nationwide Parcel Delivery"
                                       : "Self Pickup"}
                                   </span>
-                                  <span className="font-black text-blue-600">
+                                  <span className="font-black text-blue-600 dark:text-blue-400">
                                     {ord.deliveryMethod === "SELF_PICKUP"
                                       ? "FREE"
                                       : ord.deliveryMethod === "YANGO_DOOR"
@@ -1917,7 +1894,7 @@ function AccountContent() {
                                       : "Courier Rate"}
                                   </span>
                                 </div>
-                                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                <p className="text-[10px] text-slate-500 dark:text-neutral-400">
                                   {ord.deliveryMethod === "SELF_PICKUP"
                                     ? "Collect your packages free at East Legon Hub."
                                     : "Delivery fee is paid directly to the courier upon delivery."}
@@ -1965,7 +1942,7 @@ function AccountContent() {
                     <div className="grid grid-cols-3 gap-2">
                       {(["HOME","OFFICE","OTHER"] as AddrLabel[]).map((lbl) => (
                         <button key={lbl} type="button" onClick={() => setAddrForm((f) => ({ ...f, label: lbl }))}
-                          className={`py-2 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 ${addrForm.label === lbl ? "bg-blue-600 text-white border-blue-600" : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
+                          className={`py-2 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${addrForm.label === lbl ? "bg-blue-600 text-white border-blue-600" : isDarkMode ? "bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
                           {addrLabelIcon[lbl]}{lbl}
                         </button>
                       ))}
@@ -1983,14 +1960,14 @@ function AccountContent() {
                     <div><label className={labelCls}>Popular Landmark</label><input type="text" placeholder="e.g. Near Shell Station" value={addrForm.landmark} onChange={(e) => setAddrForm((f) => ({ ...f, landmark: e.target.value }))} className={inputCls} /></div>
                     <div><label className={labelCls}>Delivery Instructions</label><textarea rows={2} placeholder="e.g. Call when at gate" value={addrForm.deliveryInstructions} onChange={(e) => setAddrForm((f) => ({ ...f, deliveryInstructions: e.target.value }))} className={`${inputCls} resize-none`} /></div>
                     <button type="button" onClick={handleGetGps} id="btn-use-location" disabled={gpsLoading}
-                      className={`w-full py-2.5 rounded-xl border-2 border-dashed font-bold text-xs flex items-center justify-center gap-2 transition-colors ${gpsLoading ? "border-blue-300 text-blue-400" : "border-blue-400 text-blue-600 hover:border-blue-600 hover:bg-blue-50"}`}>
+                      className={`w-full py-2.5 rounded-xl border-2 border-dashed font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer ${gpsLoading ? "border-blue-300 text-blue-400" : "border-blue-400 text-blue-600 dark:text-blue-400 hover:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40"}`}>
                       {gpsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
                       {gpsLoading ? "Getting location..." : "📍 Use Current Location"}
                     </button>
                     <div className="flex gap-2 pt-1">
                       <button type="button" onClick={() => { setShowAddAddress(false); setEditingAddress(null); setAddrForm(blankAddr()); }}
-                        className={`flex-1 py-2.5 rounded-xl font-bold text-xs ${isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600"}`}>Cancel</button>
-                      <button type="submit" className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors">
+                        className={`flex-1 py-2.5 rounded-xl font-bold text-xs cursor-pointer ${isDarkMode ? "bg-neutral-850 text-neutral-300 hover:bg-neutral-800" : "bg-slate-100 text-slate-600"}`}>Cancel</button>
+                      <button type="submit" className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors cursor-pointer">
                         {editingAddress ? "Update Address" : "Save Address"}
                       </button>
                     </div>
@@ -1998,38 +1975,38 @@ function AccountContent() {
                 ) : (
                   <>
                     {addresses.length === 0 && (
-                      <div className="text-center py-16 text-slate-400">
+                      <div className="text-center py-16 text-slate-400 dark:text-neutral-500">
                         <MapPin className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                        <p className="text-sm font-bold">No saved addresses</p>
+                        <p className="text-sm font-bold text-slate-700 dark:text-neutral-300">No saved addresses</p>
                       </div>
                     )}
                     {addresses.map((addr) => {
                       const addrId = addr._id || addr.id;
                       return (
-                        <div key={addrId} className={`p-4 rounded-2xl border relative ${addr.isDefault ? "border-blue-500 bg-blue-50/20" : isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
+                        <div key={addrId} className={`p-4 rounded-2xl border relative ${addr.isDefault ? "border-blue-500 bg-blue-50/20 dark:bg-blue-950/30" : isDarkMode ? "bg-neutral-900/90 border-neutral-800" : "bg-white border-slate-100"}`}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-1.5">
-                              <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md uppercase ${isDarkMode ? "bg-slate-800 text-slate-300" : "bg-blue-100 text-blue-800"}`}>
+                              <span className={`inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-md uppercase ${isDarkMode ? "bg-neutral-800 text-neutral-300" : "bg-blue-100 text-blue-800"}`}>
                                 {addrLabelIcon[addr.label]}{addr.label}
                               </span>
-                              {addr.isDefault && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">Default</span>}
+                              {addr.isDefault && <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-2 py-0.5 rounded-full">Default</span>}
                             </div>
                             <div className="relative">
                               <button onClick={() => setAddrMenuId(addrMenuId === addrId ? null : addrId)}
-                                className={`p-1.5 rounded-full transition-colors ${isDarkMode ? "hover:bg-slate-800 text-slate-400" : "hover:bg-slate-200 text-slate-500"}`}>
+                                className={`p-1.5 rounded-full transition-colors cursor-pointer ${isDarkMode ? "hover:bg-neutral-800 text-neutral-400" : "hover:bg-slate-200 text-slate-500"}`}>
                                 <MoreHorizontal className="w-4 h-4" />
                               </button>
                               {addrMenuId === addrId && (
-                                <div className={`absolute right-0 top-8 z-10 min-w-[150px] rounded-xl shadow-lg border overflow-hidden ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"}`}>
-                                  <button onClick={() => handleEditAddress(addr)} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-slate-200" : "hover:bg-slate-50 text-slate-700"}`}>
+                                <div className={`absolute right-0 top-8 z-10 min-w-[150px] rounded-xl shadow-lg border overflow-hidden ${isDarkMode ? "bg-neutral-900 border-neutral-800 text-neutral-200 shadow-black" : "bg-white border-slate-200"}`}>
+                                  <button onClick={() => handleEditAddress(addr)} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 cursor-pointer ${isDarkMode ? "hover:bg-neutral-800 text-neutral-200" : "hover:bg-slate-50 text-slate-700"}`}>
                                     <Edit3 className="w-3.5 h-3.5" /> Edit Address
                                   </button>
                                   {!addr.isDefault && (
-                                    <button onClick={() => { handleSetDefaultAddress(addrId); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-blue-400" : "hover:bg-blue-50 text-blue-600"}`}>
+                                    <button onClick={() => { handleSetDefaultAddress(addrId); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 cursor-pointer ${isDarkMode ? "hover:bg-neutral-800 text-blue-400" : "hover:bg-blue-50 text-blue-600"}`}>
                                       <Star className="w-3.5 h-3.5" /> Set as Default
                                     </button>
                                   )}
-                                  <button onClick={() => { handleDeleteAddress(addrId); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 ${isDarkMode ? "hover:bg-slate-700 text-rose-400" : "hover:bg-rose-50 text-rose-600"}`}>
+                                  <button onClick={() => { handleDeleteAddress(addrId); setAddrMenuId(null); }} className={`w-full px-4 py-2.5 text-xs font-bold text-left flex items-center gap-2 cursor-pointer ${isDarkMode ? "hover:bg-neutral-800 text-rose-400" : "hover:bg-rose-50 text-rose-600"}`}>
                                     <Trash2 className="w-3.5 h-3.5" /> Delete
                                   </button>
                                 </div>
@@ -2037,15 +2014,15 @@ function AccountContent() {
                             </div>
                           </div>
                           <p className={`font-bold text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>{[addr.houseNumber, addr.street, addr.area].filter(Boolean).join(", ")}</p>
-                          <p className="text-xs text-slate-400 mt-0.5">{[addr.city, addr.region, "Ghana"].filter(Boolean).join(", ")}</p>
-                          {addr.digitalAddress && <p className="text-[11px] text-blue-600 font-mono mt-1">📍 {addr.digitalAddress}</p>}
-                          {addr.landmark && <p className="text-[11px] text-slate-400 mt-0.5">Landmark: {addr.landmark}</p>}
-                          {addr.fullName && <p className="text-[11px] text-slate-400 mt-0.5">{addr.fullName} · {addr.phone}</p>}
+                          <p className="text-xs text-slate-400 dark:text-neutral-400 mt-0.5">{[addr.city, addr.region, "Ghana"].filter(Boolean).join(", ")}</p>
+                          {addr.digitalAddress && <p className="text-[11px] text-blue-600 dark:text-blue-400 font-mono mt-1">📍 {addr.digitalAddress}</p>}
+                          {addr.landmark && <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-0.5">Landmark: {addr.landmark}</p>}
+                          {addr.fullName && <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-0.5">{addr.fullName} · {addr.phone}</p>}
                         </div>
                       );
                     })}
                     <button onClick={() => { setAddrForm(blankAddr()); setShowAddAddress(true); }} id="btn-add-address"
-                      className={`w-full py-3.5 rounded-2xl border-2 border-dashed text-blue-600 font-bold text-xs flex items-center justify-center gap-2 transition-colors ${isDarkMode ? "border-slate-700 hover:border-blue-500" : "border-slate-200 hover:border-blue-500"}`}>
+                      className={`w-full py-3.5 rounded-2xl border-2 border-dashed text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer ${isDarkMode ? "border-neutral-800 hover:border-blue-500 hover:bg-neutral-900/50" : "border-slate-200 hover:border-blue-500"}`}>
                       <Plus className="w-4 h-4" /> Add New Address
                     </button>
                   </>
@@ -2062,7 +2039,7 @@ function AccountContent() {
                     <div className="grid grid-cols-2 gap-2">
                       {([{ key: "MOMO", label: "Mobile Money" }, { key: "BANK", label: "Bank Transfer" }] as {key:PayType,label:string}[]).map((t) => (
                         <button key={t.key} type="button" onClick={() => setPayType(t.key)}
-                          className={`py-2.5 rounded-xl text-xs font-bold border transition-colors ${payType === t.key ? "bg-blue-600 text-white border-blue-600" : isDarkMode ? "bg-slate-800 border-slate-700 text-slate-300" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
+                          className={`py-2.5 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${payType === t.key ? "bg-blue-600 text-white border-blue-600" : isDarkMode ? "bg-neutral-900 border-neutral-800 text-neutral-300 hover:bg-neutral-800" : "bg-slate-50 border-slate-200 text-slate-600"}`}>
                           {t.label}
                         </button>
                       ))}
@@ -2090,38 +2067,38 @@ function AccountContent() {
                       </>
                     )}
                     <div className="flex gap-2 pt-1">
-                      <button type="button" onClick={() => setShowAddPayment(false)} className={`flex-1 py-2.5 rounded-xl font-bold text-xs ${isDarkMode ? "bg-slate-800 text-slate-300" : "bg-slate-100 text-slate-600"}`}>Cancel</button>
-                      <button type="submit" className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors">Save Method</button>
+                      <button type="button" onClick={() => setShowAddPayment(false)} className={`flex-1 py-2.5 rounded-xl font-bold text-xs cursor-pointer ${isDarkMode ? "bg-neutral-850 text-neutral-300 hover:bg-neutral-800" : "bg-slate-100 text-slate-600"}`}>Cancel</button>
+                      <button type="submit" className="flex-1 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs hover:bg-blue-700 transition-colors cursor-pointer">Save Method</button>
                     </div>
                   </form>
                 ) : (
                   <>
                     {paymentMethods.map((pay) => (
-                      <div key={pay.id} className={`p-4 rounded-2xl border ${pay.isDefault ? "border-blue-500 bg-blue-50/20" : isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
+                      <div key={pay.id} className={`p-4 rounded-2xl border ${pay.isDefault ? "border-blue-500 bg-blue-50/20 dark:bg-blue-950/30" : isDarkMode ? "bg-neutral-900/90 border-neutral-800" : "bg-white border-slate-100"}`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-600/10 text-blue-600 flex items-center justify-center font-bold text-[10px]">{pay.type === "MOMO" ? "MoMo" : "BANK"}</div>
+                            <div className="w-10 h-10 rounded-xl bg-blue-600/10 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-[10px]">{pay.type === "MOMO" ? "MoMo" : "BANK"}</div>
                             <div>
                               <p className={`font-bold text-xs ${isDarkMode ? "text-white" : "text-slate-900"}`}>{pay.provider}</p>
-                              <p className="text-xs text-slate-400 font-mono">{pay.number}</p>
+                              <p className="text-xs text-slate-400 dark:text-neutral-500 font-mono">{pay.number}</p>
                             </div>
                           </div>
-                          {pay.isDefault && <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">Default</span>}
+                          {pay.isDefault && <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/60 px-2 py-0.5 rounded-full">Default</span>}
                         </div>
                         <div className="flex gap-2 mt-3">
                           {!pay.isDefault && (
-                            <button onClick={() => handleSetDefaultPayment(pay.id)} className={`flex-1 py-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors ${isDarkMode ? "bg-slate-800 text-blue-400 hover:bg-slate-700" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}>
+                            <button onClick={() => handleSetDefaultPayment(pay.id)} className={`flex-1 py-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${isDarkMode ? "bg-neutral-800 text-blue-400 hover:bg-neutral-750" : "bg-blue-50 text-blue-600 hover:bg-blue-100"}`}>
                               <Star className="w-3 h-3" /> Set Default
                             </button>
                           )}
-                          <button onClick={() => handleDeletePayment(pay.id)} className={`py-2 px-3 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors ${isDarkMode ? "bg-slate-800 text-rose-400 hover:bg-slate-700" : "bg-rose-50 text-rose-600 hover:bg-rose-100"}`}>
+                          <button onClick={() => handleDeletePayment(pay.id)} className={`py-2 px-3 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${isDarkMode ? "bg-neutral-800 text-rose-400 hover:bg-neutral-750" : "bg-rose-50 text-rose-600 hover:bg-rose-100"}`}>
                             <Trash2 className="w-3 h-3" /> Remove
                           </button>
                         </div>
                       </div>
                     ))}
                     <button onClick={() => setShowAddPayment(true)} id="btn-add-payment"
-                      className={`w-full py-3.5 rounded-2xl border-2 border-dashed text-blue-600 font-bold text-xs flex items-center justify-center gap-2 transition-colors ${isDarkMode ? "border-slate-700 hover:border-blue-500" : "border-slate-200 hover:border-blue-500"}`}>
+                      className={`w-full py-3.5 rounded-2xl border-2 border-dashed text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer ${isDarkMode ? "border-neutral-800 hover:border-blue-500 hover:bg-neutral-900/50" : "border-slate-200 hover:border-blue-500"}`}>
                       <Plus className="w-4 h-4" /> Add Payment Method
                     </button>
                   </>
@@ -2134,15 +2111,15 @@ function AccountContent() {
               <div className="max-w-2xl mx-auto w-full p-4 space-y-3">
                 {wishlistedProducts.length === 0 ? (
                   <div className="text-center py-16 space-y-3">
-                    <Heart className="w-10 h-10 text-slate-300 mx-auto stroke-[1.5]" />
-                    <p className="text-sm font-bold text-slate-700">Your wishlist is empty</p>
-                    <p className="text-xs text-slate-400 max-w-xs mx-auto">Save your favourite water packs while browsing the store.</p>
+                    <Heart className="w-10 h-10 text-slate-300 dark:text-neutral-600 mx-auto stroke-[1.5]" />
+                    <p className="text-sm font-bold text-slate-700 dark:text-neutral-300">Your wishlist is empty</p>
+                    <p className="text-xs text-slate-400 dark:text-neutral-500 max-w-xs mx-auto">Save your favourite water packs while browsing the store.</p>
                     <Link href="/shop" onClick={closeModal} className="inline-flex items-center justify-center py-2.5 px-5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-xs">Browse Water Packs</Link>
                   </div>
                 ) : (
                   wishlistedProducts.map((product) => (
-                    <div key={product.id} className={`p-3 rounded-2xl border flex items-center gap-3 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-                      <div className="w-14 h-14 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 border border-slate-100">
+                    <div key={product.id} className={`p-3 rounded-2xl border flex items-center gap-3 ${isDarkMode ? "bg-neutral-900/90 border-neutral-800" : "bg-white border-slate-100"}`}>
+                      <div className="w-14 h-14 rounded-xl bg-white dark:bg-neutral-800 p-1 flex items-center justify-center shrink-0 border border-slate-100 dark:border-neutral-700">
                         {product.images?.[0] ? <img src={product.images[0]} alt={product.name} className="w-full h-full object-contain" /> : <ShoppingBag className="w-6 h-6 text-blue-600" />}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -2150,10 +2127,10 @@ function AccountContent() {
                         <p className={`font-black text-sm mt-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>GH₵{product.price.toFixed(2)}</p>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <button onClick={() => handleQuickAdd(product)} className={`p-2 rounded-xl text-xs font-bold transition-all ${quickAddedId === product.id ? "bg-emerald-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}>
+                        <button onClick={() => handleQuickAdd(product)} className={`p-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickAddedId === product.id ? "bg-emerald-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}>
                           {quickAddedId === product.id ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                         </button>
-                        <button onClick={() => toggleWishlist(product.id)} className="p-2 rounded-xl text-rose-500 hover:bg-rose-50"><Trash2 className="w-4 h-4" /></button>
+                        <button onClick={() => toggleWishlist(product.id)} className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 dark:hover:bg-neutral-800 cursor-pointer"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     </div>
                   ))
@@ -2165,21 +2142,21 @@ function AccountContent() {
             {activeModal === "recent" && (
               <div className="max-w-2xl mx-auto w-full p-4 space-y-3">
                 {recentProducts.length === 0 ? (
-                  <div className="text-center py-16 text-slate-400">
+                  <div className="text-center py-16 text-slate-400 dark:text-neutral-500">
                     <Clock className="w-10 h-10 mx-auto mb-3 opacity-30" />
                     <p className="text-sm font-bold">Nothing viewed yet</p>
                   </div>
                 ) : (
                   recentProducts.map((product) => (
-                    <div key={product.id} className={`p-3 rounded-2xl border flex items-center gap-3 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-                      <div className="w-14 h-14 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 border border-slate-100">
+                    <div key={product.id} className={`p-3 rounded-2xl border flex items-center gap-3 ${isDarkMode ? "bg-neutral-900/90 border-neutral-800" : "bg-white border-slate-100"}`}>
+                      <div className="w-14 h-14 rounded-xl bg-white dark:bg-neutral-800 p-1 flex items-center justify-center shrink-0 border border-slate-100 dark:border-neutral-700">
                         {product.images?.[0] ? <img src={product.images[0]} alt={product.name} className="w-full h-full object-contain" /> : <ShoppingBag className="w-6 h-6 text-blue-600" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-xs truncate leading-snug">{product.name}</h4>
                         <p className={`font-black text-sm mt-0.5 ${isDarkMode ? "text-white" : "text-slate-900"}`}>GH₵{product.price.toFixed(2)}</p>
                       </div>
-                      <button onClick={() => handleQuickAdd(product)} className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${quickAddedId === product.id ? "bg-emerald-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}>
+                      <button onClick={() => handleQuickAdd(product)} className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${quickAddedId === product.id ? "bg-emerald-600 text-white" : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"}`}>
                         {quickAddedId === product.id ? "Added!" : "Add to Bag"}
                       </button>
                     </div>
@@ -2307,72 +2284,14 @@ function AccountContent() {
                 </div>
 
                 {/* Dark Mode */}
-                <div className={`pt-4 border-t ${isDarkMode ? "border-slate-800" : "border-slate-200/60"}`}>
+                <div className={`pt-4 border-t ${isDarkMode ? "border-neutral-800" : "border-slate-200/60"}`}>
                   <div className="flex items-center justify-between py-1">
-                    <p className="font-bold text-xs text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
+                    <p className="font-bold text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
                       {isDarkMode ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />} Dark Mode
                     </p>
                     <Toggle checked={isDarkMode} onChange={handleToggleDarkMode} id="dark-mode-settings-toggle" />
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">{isDarkMode ? "Dark mode is on — easier on the eyes at night." : "Switch to dark mode for a sleek nighttime look."}</p>
-                </div>
-              </div>
-            )}
-
-            {/* ── H. Live Chat ─────────────────────────────────────────────── */}
-            {activeModal === "chat" && (
-              <div className="flex flex-col h-full max-w-2xl mx-auto w-full" style={{ height: "calc(100vh - 3.5rem)" }}>
-                {/* Chat header banner */}
-                <div className="shrink-0 p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
-                    <MessageSquare className="w-5 h-5 fill-current" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif font-bold text-base leading-tight">Kay&apos;s Packs Live Support</h3>
-                    <p className="text-[11px] text-blue-100 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Online &amp; Ready to Help
-                    </p>
-                  </div>
-                </div>
-
-                {/* Messages */}
-                <div className={`flex-1 overflow-y-auto p-4 space-y-3 ${isDarkMode ? "bg-slate-950" : "bg-slate-50/50"}`}>
-                  {chatMessages.map((msg, i) => (
-                    <div key={i} className={`flex flex-col ${msg.sender === "user" ? "items-end" : "items-start"}`}>
-                      <div className={`max-w-[82%] p-3 rounded-2xl text-xs leading-relaxed ${
-                        msg.sender === "user"
-                          ? "bg-blue-600 text-white rounded-br-xs"
-                          : isDarkMode ? "bg-slate-800 text-slate-100 rounded-bl-xs border border-slate-700" : "bg-white text-slate-800 rounded-bl-xs shadow-xs border border-slate-100"
-                      }`}>{msg.text}</div>
-                      <span className="text-[10px] text-slate-400 mt-1 px-1">{msg.time}</span>
-                    </div>
-                  ))}
-                  {isBotTyping && (
-                    <div className="flex items-center gap-1.5 text-xs text-slate-400 p-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" />
-                      <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce delay-150" />
-                      <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce delay-300" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Quick chips */}
-                <div className={`shrink-0 p-2 border-t flex gap-1.5 overflow-x-auto text-[11px] scrollbar-none ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-                  <button onClick={() => handleSendMessage("When will my water pack arrive?")} className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-medium">Track delivery</button>
-                  <button onClick={() => handleSendMessage("How do I pay with MoMo?")} className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-medium">MoMo payment</button>
-                  <button onClick={() => handleSendMessage("Do you deliver bulk wholesale?")} className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 dark:bg-slate-800 text-blue-600 dark:text-blue-400 font-medium">Bulk packs</button>
-                </div>
-
-                {/* Input */}
-                <div className={`shrink-0 p-3 border-t flex items-center gap-2 ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
-                  <input type="text" value={inputMessage} onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleSendMessage(); }}
-                    placeholder="Type your question..."
-                    className={`flex-1 p-2.5 rounded-xl text-xs outline-none focus:border-blue-500 ${isDarkMode ? "bg-slate-800 border border-slate-700 text-white" : "bg-slate-50 border border-slate-200 text-slate-900"}`}
-                  />
-                  <button onClick={() => handleSendMessage()} className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors">
-                    <Send className="w-4 h-4" />
-                  </button>
+                  <p className="text-[11px] text-slate-400 dark:text-neutral-500 mt-1">{isDarkMode ? "Dark mode is on — pure AMOLED Black system-wide." : "Switch to dark mode for a sleek nighttime AMOLED look."}</p>
                 </div>
               </div>
             )}

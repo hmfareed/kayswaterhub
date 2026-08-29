@@ -18,61 +18,55 @@ export async function GET(req: NextRequest) {
 
     const query: Record<string, unknown> = {};
 
-    // Customer gets only their own orders (matching customerId OR email OR phone); admin gets all
+    // Customer gets only their own orders (matching customerId OR unassigned guest orders matching verified email/phone); admin gets all
     if (session?.user?.id && session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") {
       const userConditions: any[] = [];
 
-      // Match by customerId
+      // 1. Primary: Owned orders directly tied to this customer's user ID
       if (mongoose.Types.ObjectId.isValid(session.user.id)) {
         userConditions.push({ customerId: new mongoose.Types.ObjectId(session.user.id) });
       }
       userConditions.push({ customerId: session.user.id });
 
-      // Match by email
-      if (session.user.email) {
-        const escapedEmail = session.user.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        userConditions.push({
+      // 2. Secondary: Unassigned guest orders (customerId is null/undefined) strictly matching user's exact credentials
+      const unlinkedConditions: any[] = [];
+      const userEmail = session.user.email?.trim();
+      if (userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com")) {
+        const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        unlinkedConditions.push({
           "guestInformation.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") },
         });
       }
 
-      // Match by phone
-      if (session.user.phone) {
-        const cleanPhone = session.user.phone.replace(/[\s-]/g, "");
-        userConditions.push({ "guestInformation.phone": session.user.phone });
-        if (cleanPhone) {
-          userConditions.push({
-            "guestInformation.phone": { $regex: new RegExp(cleanPhone.slice(-9), "i") },
-          });
-        }
+      const rawPhone = session.user.phone?.trim();
+      const cleanPhone = rawPhone ? rawPhone.replace(/[\s-]/g, "") : "";
+      if (cleanPhone && cleanPhone.length >= 9) {
+        unlinkedConditions.push({ "guestInformation.phone": rawPhone });
+        unlinkedConditions.push({ "guestInformation.phone": cleanPhone });
+        const last9 = cleanPhone.slice(-9);
+        unlinkedConditions.push({ "guestInformation.phone": `0${last9}` });
+        unlinkedConditions.push({ "guestInformation.phone": `+233${last9}` });
+        unlinkedConditions.push({ "guestInformation.phone": `233${last9}` });
+      }
+
+      if (unlinkedConditions.length > 0) {
+        userConditions.push({
+          customerId: { $in: [null, undefined] },
+          $or: unlinkedConditions,
+        });
       }
 
       query.$or = userConditions;
 
-      // Auto-link any matching unlinked guest orders to this customerId asynchronously in background (non-blocking)
-      if (mongoose.Types.ObjectId.isValid(session.user.id) && (session.user.email || session.user.phone)) {
+      // Auto-link matching UNASSIGNED guest orders to this customerId asynchronously
+      if (mongoose.Types.ObjectId.isValid(session.user.id) && unlinkedConditions.length > 0) {
         const userId = session.user.id;
-        const userEmail = session.user.email;
-        const userPhone = session.user.phone;
         (async () => {
           try {
-            const unlinkedOr: any[] = [];
-            if (userEmail) {
-              unlinkedOr.push({
-                "guestInformation.email": {
-                  $regex: new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
-                },
-              });
-            }
-            if (userPhone) {
-              unlinkedOr.push({ "guestInformation.phone": userPhone });
-            }
-            if (unlinkedOr.length > 0) {
-              await Order.updateMany(
-                { customerId: { $exists: false }, $or: unlinkedOr },
-                { $set: { customerId: new mongoose.Types.ObjectId(userId) } }
-              );
-            }
+            await Order.updateMany(
+              { customerId: { $in: [null, undefined] }, $or: unlinkedConditions },
+              { $set: { customerId: new mongoose.Types.ObjectId(userId) } }
+            );
           } catch (err) {
             console.warn("[api/orders] Background guest link warning:", err);
           }

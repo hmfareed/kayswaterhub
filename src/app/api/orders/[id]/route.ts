@@ -44,10 +44,23 @@ export async function GET(
       session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN";
 
     if (!isAdmin) {
-      const isOwner =
-        (session?.user?.id && String(order.customerId) === String(session.user.id)) ||
-        (session?.user?.email && order.guestInformation?.email?.toLowerCase() === session.user.email.toLowerCase()) ||
-        (session?.user?.phone && order.guestInformation?.phone === session.user.phone);
+      let isOwner = false;
+
+      if (order.customerId) {
+        // If assigned, strictly require matching user id
+        isOwner = !!(session?.user?.id && String(order.customerId) === String(session.user.id));
+      } else {
+        // Unassigned guest order: check against authentic user email / phone
+        const userEmail = session?.user?.email?.trim();
+        const hasValidEmail = userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com");
+        const userPhone = session?.user?.phone?.trim()?.replace(/[\s-]/g, "");
+        const orderPhone = order.guestInformation?.phone?.trim()?.replace(/[\s-]/g, "");
+
+        const emailMatches = Boolean(hasValidEmail && order.guestInformation?.email?.toLowerCase() === userEmail.toLowerCase());
+        const phoneMatches = Boolean(userPhone && userPhone.length >= 9 && orderPhone && (userPhone === orderPhone || userPhone.slice(-9) === orderPhone.slice(-9)));
+
+        isOwner = emailMatches || phoneMatches;
+      }
 
       // If user is unauthenticated or not owner, but has exact orderNumber/reference from immediate checkout
       if (!isOwner && !session?.user) {
@@ -60,12 +73,17 @@ export async function GET(
       }
     }
 
-    // Auto-link order to customerId if logged in and not yet linked
+    // Auto-link order to customerId ONLY if unassigned and logged-in user matches
     if (session?.user?.id && !order.customerId && mongoose.Types.ObjectId.isValid(session.user.id)) {
-      if (
-        (session.user.email && order.guestInformation?.email?.toLowerCase() === session.user.email.toLowerCase()) ||
-        (session.user.phone && order.guestInformation?.phone === session.user.phone)
-      ) {
+      const userEmail = session.user.email?.trim();
+      const hasValidEmail = userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com");
+      const userPhone = session.user.phone?.trim()?.replace(/[\s-]/g, "");
+      const orderPhone = order.guestInformation?.phone?.trim()?.replace(/[\s-]/g, "");
+
+      const emailMatches = Boolean(hasValidEmail && order.guestInformation?.email?.toLowerCase() === userEmail.toLowerCase());
+      const phoneMatches = Boolean(userPhone && userPhone.length >= 9 && orderPhone && (userPhone === orderPhone || userPhone.slice(-9) === orderPhone.slice(-9)));
+
+      if (emailMatches || phoneMatches) {
         order.customerId = new mongoose.Types.ObjectId(session.user.id) as any;
         await order.save();
       }
@@ -143,11 +161,21 @@ export async function PATCH(
       }
       if (notes !== undefined) order.notes = notes;
     } else {
-      // Customers: check ownership
-      const isOwner =
-        String(order.customerId) === String(session.user.id) ||
-        (session.user.email && order.guestInformation?.email?.toLowerCase() === session.user.email.toLowerCase()) ||
-        (session.user.phone && order.guestInformation?.phone === session.user.phone);
+      // Customers: check strict ownership
+      let isOwner = false;
+      if (order.customerId) {
+        isOwner = String(order.customerId) === String(session.user.id);
+      } else {
+        const userEmail = session.user.email?.trim();
+        const hasValidEmail = userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com");
+        const userPhone = session.user.phone?.trim()?.replace(/[\s-]/g, "");
+        const orderPhone = order.guestInformation?.phone?.trim()?.replace(/[\s-]/g, "");
+
+        const emailMatches = Boolean(hasValidEmail && order.guestInformation?.email?.toLowerCase() === userEmail.toLowerCase());
+        const phoneMatches = Boolean(userPhone && userPhone.length >= 9 && orderPhone && (userPhone === orderPhone || userPhone.slice(-9) === orderPhone.slice(-9)));
+
+        isOwner = emailMatches || phoneMatches;
+      }
 
       if (!isOwner) {
         return NextResponse.json(

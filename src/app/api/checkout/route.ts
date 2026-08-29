@@ -146,42 +146,16 @@ export async function POST(req: NextRequest) {
     const discount = 0;
     const onlineTotal = Math.max(0, subtotal - discount);
 
-    // 4. Create Pending Order
-    let customerId = session?.user?.id;
+    // 4. Create Pending Order - strictly bind to active session if authenticated
+    const customerId = session?.user?.id || undefined;
     const guestInformation = {
       name: customerInfo?.name || session?.user?.name || "Customer",
-      email: customerInfo?.email || session?.user?.email || "customer@khadyswater.com",
+      email: customerInfo?.email || session?.user?.email || "",
       phone: customerInfo?.phone || session?.user?.phone || deliveryAddress?.phone || "",
     };
 
-    // If not signed in via session, look up if a registered user account exists with this email or phone
-    if (!customerId && (guestInformation.email || guestInformation.phone)) {
-      try {
-        const lookupOr: any[] = [];
-        if (guestInformation.email && !guestInformation.email.includes("@khadyswater.com")) {
-          const escaped = guestInformation.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-          lookupOr.push({ email: { $regex: new RegExp(`^${escaped}$`, "i") } });
-        }
-        if (guestInformation.phone) {
-          lookupOr.push({ phone: guestInformation.phone });
-          const clean = guestInformation.phone.replace(/[\s-]/g, "");
-          if (clean.length >= 9) {
-            lookupOr.push({ phone: { $regex: new RegExp(clean.slice(-9), "i") } });
-          }
-        }
-        if (lookupOr.length > 0) {
-          const existingUser = await User.findOne({ $or: lookupOr });
-          if (existingUser) {
-            customerId = existingUser._id.toString();
-          }
-        }
-      } catch (userErr) {
-        console.warn("[checkout] User auto-match non-blocking error:", userErr);
-      }
-    }
-
     const pendingOrderResult = await OrderService.createPendingOrder({
-      customerId: customerId || undefined,
+      customerId,
       guestInformation,
       items: validatedItems,
       subtotal,

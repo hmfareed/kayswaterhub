@@ -45,22 +45,26 @@ export async function POST(req: NextRequest) {
     if (!isGeminiConfigured()) {
       const lastUserMsg =
         messages[messages.length - 1]?.content?.toLowerCase() || "";
-      let fallback = `Hello ${userName}! Our smart assistant is active. How can we help with your water delivery today? (Contact us anytime on WhatsApp: ${STORE_PHONE_DISPLAY})`;
+      let fallback = `Hello ${userName}! Our AI Hydration Assistant is temporarily running in offline mode. We deliver bottled water packs (Voltic, Bel-Aqua, Verna, Awake, Perla) and dispensers across Greater Accra (GH₵15 flat, free over GH₵100) and nationwide. Please reach us on WhatsApp at ${STORE_PHONE_DISPLAY} for instant support!`;
 
-      if (lastUserMsg.includes("delivery") || lastUserMsg.includes("fee")) {
+      if (lastUserMsg.includes("delivery") || lastUserMsg.includes("fee") || lastUserMsg.includes("shipping")) {
         fallback =
-          "We deliver across Greater Accra for GH₵15 (free on orders over GH₵100!). Orders placed before 2:00 PM are delivered same-day. Nationwide shipping is also available.";
-      } else if (lastUserMsg.includes("momo") || lastUserMsg.includes("pay")) {
+          "We deliver across Greater Accra for a flat GH₵15 (Free delivery on orders of GH₵100 and above!). Orders placed before 2:00 PM are delivered same-day. Nationwide shipping is also available to all 16 regions via parcel stations.";
+      } else if (lastUserMsg.includes("momo") || lastUserMsg.includes("pay") || lastUserMsg.includes("cash")) {
         fallback =
-          "We accept MTN Mobile Money, Telecel Cash, AT Money, and Visa/Mastercard payments via Paystack.";
+          "We accept MTN Mobile Money, Telecel Cash (Vodafone Cash), AT Money, and Visa/Mastercard payments securely processed via Paystack.";
       } else if (
         lastUserMsg.includes("voltic") ||
         lastUserMsg.includes("bel aqua") ||
+        lastUserMsg.includes("bel-aqua") ||
         lastUserMsg.includes("verna") ||
-        lastUserMsg.includes("water")
+        lastUserMsg.includes("awake") ||
+        lastUserMsg.includes("perla") ||
+        lastUserMsg.includes("water") ||
+        lastUserMsg.includes("price")
       ) {
         fallback =
-          "We stock all major mineral water brands including Voltic, Bel-Aqua, Verna, Awake, Perla, and Slem Fit in 500ml, 750ml, 1.5L packs and dispenser bottles! Visit our Shop page to view all packs.";
+          "We stock all premier Ghanaian mineral water brands including Voltic Natural Mineral Water, Bel-Aqua, Verna, Awake Purified, Perla, and Slem Fit in 500ml, 750ml, 1.5L bottle packs and 15L/19L dispensers! You can browse the catalog and add items directly to your cart.";
       }
 
       return NextResponse.json({
@@ -70,8 +74,14 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 3. Construct System Instruction
-    const systemInstruction = `You are "Kay's Packs AI Hydration Assistant", the smart, helpful, and friendly Ghanaian e-commerce shopping assistant for Kay's Packs (Ghana's premier online water delivery hub).
+    // 3. Construct System Instruction with strict domain grounding
+    const systemInstruction = `You are "Kay's Packs AI Hydration Assistant", the expert, friendly, and smart AI shopping assistant for Kay's Packs (Ghana's premier online mineral water delivery & dispenser hub).
+
+CRITICAL DOMAIN RULES:
+- Kay's Packs is strictly a BOTTLED MINERAL WATER & DISPENSER DELIVERY STORE in Ghana.
+- We sell multi-bottle packs (shrink-wrapped packs of 12, 15, 20, or 24 bottles), sachet water bags, and 15L/19L dispenser bottles.
+- WE DO NOT SELL HIKING BACKPACKS, RUCKSACKS, HYDRATION BAGS, OR CAMPING GEAR. The name "Kay's Packs" refers to packs of water bottles. If a user asks about backpacks, kindly clarify that we are Ghana's mineral water delivery hub.
+- Top Ghanaian mineral water brands we stock: Voltic Natural Mineral Water, Bel-Aqua, Verna Natural Mineral Water, Awake Purified Water, Perla, Slem Fit, and Special Ice.
 
 CUSTOMER PROFILE:
 - Name: ${userName}
@@ -79,28 +89,33 @@ CUSTOMER PROFILE:
 - User ID: ${sessionUser.id || "None"}
 - Email: ${sessionUser.email || "None"}
 
-STORE FACTS:
-- Top mineral water brands: Voltic, Bel-Aqua, Verna, Awake, Perla, Slem Fit, and heavy-duty 15L/19L dispensers.
-- Currency: Ghanaian Cedis (GH₵).
-- Standard Greater Accra delivery: GH₵15 (Free for orders GH₵100 and above).
-- Same-Day Delivery cutoff: 2:00 PM in Greater Accra.
-- Nationwide Delivery: Covers all 16 regions in Ghana via regional parcel stations.
-- Accepted Payments: MTN MoMo, Telecel Cash, AT Money, Visa, Mastercard (Paystack).
+STORE FACTS & POLICIES:
+- Currency: Ghanaian Cedis (GH₵ / GHS).
+- Greater Accra Delivery: Flat rate GH₵15. FREE delivery on all orders of GH₵100 and above.
+- Same-Day Delivery Cutoff: 2:00 PM for Greater Accra orders.
+- Nationwide Delivery: Available to all 16 regions of Ghana via regional bus/parcel stations.
+- Payment Methods: MTN Mobile Money (MoMo), Telecel Cash (Vodafone Cash), AT Money, Visa, and Mastercard (Paystack).
 - Official Support Phone: ${STORE_PHONE_DISPLAY}
-- WhatsApp: ${STORE_WHATSAPP_LINK}
+- Official WhatsApp Support: ${STORE_WHATSAPP_LINK}
 
-CRITICAL OPERATIONAL RULES:
-1. TRUTHFULNESS & LIVE DATABASE: NEVER invent prices, stock numbers, discounts, or fake order numbers. You MUST call tools like 'searchProducts', 'getProduct', 'checkStock', 'getCustomerOrders', 'getOrderStatus', etc. to get actual store data.
-2. GUEST vs AUTHENTICATED: Guests can search, view catalog, check stock, and ask questions. If a guest asks "Where is my order?", politely ask for their order reference number or encourage them to log in.
-3. CART ACTIONS: When a customer asks to add water to their cart (e.g. "Add 2 packs of Voltic 500ml"), ALWAYS call 'addToCart' with the product and quantity.
-4. CHECKOUT: When customer says "I want to checkout" or "Let's pay", call 'guideToCheckout'.
-5. TONE & STYLE: Warm Ghanaian hospitality, professional, concise, and structured with clean markdown bullet points.`;
+OPERATIONAL & TOOL EXECUTION RULES:
+1. TRUTHFUL DATA & TOOLS: NEVER invent prices, stock counts, discounts, or order status. ALWAYS call tools like 'searchProducts', 'getProduct', 'checkStock', 'getCustomerOrders', 'getOrderStatus' to fetch live store data.
+2. ADDING ITEMS TO CART: When a customer asks to buy or add water (e.g. "Add 2 packs of Voltic 500ml", "I want 3 Bel-Aqua"), ALWAYS execute 'addToCart' with the product name and quantity.
+3. CART & CHECKOUT: If the customer asks "What is in my cart?", call 'getCart'. When they want to pay or checkout, call 'guideToCheckout'.
+4. ORDER LOOKUPS: If logged in and asking "Where is my order?", call 'getCustomerOrders'. If given an order reference like "KP-2026-0001", call 'getOrderStatus'.
+5. TONE: Warm Ghanaian hospitality, professional, concise, helpful. Use Markdown with clean bullet points and bolding for readability.`;
 
     // 4. Format conversation history for Gemini API
     const contents: GeminiContent[] = [];
 
-    for (let i = 0; i < messages.length; i++) {
-      const msg = messages[i];
+    // Filter out initial welcome bot greeting so the history sent to Gemini begins with user intent
+    const cleanMessages = messages.filter((m: any, idx: number) => {
+      if (idx === 0 && (m.role === "assistant" || m.role === "model")) return false;
+      return true;
+    });
+
+    for (let i = 0; i < cleanMessages.length; i++) {
+      const msg = cleanMessages[i];
       const role =
         msg.role === "assistant" || msg.role === "model" ? "model" : "user";
       contents.push({

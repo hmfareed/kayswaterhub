@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/context/theme-context";
 import { CartProvider } from "@/context/cart-context";
 import { ChatProvider } from "@/context/chat-context";
 import { AuthSessionProvider } from "@/components/ui/session-provider";
@@ -50,14 +51,35 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
-      <body className="font-sans antialiased bg-slate-50 text-slate-900">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var saved = localStorage.getItem('kays_theme');
+                  var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (saved === 'dark' || (!saved && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body className="font-sans antialiased bg-slate-50 dark:bg-black text-slate-900 dark:text-neutral-100 min-h-screen selection:bg-blue-600 selection:text-white transition-colors duration-200">
         <AuthSessionProvider>
-          <CartProvider>
-            <ChatProvider>
-              {children}
-              <CustomerChatWidget />
-            </ChatProvider>
-          </CartProvider>
+          <ThemeProvider>
+            <CartProvider>
+              <ChatProvider>
+                {children}
+                <CustomerChatWidget />
+              </ChatProvider>
+            </CartProvider>
+          </ThemeProvider>
         </AuthSessionProvider>
       </body>
     </html>

@@ -30,7 +30,7 @@ function MobileBottomNavInner() {
 
   return (
     /* md:hidden → only visible on mobile (< 768 px) */
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-t border-slate-200/80 px-2 py-1.5 shadow-lg">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-black/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-neutral-800 px-2 py-1.5 shadow-lg">
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           let isActive = false;
@@ -52,13 +52,13 @@ function MobileBottomNavInner() {
               href={item.href}
               className={`relative flex flex-col items-center justify-center py-1 px-3 min-w-[56px] rounded-xl transition-all ${
                 isActive
-                  ? "text-blue-600 font-bold scale-105"
-                  : "text-slate-400 hover:text-slate-700 font-medium"
+                  ? "text-blue-600 dark:text-blue-400 font-bold scale-105"
+                  : "text-slate-400 dark:text-neutral-500 hover:text-slate-700 dark:hover:text-neutral-300 font-medium"
               }`}
             >
               <div className="relative">
                 {item.label === "Account" && isActive ? (
-                  <div className="w-6 h-6 rounded-full border-2 border-blue-600 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full border-2 border-blue-600 dark:border-blue-400 flex items-center justify-center">
                     <Icon className="w-3.5 h-3.5 stroke-[2.5]" />
                   </div>
                 ) : (
@@ -73,7 +73,7 @@ function MobileBottomNavInner() {
               </div>
               <span
                 className={`text-[10px] mt-0.5 tracking-tight ${
-                  isActive ? "font-bold text-blue-600" : "font-medium"
+                  isActive ? "font-bold text-blue-600 dark:text-blue-400" : "font-medium"
                 }`}
               >
                 {item.label}

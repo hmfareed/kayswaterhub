@@ -23,9 +23,9 @@ export default function HomePage() {
   const bestSellers = STORE_PRODUCTS.slice(0, 4);
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-blue-500 selection:text-white relative font-sans">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-black text-slate-900 dark:text-neutral-100 selection:bg-blue-500 selection:text-white relative font-sans">
       {/* ─── Top Hero Section with Sea-Blue Gradient ──────────────────────── */}
-      <div className="bg-[radial-gradient(ellipse_120%_90%_at_25%_0%,#cce7fe_0%,#dff0ff_30%,#edf7ff_55%,#f7fbff_80%,#ffffff_100%)] border-b border-blue-100/50">
+      <div className="bg-[radial-gradient(ellipse_120%_90%_at_25%_0%,#cce7fe_0%,#dff0ff_30%,#edf7ff_55%,#f7fbff_80%,#ffffff_100%)] dark:bg-[radial-gradient(ellipse_120%_90%_at_25%_0%,#0c1a30_0%,#08101e_40%,#000000_80%)] border-b border-blue-100/50 dark:border-neutral-800">
         {/* Main Clean Seamless Navbar */}
         <StoreNavbar />
 
@@ -35,13 +35,13 @@ export default function HomePage() {
               
               {/* Text / CTAs Column: Order 2 on Mobile, Order 1 on Desktop */}
               <div className="lg:col-span-6 space-y-5 sm:space-y-7 text-center lg:text-left order-2 lg:order-1 pt-0 sm:pt-2 lg:pt-0">
-                <h1 className="text-4xl sm:text-5xl md:text-[54px] lg:text-[60px] xl:text-[68px] font-black text-slate-900 tracking-tight leading-[1.07]">
+                <h1 className="text-4xl sm:text-5xl md:text-[54px] lg:text-[60px] xl:text-[68px] font-black text-slate-900 dark:text-neutral-50 tracking-tight leading-[1.07]">
                   Hydration <br />
                   <span className="whitespace-nowrap">delivered to your</span> <br />
-                  <span className="text-[#0066FF]">door.</span>
+                  <span className="text-[#0066FF] dark:text-blue-400">door.</span>
                 </h1>
 
-                <p className="text-sm sm:text-base lg:text-[17px] text-slate-500 font-normal leading-relaxed max-w-lg mx-auto lg:mx-0">
+                <p className="text-sm sm:text-base lg:text-[17px] text-slate-500 dark:text-neutral-400 font-normal leading-relaxed max-w-lg mx-auto lg:mx-0">
                   Purified bottled water, fresh from Kay&apos;s Packs to your home. Fastest water delivery to keep you hydrated.
                 </p>
 
@@ -49,7 +49,7 @@ export default function HomePage() {
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3.5 sm:gap-4 pt-1 sm:pt-2">
                   <Link
                     href="/shop"
-                    className="inline-flex items-center justify-center gap-2.5 bg-[#172554] hover:bg-[#0f172a] active:scale-98 text-white font-bold text-sm sm:text-base px-7 sm:px-9 py-3.5 sm:py-4 rounded-full shadow-lg shadow-slate-900/15 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"
+                    className="inline-flex items-center justify-center gap-2.5 bg-[#172554] dark:bg-blue-600 hover:bg-[#0f172a] dark:hover:bg-blue-700 active:scale-98 text-white font-bold text-sm sm:text-base px-7 sm:px-9 py-3.5 sm:py-4 rounded-full shadow-lg shadow-slate-900/15 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all"
                   >
                     <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span>Shop now</span>
@@ -69,28 +69,28 @@ export default function HomePage() {
                 {/* 3 Trust Stats Metrics */}
                 <div className="pt-6 sm:pt-8 flex items-center justify-center lg:justify-start gap-8 sm:gap-12">
                   <div>
-                    <div className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-900 tracking-tight leading-none">
+                    <div className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-900 dark:text-neutral-50 tracking-tight leading-none">
                       200+
                     </div>
-                    <div className="text-xs sm:text-sm text-slate-500 font-semibold mt-1.5">
+                    <div className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 font-semibold mt-1.5">
                       Happy customers
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-900 tracking-tight leading-none">
+                    <div className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-900 dark:text-neutral-50 tracking-tight leading-none">
                       3+
                     </div>
-                    <div className="text-xs sm:text-sm text-slate-500 font-semibold mt-1.5">
+                    <div className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 font-semibold mt-1.5">
                       Best products
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-900 tracking-tight leading-none">
+                    <div className="text-2xl sm:text-3xl lg:text-[38px] font-black text-slate-900 dark:text-neutral-50 tracking-tight leading-none">
                       Fastest
                     </div>
-                    <div className="text-xs sm:text-sm text-slate-500 font-semibold mt-1.5">
+                    <div className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400 font-semibold mt-1.5">
                       Keep hydrated
                     </div>
                   </div>
@@ -106,19 +106,19 @@ export default function HomePage() {
         </section>
       </div>
 
-      {/* ─── The Rest of the Page (Pure Crisp White) ────────────────────────── */}
-      <main className="flex-1 bg-white pb-16 lg:pb-0">
+      {/* ─── The Rest of the Page (AMOLED Black Compatible) ─────────────────── */}
+      <main className="flex-1 bg-white dark:bg-black pb-16 lg:pb-0">
         {/* ─── Shop By Brand Section ─────────────────────────────────────────── */}
-        <section id="brands" className="py-14 lg:py-16 bg-white">
+        <section id="brands" className="py-14 lg:py-16 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Shop By Brand</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Explore authentic mineral water brands in Ghana</p>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-neutral-100 tracking-tight">Shop By Brand</h2>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Explore authentic mineral water brands in Ghana</p>
               </div>
               <Link
                 href="/shop"
-                className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700"
+                className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
               >
                 View all
               </Link>
@@ -130,7 +130,7 @@ export default function HomePage() {
                 <Link
                   key={brand.slug}
                   href={`/shop?brand=${brand.slug}`}
-                  className="h-24 p-3 rounded-xl bg-white border border-slate-200/80 hover:border-blue-300 hover:shadow-xs flex items-center justify-center text-center transition-all group"
+                  className="h-24 p-3 rounded-xl bg-white dark:bg-neutral-900 border border-slate-200/80 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-neutral-700 hover:shadow-xs flex items-center justify-center text-center transition-all group"
                 >
                   <BrandLogo brand={brand.name} className="h-8 w-auto group-hover:scale-105 transition-transform" />
                 </Link>
@@ -140,16 +140,16 @@ export default function HomePage() {
         </section>
 
         {/* ─── Best Sellers Section ──────────────────────────────────────────── */}
-        <section className="py-14 lg:py-16 bg-white border-t border-slate-100">
+        <section className="py-14 lg:py-16 bg-white dark:bg-black border-t border-slate-100 dark:border-neutral-850">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Best Sellers</h2>
-                <p className="text-xs text-slate-500 mt-0.5">Most requested water bottle packs and cases</p>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-neutral-100 tracking-tight">Best Sellers</h2>
+                <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Most requested water bottle packs and cases</p>
               </div>
               <Link
                 href="/shop"
-                className="text-xs sm:text-sm font-semibold text-blue-600 hover:text-blue-700"
+                className="text-xs sm:text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
               >
                 View all
               </Link>
@@ -165,7 +165,7 @@ export default function HomePage() {
         </section>
 
         {/* ─── How It Works Section ─────────────────────────────────────────── */}
-        <section id="how-it-works" className="py-18 bg-[#0B1528] text-white">
+        <section id="how-it-works" className="py-18 bg-[#0B1528] dark:bg-neutral-950 text-white border-y dark:border-neutral-850">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center max-w-xl mx-auto mb-14">
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">How It Works</h2>
@@ -221,15 +221,15 @@ export default function HomePage() {
         </section>
 
         {/* ─── Need Bulk Water for an Event? Section ─────────────────────────── */}
-        <section className="py-16 bg-white">
+        <section className="py-16 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl bg-[#EAF3FD] p-8 sm:p-12 border border-blue-100 flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="rounded-2xl bg-[#EAF3FD] dark:bg-neutral-900/90 p-8 sm:p-12 border border-blue-100 dark:border-neutral-800 flex flex-col lg:flex-row items-center justify-between gap-8">
               <div className="max-w-xl space-y-4 text-left">
-                <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-neutral-50 leading-tight">
                   Need Bulk Water <br className="hidden sm:inline" />for an Event?
                 </h2>
 
-                <p className="text-sm sm:text-base text-slate-600 font-normal leading-relaxed">
+                <p className="text-sm sm:text-base text-slate-600 dark:text-neutral-400 font-normal leading-relaxed">
                   We&apos;ve got you covered with customized prices for weddings, conferences, parties, and offices.
                 </p>
 
@@ -256,7 +256,7 @@ export default function HomePage() {
                 <img
                   src="/images/bulk-water-cluster.png"
                   alt="Bulk water bottles and dispenser packs"
-                  className="w-full h-auto object-contain max-h-64"
+                  className="w-full h-auto object-contain max-h-64 select-none"
                 />
               </div>
             </div>

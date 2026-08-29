@@ -40,16 +40,15 @@ export async function executeChatbotTool(
     clientCartItems?: Array<{ productId: string; quantity: number }>;
   }
 ): Promise<ToolExecutionResult> {
-  await connectDB();
-
-  // Ensure catalog exists in DB
+  // Ensure DB connection is safe with catalog synced
   try {
+    await connectDB();
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
       await ensureStoreProductsSynced(false);
     }
   } catch (err) {
-    console.error("[ChatTools] Sync error:", err);
+    console.warn("[ChatTools] DB connection/sync warning:", err);
   }
 
   switch (name) {
@@ -541,20 +540,31 @@ async function handleGetCustomerOrders(
   }
   userConditions.push({ customerId: sessionUser.id });
 
-  if (sessionUser.email) {
-    userConditions.push({
-      "guestInformation.email": { $regex: new RegExp(`^${sessionUser.email}$`, "i") },
+  const unlinkedConditions: any[] = [];
+  const userEmail = sessionUser.email?.trim();
+  if (userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com")) {
+    const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    unlinkedConditions.push({
+      "guestInformation.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") },
     });
   }
 
-  if (sessionUser.phone) {
-    const cleanPhone = sessionUser.phone.replace(/[\s-]/g, "");
-    userConditions.push({ "guestInformation.phone": sessionUser.phone });
-    if (cleanPhone) {
-      userConditions.push({
-        "guestInformation.phone": { $regex: new RegExp(cleanPhone.slice(-9), "i") },
-      });
-    }
+  const rawPhone = sessionUser.phone?.trim();
+  const cleanPhone = rawPhone ? rawPhone.replace(/[\s-]/g, "") : "";
+  if (cleanPhone && cleanPhone.length >= 9) {
+    unlinkedConditions.push({ "guestInformation.phone": rawPhone });
+    unlinkedConditions.push({ "guestInformation.phone": cleanPhone });
+    const last9 = cleanPhone.slice(-9);
+    unlinkedConditions.push({ "guestInformation.phone": `0${last9}` });
+    unlinkedConditions.push({ "guestInformation.phone": `+233${last9}` });
+    unlinkedConditions.push({ "guestInformation.phone": `233${last9}` });
+  }
+
+  if (unlinkedConditions.length > 0) {
+    userConditions.push({
+      customerId: { $in: [null, undefined] },
+      $or: unlinkedConditions,
+    });
   }
 
   const orders = await Order.find({ $or: userConditions })
@@ -580,10 +590,10 @@ async function handleGetCustomerOrders(
       year: "numeric",
     }),
     status: o.status,
-    paymentStatus: o.paymentStatus,
-    deliveryStatus: o.deliveryStatus || "PENDING",
-    totalInGHS: o.pricing?.total || 0,
-    itemSummary: o.items.map((i: any) => `${i.quantity}x ${i.productName} (${i.variantName})`).join(", "),
+    paymentStatus: o.deliveryPaymentStatus || "PENDING",
+    deliveryStatus: o.status || "PENDING",
+    totalInGHS: o.total || 0,
+    itemSummary: (o.items || []).map((i: any) => `${i.quantity}x ${i.productName} (${i.variantName})`).join(", "),
     deliveryAddress: o.deliveryAddress ? `${o.deliveryAddress.city}, ${o.deliveryAddress.region}` : "N/A",
   }));
 
@@ -618,21 +628,33 @@ async function handleGetOrderStatus(
     };
   }
 
-  // Security check: if order belongs to a user and caller is a different user
-  if (
-    order.customerId &&
-    sessionUser?.id &&
-    order.customerId.toString() !== sessionUser.id &&
-    sessionUser.role !== "ADMIN" &&
-    sessionUser.role !== "SUPER_ADMIN"
-  ) {
-    return {
-      toolName: "getOrderStatus",
-      result: {
-        found: false,
-        message: "You are not authorized to view this order.",
-      },
-    };
+  // Security check: non-admins can view only their own orders
+  const isAdmin = sessionUser?.role === "ADMIN" || sessionUser?.role === "SUPER_ADMIN";
+  if (!isAdmin) {
+    let isOwner = false;
+    if (order.customerId) {
+      isOwner = !!(sessionUser?.id && order.customerId.toString() === sessionUser.id);
+    } else {
+      const userEmail = sessionUser?.email?.trim();
+      const hasValidEmail = userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com");
+      const userPhone = sessionUser?.phone?.trim()?.replace(/[\s-]/g, "");
+      const orderPhone = order.guestInformation?.phone?.trim()?.replace(/[\s-]/g, "");
+
+      const emailMatches = Boolean(hasValidEmail && order.guestInformation?.email?.toLowerCase() === userEmail.toLowerCase());
+      const phoneMatches = Boolean(userPhone && userPhone.length >= 9 && orderPhone && (userPhone === orderPhone || userPhone.slice(-9) === orderPhone.slice(-9)));
+
+      isOwner = emailMatches || phoneMatches;
+    }
+
+    if (!isOwner) {
+      return {
+        toolName: "getOrderStatus",
+        result: {
+          found: false,
+          message: "You are not authorized to view this order.",
+        },
+      };
+    }
   }
 
   return {

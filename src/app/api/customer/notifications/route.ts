@@ -29,12 +29,23 @@ export async function GET(req: NextRequest) {
     const userEmail = session.user.email?.toLowerCase().trim();
 
     // Query filter for customer notifications:
-    // Either assigned specifically to this user (userId or recipientEmail) OR general broadcast for customers
+    // Either assigned specifically to this user (userId or recipientEmail) OR non-order general broadcast
     const userMatchConditions: any[] = [];
     if (userObjectId) userMatchConditions.push({ userId: userObjectId });
-    if (userEmail) userMatchConditions.push({ recipientEmail: userEmail });
-    userMatchConditions.push({ recipientRole: "ALL" });
-    userMatchConditions.push({ recipientRole: "CUSTOMER", userId: null, recipientEmail: null });
+    if (userEmail && !userEmail.endsWith("@khadyswater.com")) {
+      userMatchConditions.push({ recipientEmail: userEmail });
+    }
+    // General system announcements / promotions only — NEVER order/payment/delivery events
+    userMatchConditions.push({
+      recipientRole: "ALL",
+      category: { $nin: ["ORDERS", "PAYMENTS", "DELIVERY"] },
+    });
+    userMatchConditions.push({
+      recipientRole: "CUSTOMER",
+      userId: null,
+      recipientEmail: null,
+      category: { $nin: ["ORDERS", "PAYMENTS", "DELIVERY"] },
+    });
 
     const query: any = {
       $or: userMatchConditions,

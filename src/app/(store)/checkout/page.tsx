@@ -486,7 +486,7 @@ export default function CheckoutPage() {
         customerInfo: {
           name: formData.fullName,
           phone: formData.phone,
-          email: formData.email || `${formData.phone.replace(/\s+/g, "")}@khadyswater.com`,
+          email: formData.email ? formData.email.trim() : "",
         },
         paymentMethod: "PAYSTACK",
       };

@@ -2,13 +2,16 @@ export const GEMINI_MODEL_NAME = "gemini-3.6-flash";
 
 export interface GeminiContentPart {
   text?: string;
+  thoughtSignature?: string;
   functionCall?: {
     name: string;
     args: Record<string, any>;
+    id?: string;
   };
   functionResponse?: {
     name: string;
     response: Record<string, any>;
+    id?: string;
   };
 }
 

@@ -184,7 +184,7 @@ export function HeroBottleShowcase() {
         <div className="absolute bottom-6 left-8 w-3 h-3 sm:w-5 sm:h-5 rounded-full bg-blue-200/50 animate-droplet-float [animation-delay:2.2s] pointer-events-none" />
 
         {/* Subtle Water Splash Particles Accent */}
-        <div className="absolute -top-2 right-8 flex items-center gap-1 bg-white/80 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-blue-100/80 text-[11px] font-bold text-blue-700 pointer-events-none animate-pulse-soft">
+        <div className="absolute -top-2 right-8 flex items-center gap-1 bg-white/80 dark:bg-neutral-900/90 backdrop-blur-md px-3 py-1 rounded-full shadow-xs border border-blue-100/80 dark:border-neutral-800 text-[11px] font-bold text-blue-700 dark:text-blue-300 pointer-events-none animate-pulse-soft">
           <Sparkles className="w-3 h-3 text-blue-500 fill-blue-400" />
           <span>{currentItem.badge}</span>
         </div>
@@ -206,7 +206,7 @@ export function HeroBottleShowcase() {
                   <img
                     src={item.image}
                     alt={`${item.name} - ${item.packSize}`}
-                    className="w-full h-full object-contain filter drop-shadow-[0_15px_25px_rgba(0,102,255,0.18)]"
+                    className="w-full h-full object-contain filter drop-shadow-[0_15px_25px_rgba(0,102,255,0.18)] select-none"
                     draggable={false}
                   />
                 </div>
@@ -219,7 +219,7 @@ export function HeroBottleShowcase() {
         <button
           onClick={handlePrev}
           aria-label="Previous water bottle pack"
-          className="absolute left-0 sm:-left-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-blue-600 shadow-md hover:shadow-lg border border-slate-200/80 flex items-center justify-center transition-all active:scale-90 z-20 backdrop-blur-xs"
+          className="absolute left-0 sm:-left-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/90 dark:bg-neutral-900/90 hover:bg-white dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 hover:text-blue-600 dark:hover:text-blue-400 shadow-md hover:shadow-lg border border-slate-200/80 dark:border-neutral-800 flex items-center justify-center transition-all active:scale-90 z-20 backdrop-blur-xs cursor-pointer"
         >
           <ChevronLeft className="w-5 h-5 stroke-[2.2]" />
         </button>
@@ -227,30 +227,30 @@ export function HeroBottleShowcase() {
         <button
           onClick={handleNext}
           aria-label="Next water bottle pack"
-          className="absolute right-0 sm:-right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/90 hover:bg-white text-slate-700 hover:text-blue-600 shadow-md hover:shadow-lg border border-slate-200/80 flex items-center justify-center transition-all active:scale-90 z-20 backdrop-blur-xs"
+          className="absolute right-0 sm:-right-3 top-1/2 -translate-y-1/2 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-white/90 dark:bg-neutral-900/90 hover:bg-white dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-200 hover:text-blue-600 dark:hover:text-blue-400 shadow-md hover:shadow-lg border border-slate-200/80 dark:border-neutral-800 flex items-center justify-center transition-all active:scale-90 z-20 backdrop-blur-xs cursor-pointer"
         >
           <ChevronRight className="w-5 h-5 stroke-[2.2]" />
         </button>
 
         {/* Floating Quick Action Pack Badge */}
-        <div className="absolute -bottom-2 sm:bottom-0 left-1/2 -translate-x-1/2 w-[92%] sm:w-auto min-w-[290px] sm:min-w-[340px] bg-white/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-xl shadow-blue-900/10 border border-blue-100/90 z-20 transition-all duration-300">
+        <div className="absolute -bottom-2 sm:bottom-0 left-1/2 -translate-x-1/2 w-[92%] sm:w-auto min-w-[290px] sm:min-w-[340px] bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md rounded-2xl p-3 sm:p-3.5 shadow-xl shadow-blue-900/10 dark:shadow-black border border-blue-100/90 dark:border-neutral-800 z-20 transition-all duration-300">
           <div className="flex items-center justify-between gap-3">
             <div className="text-left min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-blue-600">
+                <span className="text-[10px] sm:text-xs font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400">
                   {currentItem.brand}
                 </span>
-                <span className="text-slate-300">•</span>
-                <span className="text-[10px] sm:text-xs text-slate-500 font-semibold truncate">
+                <span className="text-slate-300 dark:text-neutral-600">•</span>
+                <span className="text-[10px] sm:text-xs text-slate-500 dark:text-neutral-400 font-semibold truncate">
                   {currentItem.packSize}
                 </span>
               </div>
               <div className="flex items-baseline gap-2 mt-0.5">
-                <span className="text-base sm:text-lg font-black text-slate-900">
+                <span className="text-base sm:text-lg font-black text-slate-900 dark:text-neutral-100">
                   GH₵{currentItem.price.toFixed(2)}
                 </span>
                 {currentItem.originalPrice && (
-                  <span className="text-xs text-slate-400 line-through font-semibold">
+                  <span className="text-xs text-slate-400 dark:text-neutral-500 line-through font-semibold">
                     GH₵{currentItem.originalPrice.toFixed(2)}
                   </span>
                 )}
@@ -260,7 +260,7 @@ export function HeroBottleShowcase() {
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => handleQuickAdd(currentItem)}
-                className={`inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all shadow-xs active:scale-95 ${
+                className={`inline-flex items-center justify-center gap-1.5 text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all shadow-xs active:scale-95 cursor-pointer ${
                   addedItem === currentItem.id
                     ? "bg-emerald-600 text-white shadow-emerald-500/30"
                     : "bg-[#0066FF] hover:bg-[#0052cc] text-white shadow-blue-600/25 hover:shadow-md"
@@ -292,16 +292,16 @@ export function HeroBottleShowcase() {
               <button
                 key={item.id}
                 onClick={() => setCurrentIndex(idx)}
-                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 border ${
+                className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 border cursor-pointer ${
                   isSelected
-                    ? "bg-slate-900 text-white border-slate-900 shadow-md scale-105"
-                    : "bg-white/80 hover:bg-white text-slate-700 border-slate-200/90 hover:border-blue-300 shadow-2xs hover:shadow-xs"
+                    ? "bg-slate-900 dark:bg-white text-white dark:text-black border-slate-900 dark:border-white shadow-md scale-105"
+                    : "bg-white/80 dark:bg-neutral-900/90 hover:bg-white dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 border-slate-200/90 dark:border-neutral-800 shadow-2xs hover:shadow-xs"
                 }`}
               >
                 <span
                   className="w-2 h-2 rounded-full transition-colors"
                   style={{
-                    backgroundColor: isSelected ? "#38BDF8" : item.themeColor,
+                    backgroundColor: isSelected ? (idx === currentIndex ? "#38BDF8" : item.themeColor) : item.themeColor,
                   }}
                 />
                 <span>{item.brand}</span>
@@ -311,7 +311,7 @@ export function HeroBottleShowcase() {
         </div>
 
         {/* Progress Bar for Auto-play */}
-        <div className="w-48 mx-auto mt-4 h-1 bg-slate-200/70 rounded-full overflow-hidden">
+        <div className="w-48 mx-auto mt-4 h-1 bg-slate-200/70 dark:bg-neutral-800 rounded-full overflow-hidden">
           <div
             key={currentIndex}
             className={`h-full bg-[#0066FF] rounded-full ${

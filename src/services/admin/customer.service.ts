@@ -82,15 +82,30 @@ export async function getAdminCustomerById(id: string) {
   if (!customer) return null;
 
   const orderConditions: any[] = [{ customerId: customer._id }];
-  if (customer.email) {
-    orderConditions.push({
+  const unlinkedConditions: any[] = [];
+  const customerEmail = customer.email?.trim();
+  if (customerEmail && !customerEmail.toLowerCase().endsWith("@khadyswater.com")) {
+    unlinkedConditions.push({
       "guestInformation.email": {
-        $regex: new RegExp(`^${customer.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+        $regex: new RegExp(`^${customerEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
       },
     });
   }
-  if (customer.phone) {
-    orderConditions.push({ "guestInformation.phone": customer.phone });
+  const cleanPhone = customer.phone?.trim().replace(/[\s-]/g, "");
+  if (cleanPhone && cleanPhone.length >= 9) {
+    unlinkedConditions.push({ "guestInformation.phone": customer.phone });
+    unlinkedConditions.push({ "guestInformation.phone": cleanPhone });
+    const last9 = cleanPhone.slice(-9);
+    unlinkedConditions.push({ "guestInformation.phone": `0${last9}` });
+    unlinkedConditions.push({ "guestInformation.phone": `+233${last9}` });
+    unlinkedConditions.push({ "guestInformation.phone": `233${last9}` });
+  }
+
+  if (unlinkedConditions.length > 0) {
+    orderConditions.push({
+      customerId: { $in: [null, undefined] },
+      $or: unlinkedConditions,
+    });
   }
 
   const [orders, reviews, addresses] = await Promise.all([
