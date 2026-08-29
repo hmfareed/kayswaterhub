@@ -1,9 +1,14 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
-import { Droplets, Phone, Mail, MapPin, ShieldCheck, Truck, RefreshCw, Clock } from "lucide-react";
+import { Droplets, Phone, Mail, MapPin, ShieldCheck, Truck, RefreshCw, Clock, MessageSquare } from "lucide-react";
 import { PaymentMethodBadge } from "@/components/ui/brand-logos";
+import { useChat } from "@/context/chat-context";
 
 export function StoreFooter() {
+  const { openChat } = useChat();
+
   return (
     <footer className="bg-slate-900 text-slate-300 pt-16 pb-24 lg:pb-12 border-t border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,15 +41,20 @@ export function StoreFooter() {
               <p className="text-xs text-slate-400">Original and sealed packs</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+          <button
+            onClick={() => openChat()}
+            className="flex items-center gap-3 text-left hover:opacity-90 active:scale-98 transition-all group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:bg-indigo-500/20 flex items-center justify-center shrink-0 transition-colors">
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-white text-sm">24/7 Support</h3>
-              <p className="text-xs text-slate-400">Call or chat us anytime</p>
+              <h3 className="font-bold text-white text-sm group-hover:text-blue-400 transition-colors flex items-center gap-1">
+                24/7 AI Support
+              </h3>
+              <p className="text-xs text-slate-400">Click to chat with us anytime</p>
             </div>
-          </div>
+          </button>
         </div>
 
         {/* Main Footer Links */}
@@ -101,6 +111,15 @@ export function StoreFooter() {
           <div className="space-y-3">
             <h4 className="font-bold text-white text-sm tracking-wide uppercase">Customer Care</h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
+              <li>
+                <button
+                  onClick={() => openChat()}
+                  className="hover:text-blue-400 transition-colors flex items-center gap-1.5 text-left"
+                >
+                  <MessageSquare className="w-3.5 h-3.5 text-blue-400" />
+                  <span>AI Hydration Assistant</span>
+                </button>
+              </li>
               <li>
                 <Link href="/faq" className="hover:text-blue-400 transition-colors flex items-center gap-1.5">
                   <span>Help &amp; FAQ</span>

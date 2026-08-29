@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/context/cart-context";
+import { ChatProvider } from "@/context/chat-context";
 import { AuthSessionProvider } from "@/components/ui/session-provider";
+import { CustomerChatWidget } from "@/components/chat/CustomerChatWidget";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -50,7 +52,12 @@ export default function RootLayout({
     <html lang="en" className={jakarta.variable} suppressHydrationWarning>
       <body className="font-sans antialiased bg-slate-50 text-slate-900">
         <AuthSessionProvider>
-          <CartProvider>{children}</CartProvider>
+          <CartProvider>
+            <ChatProvider>
+              {children}
+              <CustomerChatWidget />
+            </ChatProvider>
+          </CartProvider>
         </AuthSessionProvider>
       </body>
     </html>
