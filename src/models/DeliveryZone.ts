@@ -2,6 +2,13 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export type DeliveryPricingType = "FLAT" | "DISTANCE_BASED" | "ZONE_BASED";
 
+export interface IQuantityRule {
+  minPacks: number;
+  maxPacks: number | null; // null = unlimited
+  fee: number;
+  label?: string; // e.g. "1–3 packs"
+}
+
 export interface IDeliveryZone extends Document {
   name: string;           // e.g. "Accra Central", "Greater Accra Extended"
   region: string;
@@ -25,6 +32,7 @@ export interface IDeliveryZone extends Document {
   isActive: boolean;
   minimumOrder?: number;  // optional minimum order for this zone
   freeDeliveryThreshold?: number; // order amount above which delivery is free
+  quantityRules: IQuantityRule[]; // optional tier-based pricing per pack count
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +68,18 @@ const DeliveryZoneSchema = new Schema<IDeliveryZone>(
     isActive: { type: Boolean, default: true },
     minimumOrder: { type: Number, default: 0 },
     freeDeliveryThreshold: { type: Number },
+    quantityRules: {
+      type: [
+        {
+          minPacks: { type: Number, required: true },
+          maxPacks: { type: Number, default: null },
+          fee: { type: Number, required: true },
+          label: { type: String },
+          _id: false,
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

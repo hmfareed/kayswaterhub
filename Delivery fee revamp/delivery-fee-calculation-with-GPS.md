@@ -1,4 +1,4 @@
-Absolutely. For this bottle-pack delivery website, I would build the delivery system as a **standalone Delivery Management Module** that connects to Products, Cart, Checkout, Orders, Customer Addresses, and the Admin Panel.
+For this bottle-pack delivery website, I would build the delivery system as a **standalone Delivery Management Module** that connects to Products, Cart, Checkout, Orders, Customer Addresses, and the Admin Panel.
 
 The key principle is:
 

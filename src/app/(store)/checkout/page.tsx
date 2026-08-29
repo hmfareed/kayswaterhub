@@ -23,6 +23,9 @@ import {
   Bookmark,
   Check,
   Store,
+  Search,
+  X,
+  TriangleAlert,
 } from "lucide-react";
 import { GHANA_REGIONS, formatCurrency } from "@/lib/constants";
 import { useCart } from "@/context/cart-context";
@@ -47,7 +50,19 @@ interface SavedAddress {
   landmark?: string;
   deliveryInstructions?: string;
   coordinates?: { lat: number; lng: number };
+  gpsAccuracy?: number;
+  addressSource?: "GPS" | "SEARCH" | "MANUAL";
   isDefault?: boolean;
+}
+
+interface SearchSuggestion {
+  placeId: string;
+  displayName: string;
+  coordinates: { lat: number; lng: number };
+  region: string;
+  city: string;
+  area?: string;
+  formattedAddress: string;
 }
 
 interface DeliveryCalculationData {
@@ -57,9 +72,11 @@ interface DeliveryCalculationData {
   distanceKm?: number;
   zoneName: string;
   pricingType: string;
+  pricingRule?: string;
   estimatedDeliveryTime: string;
   isFreeDelivery: boolean;
   freeDeliveryThreshold?: number;
+  gpsAccuracyWarning?: boolean;
   reason?: string;
 }
 
@@ -104,6 +121,13 @@ export default function CheckoutPage() {
   const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
   const [isLocating, setIsLocating] = useState(false);
   const [locationStatus, setLocationStatus] = useState<string | null>(null);
+  const [addressSource, setAddressSource] = useState<"GPS" | "SEARCH" | "MANUAL">("MANUAL");
+
+  // Address search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchSuggestion[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   // Delivery Calculation State
   const [deliveryCalc, setDeliveryCalc] = useState<DeliveryCalculationData>({
@@ -179,7 +203,7 @@ export default function CheckoutPage() {
     }
   };
 
-  // Trigger GPS Geolocation
+  // Trigger GPS Geolocation + reverse geocode to auto-fill address fields
   const handleDetectLocation = () => {
     if (!navigator.geolocation) {
       setLocationStatus("Geolocation is not supported by your browser.");
@@ -188,20 +212,48 @@ export default function CheckoutPage() {
 
     setIsLocating(true);
     setLocationStatus("Accessing GPS satellite coordinates...");
+    setShowSearch(false);
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
+      async (position) => {
         const { latitude, longitude, accuracy } = position.coords;
         const coords = { lat: latitude, lng: longitude };
         setGpsCoordinates(coords);
         setGpsAccuracy(Math.round(accuracy));
+        setAddressSource("GPS");
+        setLocationStatus(`Location detected — reverse geocoding...`);
+
+        // Reverse geocode to get region/city/area
+        try {
+          const res = await fetch("/api/delivery/geocode", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lat: latitude, lng: longitude }),
+          });
+          const json = await res.json();
+          if (json.success && json.data) {
+            const geo = json.data;
+            setFormData((prev) => ({
+              ...prev,
+              region: geo.region || prev.region,
+              city: geo.city || prev.city,
+              area: geo.area || prev.area,
+            }));
+            if (geo.region) setSelectedRegion(geo.region);
+            setLocationStatus(`✓ ${geo.area ? geo.area + ", " : ""}${geo.city || ""}, ${geo.region}`);
+          } else {
+            setLocationStatus(`GPS locked (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+          }
+        } catch {
+          setLocationStatus(`GPS locked (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
+        }
+
         setIsLocating(false);
-        setLocationStatus(`GPS Locked (${latitude.toFixed(4)}, ${longitude.toFixed(4)})`);
       },
       (error) => {
         setIsLocating(false);
         console.warn("GPS Geolocation error:", error.message);
-        setLocationStatus("GPS access unavailable. You can enter your address details below.");
+        setLocationStatus("GPS access unavailable. Search for your address or enter it manually below.");
       },
       {
         enableHighAccuracy: true,
@@ -211,7 +263,50 @@ export default function CheckoutPage() {
     );
   };
 
+  // Address search (forward geocode)
+  const handleAddressSearch = async (query: string) => {
+    setSearchQuery(query);
+    if (query.length < 3) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const res = await fetch("/api/delivery/geocode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      const json = await res.json();
+      if (json.success) setSearchResults(json.data || []);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSelectSearchResult = (result: SearchSuggestion) => {
+    setGpsCoordinates(result.coordinates);
+    setGpsAccuracy(null);
+    setAddressSource("SEARCH");
+    setFormData((prev) => ({
+      ...prev,
+      region: result.region || prev.region,
+      city: result.city || prev.city,
+      area: result.area || prev.area,
+    }));
+    if (result.region) setSelectedRegion(result.region);
+    setLocationStatus(`✓ ${result.displayName}`);
+    setSearchResults([]);
+    setSearchQuery(result.displayName);
+    setShowSearch(false);
+  };
+
+
   // Recalculate delivery fee when location, region or subtotal change
+  const packQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+
   const calculateDelivery = useCallback(async () => {
     if (items.length === 0 || fulfillmentType === "PICKUP") return;
     setIsCalculatingDelivery(true);
@@ -221,10 +316,13 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          coordinates: gpsCoordinates,
+          coordinates: gpsCoordinates
+            ? { ...gpsCoordinates, accuracy: gpsAccuracy }
+            : undefined,
           region: formData.region,
           city: formData.city || "Accra",
           area: formData.area,
+          packQuantity,
           subtotal,
         }),
       });
@@ -238,7 +336,8 @@ export default function CheckoutPage() {
     } finally {
       setIsCalculatingDelivery(false);
     }
-  }, [gpsCoordinates, formData.region, formData.city, formData.area, subtotal, items.length, fulfillmentType]);
+  }, [gpsCoordinates, gpsAccuracy, formData.region, formData.city, formData.area, packQuantity, subtotal, items.length, fulfillmentType]);
+
 
   useEffect(() => {
     if (fulfillmentType === "DELIVERY") {
@@ -370,7 +469,10 @@ export default function CheckoutPage() {
                 landmark: formData.landmark,
                 deliveryInstructions: formData.deliveryInstructions,
                 coordinates: gpsCoordinates,
+                gpsAccuracy: gpsAccuracy ?? undefined,
+                addressSource,
               },
+
         customerInfo: {
           name: formData.fullName,
           phone: formData.phone,
@@ -629,26 +731,75 @@ export default function CheckoutPage() {
                         Doorstep Delivery Address
                       </h3>
 
-                      {/* GPS Button */}
-                      <button
-                        type="button"
-                        onClick={handleDetectLocation}
-                        disabled={isLocating}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-                      >
-                        {isLocating ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>Detecting...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Navigation className="w-3.5 h-3.5" />
-                            <span>Use My Location</span>
-                          </>
-                        )}
-                      </button>
+                      {/* Location action buttons */}
+                      <div className="flex items-center gap-2">
+                        {/* Address Search */}
+                        <button
+                          type="button"
+                          onClick={() => { setShowSearch(!showSearch); setSearchResults([]); setSearchQuery(""); }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
+                        >
+                          <Search className="w-3.5 h-3.5" />
+                          <span>Search</span>
+                        </button>
+
+                        {/* GPS Button */}
+                        <button
+                          type="button"
+                          onClick={handleDetectLocation}
+                          disabled={isLocating}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                        >
+                          {isLocating ? (
+                            <>
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              <span>Detecting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Navigation className="w-3.5 h-3.5" />
+                              <span>Use GPS</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
+
+                    {/* Address Search Box */}
+                    {showSearch && (
+                      <div className="relative">
+                        <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl">
+                          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => handleAddressSearch(e.target.value)}
+                            placeholder="Search your area, street or landmark..."
+                            autoFocus
+                            className="flex-1 text-xs bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
+                          />
+                          {isSearching && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />}
+                          <button type="button" onClick={() => { setShowSearch(false); setSearchResults([]); }} className="p-0.5 hover:bg-slate-200 rounded cursor-pointer">
+                            <X className="w-3.5 h-3.5 text-slate-400" />
+                          </button>
+                        </div>
+                        {searchResults.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                            {searchResults.map((result) => (
+                              <button
+                                key={result.placeId}
+                                type="button"
+                                onClick={() => handleSelectSearchResult(result)}
+                                className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-slate-100 last:border-0 cursor-pointer"
+                              >
+                                <div className="text-xs font-semibold text-slate-900 truncate">{result.displayName.split(",")[0]}</div>
+                                <div className="text-[10px] text-slate-400 truncate">{result.displayName}</div>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* GPS Status Banner */}
                     {locationStatus && (
@@ -661,13 +812,24 @@ export default function CheckoutPage() {
                       >
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
-                          <span>{locationStatus}</span>
+                          <span className="line-clamp-1">{locationStatus}</span>
                         </div>
                         {gpsAccuracy && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-white border border-emerald-300 font-bold text-emerald-700">
-                            ~{gpsAccuracy}m accuracy
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-white border border-emerald-300 font-bold text-emerald-700 whitespace-nowrap">
+                            ~{gpsAccuracy}m
                           </span>
                         )}
+                      </div>
+                    )}
+
+                    {/* GPS accuracy warning */}
+                    {deliveryCalc.gpsAccuracyWarning && gpsCoordinates && (
+                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                        <TriangleAlert className="w-4 h-4 flex-shrink-0 text-amber-500 mt-0.5" />
+                        <span>
+                          <strong>Low GPS accuracy</strong> — your location signal is weak. Please confirm your
+                          region, city, and area below to ensure the correct delivery fee.
+                        </span>
                       </div>
                     )}
 

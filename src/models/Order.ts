@@ -24,6 +24,17 @@ export interface IGuestInformation {
   phone: string;
 }
 
+export interface IDeliverySnapshot {
+  fee: number;
+  originalFee: number; // before free-delivery discount
+  region: string;
+  zone?: string;
+  calculationMethod: "ZONE" | "DISTANCE" | "REGIONAL" | "EXCEPTION" | "FREE" | "PICKUP";
+  pricingRule?: string; // e.g. "4-6_PACKS"
+  isFreeDelivery: boolean;
+  packQuantity: number;
+}
+
 export interface IDeliveryAddress {
   fullName?: string;
   phone?: string;
@@ -35,8 +46,11 @@ export interface IDeliveryAddress {
   landmark?: string;
   deliveryInstructions?: string;
   coordinates?: { lat: number; lng: number };
+  gpsAccuracy?: number; // metres
+  addressSource?: "GPS" | "SEARCH" | "MANUAL"; // how the address was entered
   distanceKm?: number;
   zoneName?: string;
+  deliverySnapshot?: IDeliverySnapshot; // locked fee at order time
 }
 
 export interface ICancellation {
@@ -134,8 +148,20 @@ const OrderSchema = new Schema<IOrder>(
       landmark: String,
       deliveryInstructions: String,
       coordinates: { lat: Number, lng: Number },
+      gpsAccuracy: Number,
+      addressSource: { type: String, enum: ["GPS", "SEARCH", "MANUAL"] },
       distanceKm: Number,
       zoneName: String,
+      deliverySnapshot: {
+        fee: Number,
+        originalFee: Number,
+        region: String,
+        zone: String,
+        calculationMethod: { type: String, enum: ["ZONE", "DISTANCE", "REGIONAL", "EXCEPTION", "FREE", "PICKUP"] },
+        pricingRule: String,
+        isFreeDelivery: Boolean,
+        packQuantity: Number,
+      },
     },
     status: {
       type: String,

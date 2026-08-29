@@ -22,6 +22,18 @@ export interface IStoreLocation {
   maxDeliveryRadiusKm: number;
 }
 
+export interface IDeliverySettings {
+  greaterAccraEnabled: boolean;
+  nationwideEnabled: boolean;
+  greaterAccraMethod: "ZONE" | "DISTANCE"; // ZONE = named area zones, DISTANCE = radius tiers
+  allowGPS: boolean;
+  allowManualAddress: boolean;
+  allowSearch: boolean;
+  minimumDeliveryFee: number;
+  maximumDeliveryFee: number;
+  gpsAccuracyThresholdMeters: number; // warn customer if GPS accuracy worse than this
+}
+
 export interface ISettings extends Document {
   // Business
   businessName: string;
@@ -33,6 +45,9 @@ export interface ISettings extends Document {
 
   // Store Pickup / Warehouse Base Location for distance calculations
   storeLocation: IStoreLocation;
+
+  // Delivery behaviour settings
+  deliverySettings: IDeliverySettings;
 
   // Payments (Paystack)
   paystack?: {
@@ -132,6 +147,17 @@ const SettingsSchema = new Schema<ISettings>(
         freeDeliveryThreshold: 350,
         maxDeliveryRadiusKm: 60,
       }),
+    },
+    deliverySettings: {
+      greaterAccraEnabled: { type: Boolean, default: true },
+      nationwideEnabled: { type: Boolean, default: true },
+      greaterAccraMethod: { type: String, enum: ["ZONE", "DISTANCE"], default: "ZONE" },
+      allowGPS: { type: Boolean, default: true },
+      allowManualAddress: { type: Boolean, default: true },
+      allowSearch: { type: Boolean, default: true },
+      minimumDeliveryFee: { type: Number, default: 0 },
+      maximumDeliveryFee: { type: Number, default: 1000 },
+      gpsAccuracyThresholdMeters: { type: Number, default: 500 },
     },
     paystack: {
       publicKey: { type: String, default: "" },

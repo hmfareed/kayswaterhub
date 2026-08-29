@@ -17,6 +17,8 @@ export interface IAddress extends Document {
     lat: number;
     lng: number;
   };
+  gpsAccuracy?: number; // metres — from browser Geolocation API
+  addressSource?: "GPS" | "SEARCH" | "MANUAL";
   isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -39,6 +41,8 @@ const AddressSchema = new Schema<IAddress>(
       lat: { type: Number },
       lng: { type: Number },
     },
+    gpsAccuracy: { type: Number },
+    addressSource: { type: String, enum: ["GPS", "SEARCH", "MANUAL"] },
     isDefault: { type: Boolean, default: false },
   },
   { timestamps: true }

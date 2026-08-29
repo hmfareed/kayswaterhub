@@ -34,6 +34,8 @@ import {
   ChevronDown,
   ChevronRight,
   X,
+  Globe,
+  Zap,
 } from "lucide-react";
 
 interface AdminSidebarProps {
@@ -106,6 +108,8 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
         { name: "Overview", href: "/admin/delivery", icon: Compass },
         { name: "Store Location", href: "/admin/delivery/store-location", icon: MapPin },
         { name: "Delivery Zones", href: "/admin/delivery/zones", icon: Map },
+        { name: "Regions", href: "/admin/delivery/regions", icon: Globe },
+        { name: "Exceptions", href: "/admin/delivery/exceptions", icon: Zap },
         { name: "Pricing Rules", href: "/admin/delivery/pricing", icon: Tag },
         { name: "Active Deliveries", href: "/admin/delivery/active", icon: Truck },
         { name: "Delivery History", href: "/admin/delivery/history", icon: History },

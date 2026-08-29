@@ -14,6 +14,8 @@ import {
   ExternalLink,
   CheckCircle2,
   AlertCircle,
+  Globe,
+  Zap,
 } from "lucide-react";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
@@ -188,6 +190,46 @@ export default function AdminDeliveryOverviewPage() {
               </div>
             </div>
             <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+          </Link>
+
+          <Link
+            href="/admin/delivery/regions"
+            className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:border-blue-300 transition-all flex items-center justify-between group block"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                <Globe className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-xs text-slate-900 group-hover:text-blue-600 transition-colors block">
+                  Nationwide Regions
+                </span>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  Fees and availability for all 16 Ghana regions
+                </span>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+          </Link>
+
+          <Link
+            href="/admin/delivery/exceptions"
+            className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:border-amber-300 transition-all flex items-center justify-between group block"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <Zap className="w-5 h-5" />
+              </div>
+              <div>
+                <span className="font-bold text-xs text-slate-900 group-hover:text-amber-600 transition-colors block">
+                  Delivery Exceptions
+                </span>
+                <span className="text-[11px] text-slate-400 font-medium">
+                  Override pricing for special areas (highest priority)
+                </span>
+              </div>
+            </div>
+            <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 group-hover:translate-x-0.5 transition-all" />
           </Link>
         </div>
       </div>

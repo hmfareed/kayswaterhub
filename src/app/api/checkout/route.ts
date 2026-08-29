@@ -96,6 +96,10 @@ export async function POST(req: NextRequest) {
     let deliveryFee = 0;
     let zoneName = "Self Pickup (Depot Hub)";
     let distanceKm: number | undefined = undefined;
+    let deliverySnapshot: any = undefined;
+
+    // Total packs in cart for quantity-tier pricing
+    const packQuantity = validatedItems.reduce((sum, item) => sum + item.quantity, 0);
 
     if (!isPickup) {
       const deliveryCalc = await resolveDeliveryFee({
@@ -103,6 +107,7 @@ export async function POST(req: NextRequest) {
         region: deliveryAddress?.region || "Greater Accra",
         city: deliveryAddress?.city || "Accra",
         area: deliveryAddress?.area,
+        packQuantity,
         subtotal,
       });
 
@@ -119,6 +124,7 @@ export async function POST(req: NextRequest) {
       deliveryFee = deliveryCalc.deliveryFee;
       zoneName = deliveryCalc.zoneName;
       distanceKm = deliveryCalc.distanceKm;
+      deliverySnapshot = deliveryCalc.snapshot;
     }
 
     const discount = 0;
@@ -152,8 +158,11 @@ export async function POST(req: NextRequest) {
         landmark: deliveryAddress.landmark,
         deliveryInstructions: deliveryAddress.deliveryInstructions,
         coordinates: deliveryAddress.coordinates,
+        gpsAccuracy: deliveryAddress.gpsAccuracy,
+        addressSource: deliveryAddress.addressSource || "MANUAL",
         distanceKm,
         zoneName,
+        deliverySnapshot,
       },
     });
 
