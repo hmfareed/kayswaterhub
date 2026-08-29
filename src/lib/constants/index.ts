@@ -44,13 +44,19 @@ export const PAYMENT_STATUSES: Record<PaymentStatus, PaymentStatus> = {
 // ─── Delivery Statuses ────────────────────────────────────────────────────────
 export const DELIVERY_STATUSES: Record<DeliveryStatus, DeliveryStatus> = {
   PENDING: "PENDING",
+  AWAITING_COURIER: "AWAITING_COURIER",
+  COURIER_ASSIGNED: "COURIER_ASSIGNED",
   CREATED: "CREATED",
   DRIVER_ASSIGNED: "DRIVER_ASSIGNED",
   PICKED_UP: "PICKED_UP",
+  IN_TRANSIT: "IN_TRANSIT",
   OUT_FOR_DELIVERY: "OUT_FOR_DELIVERY",
+  AT_STATION: "AT_STATION",
+  PICKUP_PENDING: "PICKUP_PENDING",
   DELIVERED: "DELIVERED",
   FAILED: "FAILED",
   CANCELLED: "CANCELLED",
+  RETURNED: "RETURNED",
 };
 
 // ─── Ghana Regions ────────────────────────────────────────────────────────────
