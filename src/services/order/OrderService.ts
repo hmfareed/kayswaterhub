@@ -5,7 +5,7 @@ import Settings from "@/models/Settings";
 import { InventoryService } from "@/services/inventory/InventoryService";
 import { notificationService } from "@/services/notification/NotificationService";
 import { generateOrderNumber } from "@/lib/utils";
-import type { OrderStatus, PaymentMethod } from "@/types";
+import type { OrderStatus, PaymentMethod, DeliveryMethod, DeliveryPaymentStatus, DeliveryPaymentMethod } from "@/types";
 import type { IOrderItem, IDeliveryAddress, IGuestInformation } from "@/models/Order";
 
 export interface CreateOrderPayload {
@@ -14,8 +14,13 @@ export interface CreateOrderPayload {
   items: IOrderItem[];
   subtotal: number;
   discount?: number;
-  deliveryFee: number;
-  total: number;
+  deliveryFee?: number; // Estimated fee
+  estimatedDeliveryFee?: number;
+  total: number; // Online product payment amount (subtotal - discount)
+  amountPaidOnline?: number;
+  deliveryMethod?: DeliveryMethod;
+  deliveryPaymentStatus?: DeliveryPaymentStatus;
+  deliveryPaymentMethod?: DeliveryPaymentMethod;
   paymentMethod?: string;
   deliveryAddress: IDeliveryAddress;
 }
@@ -24,6 +29,9 @@ export interface CreateOrderPayload {
  * OrderService — coordinates the full order lifecycle.
  *
  * Architecture rules enforced:
+ * - Product payment is separate from courier delivery payment.
+ * - Website collects product payment via Paystack.
+ * - Courier collects delivery fee on delivery/pickup.
  * - Rule 3: Reserves stock before payment, not on cart add
  * - Rule 4: Price snapshots stored in OrderItem, never recalculated
  * - Rule 10: Every transition is logged and creates linked delivery orders
@@ -39,6 +47,11 @@ export class OrderService {
     await connectDB();
 
     const orderNumber = generateOrderNumber();
+    const estFee = payload.estimatedDeliveryFee ?? payload.deliveryFee ?? 0;
+    const deliveryMethod = payload.deliveryMethod || "YANGO_DOOR";
+    const deliveryPaymentStatus =
+      payload.deliveryPaymentStatus ||
+      (deliveryMethod === "SELF_PICKUP" ? "NOT_REQUIRED" : "EXPECTED");
 
     const order = await Order.create({
       orderNumber,
@@ -47,8 +60,13 @@ export class OrderService {
       items: payload.items,
       subtotal: payload.subtotal,
       discount: payload.discount ?? 0,
-      deliveryFee: payload.deliveryFee,
-      total: payload.total,
+      total: payload.total, // Online product payment
+      amountPaidOnline: 0,
+      deliveryFee: estFee,
+      estimatedDeliveryFee: estFee,
+      deliveryMethod,
+      deliveryPaymentStatus,
+      deliveryPaymentMethod: payload.deliveryPaymentMethod || "CASH_TO_COURIER",
       paymentMethod: payload.paymentMethod || "PAYSTACK",
       deliveryAddress: payload.deliveryAddress,
       status: "PENDING_PAYMENT",
@@ -96,7 +114,7 @@ export class OrderService {
         category: "ORDERS",
         priority: "HIGH",
         title: `New Order Placed: #${orderNumber}`,
-        message: `Order #${orderNumber} for GH₵${payload.total.toFixed(2)} placed by ${payload.guestInformation?.name || "Customer"}.`,
+        message: `Order #${orderNumber} for GH₵${payload.total.toFixed(2)} (Products) placed by ${payload.guestInformation?.name || "Customer"}. Delivery: ${deliveryMethod.replace(/_/g, " ")}.`,
         entityType: "ORDER",
         entityId: orderNumber,
         actionUrl: `/admin/orders/${orderNumber}`,
@@ -130,6 +148,7 @@ export class OrderService {
 
     order.paymentId = paymentId as unknown as typeof order.paymentId;
     order.status = "PAID";
+    order.amountPaidOnline = order.total;
 
     // Auto-create DeliveryOrder record
     try {
@@ -140,6 +159,7 @@ export class OrderService {
 
       const destinationAddress = [
         order.deliveryAddress.houseOrBuilding,
+        order.deliveryAddress.parcelStation ? `Station: ${order.deliveryAddress.parcelStation}` : null,
         order.deliveryAddress.area,
         order.deliveryAddress.city,
         order.deliveryAddress.region,
@@ -148,14 +168,30 @@ export class OrderService {
         .filter(Boolean)
         .join(", ");
 
+      const provider =
+        order.deliveryMethod === "YANGO_DOOR"
+          ? "YANGO"
+          : order.deliveryMethod === "NATIONWIDE_PARCEL"
+          ? "STATION_COURIER"
+          : "INTERNAL";
+
+      const initialStatus =
+        order.deliveryMethod === "SELF_PICKUP"
+          ? "PICKUP_PENDING"
+          : "AWAITING_COURIER";
+
       const deliveryOrder = await DeliveryOrder.create({
         orderId: order._id,
-        provider: "INTERNAL",
+        method: order.deliveryMethod || "YANGO_DOOR",
+        provider,
         pickupAddress,
         destinationAddress: destinationAddress || `${order.deliveryAddress.city}, ${order.deliveryAddress.region}`,
         destinationCoordinates: order.deliveryAddress.coordinates,
-        deliveryFee: order.deliveryFee,
-        status: "CREATED",
+        parcelStation: order.deliveryAddress.parcelStation,
+        deliveryFee: order.estimatedDeliveryFee || order.deliveryFee || 0,
+        estimatedFee: order.estimatedDeliveryFee || order.deliveryFee || 0,
+        deliveryPaymentStatus: order.deliveryPaymentStatus || "EXPECTED",
+        status: initialStatus,
       });
 
       order.deliveryId = deliveryOrder._id;

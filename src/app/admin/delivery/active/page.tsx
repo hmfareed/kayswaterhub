@@ -91,12 +91,21 @@ export default function ActiveDeliveriesPage() {
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <Link
-                    href={`/admin/orders/${d.orderId?._id}`}
-                    className="font-bold text-xs text-blue-600 hover:underline block"
-                  >
-                    Order #{d.orderId?.orderNumber || "ORD-XXXX"}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/orders/${d.orderId?._id}`}
+                      className="font-bold text-xs text-blue-600 hover:underline block"
+                    >
+                      Order #{d.orderId?.orderNumber || "ORD-XXXX"}
+                    </Link>
+                    <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-black rounded-full">
+                      {d.deliveryMethod === "YANGO_DOOR"
+                        ? "Yango Door"
+                        : d.deliveryMethod === "NATIONWIDE_PARCEL"
+                        ? "Nationwide Parcel"
+                        : "Pickup"}
+                    </span>
+                  </div>
                   <span className="text-[10px] text-slate-400 font-medium">
                     Assigned: {new Date(d.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
@@ -106,12 +115,22 @@ export default function ActiveDeliveriesPage() {
 
               {/* Destination */}
               <div className="p-3 bg-slate-50 rounded-xl space-y-1 text-xs">
-                <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[11px]">
-                  <MapPin className="w-3.5 h-3.5 text-purple-600" />
-                  <span>Destination: {d.deliveryAddress?.area || d.deliveryAddress?.city}</span>
+                <div className="flex items-center justify-between text-slate-500 font-bold text-[11px]">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-purple-600" />
+                    <span>Destination: {d.deliveryAddress?.area || d.deliveryAddress?.city}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400">({d.deliveryAddress?.region || "Accra"})</span>
                 </div>
+
+                {d.deliveryAddress?.parcelStation && (
+                  <p className="text-amber-900 font-bold text-[11px] pl-5">
+                    📍 Parcel Station: {d.deliveryAddress.parcelStation}
+                  </p>
+                )}
+
                 <p className="text-slate-800 font-semibold pl-5">
-                  {d.deliveryAddress?.streetAddress || d.deliveryAddress?.city}, {d.deliveryAddress?.region}
+                  {d.deliveryAddress?.houseOrBuilding || d.deliveryAddress?.streetAddress || d.deliveryAddress?.city}, {d.deliveryAddress?.region}
                 </p>
                 {d.deliveryAddress?.digitalAddress && (
                   <span className="font-mono text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-5 inline-block">
@@ -120,11 +139,35 @@ export default function ActiveDeliveriesPage() {
                 )}
               </div>
 
+              {/* Courier Fee & Payment Status */}
+              <div className="p-2.5 bg-blue-50/50 rounded-xl border border-blue-100 flex items-center justify-between text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-semibold block">Courier Delivery Fee</span>
+                  <span className="font-black text-slate-900">
+                    {formatCurrency(d.actualDeliveryFee || d.estimatedDeliveryFee || 0)}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-slate-400 font-semibold block">Delivery Payment</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                    d.deliveryPaymentStatus === "CONFIRMED" || d.deliveryPaymentStatus === "COLLECTED"
+                      ? "bg-emerald-100 text-emerald-800"
+                      : d.deliveryPaymentStatus === "DISPUTED"
+                      ? "bg-rose-100 text-rose-800"
+                      : "bg-amber-100 text-amber-800"
+                  }`}>
+                    {d.deliveryPaymentStatus || "EXPECTED"}
+                  </span>
+                </div>
+              </div>
+
               {/* Driver & Customer Contacts */}
               <div className="grid grid-cols-2 gap-3 text-xs pt-1 border-t border-slate-100">
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold block">Assigned Driver</span>
-                  <span className="font-bold text-slate-800">{d.driverName || "In-house Courier"}</span>
+                  <span className="text-[10px] text-slate-400 font-bold block">
+                    {d.courierProvider === "YANGO" ? "Yango Rider" : "Assigned Courier"}
+                  </span>
+                  <span className="font-bold text-slate-800">{d.driverName || "Courier"}</span>
                   <span className="text-[11px] text-blue-600 block">{d.driverPhone || "+233 24 000 0000"}</span>
                 </div>
                 <div>

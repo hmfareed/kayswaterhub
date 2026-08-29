@@ -92,8 +92,9 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Calculate Delivery Fee or Self Pickup
-    let deliveryFee = 0;
+    // 2. Determine Delivery Method & Calculate Estimated Delivery Fee
+    let deliveryMethod: "YANGO_DOOR" | "NATIONWIDE_PARCEL" | "SELF_PICKUP" = "YANGO_DOOR";
+    let estimatedDeliveryFee = 0;
     let zoneName = "Self Pickup (Depot Hub)";
     let distanceKm: number | undefined = undefined;
     let deliverySnapshot: any = undefined;
@@ -101,41 +102,55 @@ export async function POST(req: NextRequest) {
     // Total packs in cart for quantity-tier pricing
     const packQuantity = validatedItems.reduce((sum, item) => sum + item.quantity, 0);
 
-    if (!isPickup) {
-      const deliveryCalc = await resolveDeliveryFee({
-        coordinates: deliveryAddress?.coordinates,
-        region: deliveryAddress?.region || "Greater Accra",
-        city: deliveryAddress?.city || "Accra",
-        area: deliveryAddress?.area,
-        packQuantity,
-        subtotal,
-      });
+    if (isPickup) {
+      deliveryMethod = "SELF_PICKUP";
+    } else {
+      const region = deliveryAddress?.region || "Greater Accra";
+      const isGreaterAccra = region.toLowerCase().includes("greater accra") || region.toLowerCase() === "accra";
 
-      if (!deliveryCalc.isDeliverable) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: deliveryCalc.reason || "We are unable to deliver to this location.",
-          },
-          { status: 400 }
-        );
+      if (isGreaterAccra) {
+        deliveryMethod = "YANGO_DOOR";
+        const deliveryCalc = await resolveDeliveryFee({
+          coordinates: deliveryAddress?.coordinates,
+          region: "Greater Accra",
+          city: deliveryAddress?.city || "Accra",
+          area: deliveryAddress?.area,
+          packQuantity,
+          subtotal,
+        });
+
+        if (!deliveryCalc.isDeliverable) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: deliveryCalc.reason || "We are unable to deliver to this location.",
+            },
+            { status: 400 }
+          );
+        }
+
+        estimatedDeliveryFee = deliveryCalc.deliveryFee;
+        zoneName = deliveryCalc.zoneName;
+        distanceKm = deliveryCalc.distanceKm;
+        deliverySnapshot = deliveryCalc.snapshot;
+      } else {
+        // Nationwide Parcel Delivery
+        deliveryMethod = "NATIONWIDE_PARCEL";
+        zoneName = `${region} Parcel Station`;
+        estimatedDeliveryFee = 0; // Courier-determined fee, paid separately on collection
       }
-
-      deliveryFee = deliveryCalc.deliveryFee;
-      zoneName = deliveryCalc.zoneName;
-      distanceKm = deliveryCalc.distanceKm;
-      deliverySnapshot = deliveryCalc.snapshot;
     }
 
+    // 3. Online Payment Calculation: Product Subtotal - Discount (Delivery is paid separately to courier)
     const discount = 0;
-    const total = subtotal + deliveryFee - discount;
+    const onlineTotal = Math.max(0, subtotal - discount);
 
-    // 3. Create Pending Order
+    // 4. Create Pending Order
     const customerId = session?.user?.id;
     const guestInformation = {
       name: customerInfo?.name || session?.user?.name || "Customer",
       email: customerInfo?.email || session?.user?.email || "customer@khadyswater.com",
-      phone: customerInfo?.phone || session?.user?.phone || deliveryAddress.phone || "",
+      phone: customerInfo?.phone || session?.user?.phone || deliveryAddress?.phone || "",
     };
 
     const pendingOrderResult = await OrderService.createPendingOrder({
@@ -144,22 +159,28 @@ export async function POST(req: NextRequest) {
       items: validatedItems,
       subtotal,
       discount,
-      deliveryFee,
-      total,
+      deliveryFee: estimatedDeliveryFee,
+      estimatedDeliveryFee,
+      total: onlineTotal, // Paystack charges product amount only
+      amountPaidOnline: 0,
+      deliveryMethod,
+      deliveryPaymentStatus: isPickup ? "NOT_REQUIRED" : "EXPECTED",
+      deliveryPaymentMethod: "CASH_TO_COURIER",
       paymentMethod: paymentMethod || "PAYSTACK",
       deliveryAddress: {
-        fullName: deliveryAddress.fullName || guestInformation.name,
-        phone: deliveryAddress.phone || guestInformation.phone,
-        region: deliveryAddress.region,
-        city: deliveryAddress.city,
-        area: deliveryAddress.area,
-        digitalAddress: deliveryAddress.digitalAddress,
-        houseOrBuilding: deliveryAddress.houseOrBuilding,
-        landmark: deliveryAddress.landmark,
-        deliveryInstructions: deliveryAddress.deliveryInstructions,
-        coordinates: deliveryAddress.coordinates,
-        gpsAccuracy: deliveryAddress.gpsAccuracy,
-        addressSource: deliveryAddress.addressSource || "MANUAL",
+        fullName: deliveryAddress?.fullName || guestInformation.name,
+        phone: deliveryAddress?.phone || guestInformation.phone,
+        region: deliveryAddress?.region || "Greater Accra",
+        city: deliveryAddress?.city || "Accra",
+        area: deliveryAddress?.area,
+        digitalAddress: deliveryAddress?.digitalAddress,
+        houseOrBuilding: deliveryAddress?.houseOrBuilding,
+        landmark: deliveryAddress?.landmark,
+        deliveryInstructions: deliveryAddress?.deliveryInstructions,
+        parcelStation: deliveryAddress?.parcelStation,
+        coordinates: deliveryAddress?.coordinates,
+        gpsAccuracy: deliveryAddress?.gpsAccuracy,
+        addressSource: deliveryAddress?.addressSource || "MANUAL",
         distanceKm,
         zoneName,
         deliverySnapshot,
@@ -176,14 +197,14 @@ export async function POST(req: NextRequest) {
     const orderId = pendingOrderResult.orderId;
     const orderNumber = pendingOrderResult.orderNumber!;
 
-    // 4. Create Payment Record with Unique Reference
+    // 5. Create Payment Record with Unique Reference for Online Product Amount
     const reference = `PSK_${orderNumber}_${Date.now()}`;
 
     const payment = await Payment.create({
       orderId: new mongoose.Types.ObjectId(orderId),
       provider: "PAYSTACK",
       reference,
-      amount: total,
+      amount: onlineTotal, // Online product payment only
       currency: "GHS",
       method: "MOBILE_MONEY",
       status: "PENDING",
@@ -192,20 +213,22 @@ export async function POST(req: NextRequest) {
         orderNumber,
         customerId: customerId || "guest",
         deliveryZone: zoneName,
+        deliveryMethod,
+        estimatedDeliveryFee,
       },
       transactions: [],
     });
 
     await Order.findByIdAndUpdate(orderId, { paymentId: payment._id });
 
-    // 5. Initialize Paystack Transaction
+    // 6. Initialize Paystack Transaction for Product Amount Only
     const protocol = req.headers.get("x-forwarded-proto") || "http";
     const host = req.headers.get("host") || "localhost:3000";
     const callbackUrl = `${protocol}://${host}/orders/${orderId}?ref=${reference}`;
 
     const paymentInitResult = await paymentService.initiatePayment({
       reference,
-      amount: total,
+      amount: onlineTotal,
       email: guestInformation.email,
       phone: guestInformation.phone,
       callbackUrl,
@@ -222,9 +245,11 @@ export async function POST(req: NextRequest) {
         orderId,
         orderNumber,
         reference,
-        total,
+        total: onlineTotal, // Online product payment
         subtotal,
-        deliveryFee,
+        deliveryFee: estimatedDeliveryFee,
+        estimatedDeliveryFee,
+        deliveryMethod,
         distanceKm,
         zoneName,
         authorizationUrl: paymentInitResult.authorizationUrl,

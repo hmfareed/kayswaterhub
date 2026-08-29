@@ -228,6 +228,81 @@ export async function updateOrderStatus(
   return order;
 }
 
+export async function updateOrderCourierDetails(
+  orderId: string,
+  data: {
+    courierProvider?: string;
+    courierName?: string;
+    courierPhone?: string;
+    actualDeliveryFee?: number;
+    deliveryPaymentStatus?: string;
+    deliveryPaymentMethod?: string;
+    trackingReference?: string;
+    deliveryStatus?: string;
+  },
+  adminUser?: { id: string; name: string }
+) {
+  await connectDB();
+  const order = await Order.findById(orderId);
+  if (!order) throw new Error("Order not found");
+
+  if (data.courierProvider !== undefined) order.courierProvider = data.courierProvider as any;
+  if (data.courierName !== undefined) order.courierName = data.courierName;
+  if (data.courierPhone !== undefined) order.courierPhone = data.courierPhone;
+  if (data.actualDeliveryFee !== undefined) order.actualDeliveryFee = data.actualDeliveryFee;
+  if (data.deliveryPaymentStatus !== undefined) order.deliveryPaymentStatus = data.deliveryPaymentStatus as any;
+  if (data.deliveryPaymentMethod !== undefined) order.deliveryPaymentMethod = data.deliveryPaymentMethod as any;
+  if (data.trackingReference !== undefined) order.trackingReference = data.trackingReference;
+
+  // Add timeline note
+  order.timeline.push({
+    status: order.status,
+    title: "Courier & Delivery Details Updated",
+    description: `Courier details updated: Provider=${order.courierProvider || "N/A"}, Fee=GH₵${order.actualDeliveryFee || order.estimatedDeliveryFee || 0}, DeliveryPaymentStatus=${order.deliveryPaymentStatus || "EXPECTED"}`,
+    actor: adminUser?.name ? `ADMIN (${adminUser.name})` : "ADMIN",
+    timestamp: new Date(),
+  });
+
+  await order.save();
+
+  // If order has a linked DeliveryOrder, keep it synced
+  if (order.deliveryId) {
+    try {
+      const DeliveryOrder = mongoose.models.DeliveryOrder;
+      if (DeliveryOrder) {
+        const updatePayload: Record<string, unknown> = {};
+        if (data.courierProvider) updatePayload.provider = data.courierProvider;
+        if (data.courierName || data.courierPhone) {
+          updatePayload.assignedRider = {
+            name: data.courierName || order.courierName,
+            phone: data.courierPhone || order.courierPhone,
+          };
+        }
+        if (data.actualDeliveryFee !== undefined) updatePayload.actualFee = data.actualDeliveryFee;
+        if (data.deliveryPaymentStatus) updatePayload.deliveryPaymentStatus = data.deliveryPaymentStatus;
+        if (data.trackingReference) updatePayload.trackingReference = data.trackingReference;
+        if (data.deliveryStatus) updatePayload.status = data.deliveryStatus;
+
+        await DeliveryOrder.findByIdAndUpdate(order.deliveryId, { $set: updatePayload });
+      }
+    } catch (deliveryErr) {
+      console.warn("[updateOrderCourierDetails] Error syncing DeliveryOrder:", deliveryErr);
+    }
+  }
+
+  // Audit log
+  await logAdminAction({
+    performedBy: adminUser?.id,
+    action: "ORDER_COURIER_UPDATED",
+    resource: "Order",
+    resourceId: order._id.toString(),
+    description: `Order #${order.orderNumber} courier & delivery details updated`,
+    changes: [{ field: "courierDetails", before: null, after: data }],
+  });
+
+  return order;
+}
+
 function getTimelineTitleForStatus(status: string): string {
   switch (status) {
     case "PAID":

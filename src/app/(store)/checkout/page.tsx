@@ -113,6 +113,7 @@ export default function CheckoutPage() {
     houseAddress: "",
     landmark: "",
     deliveryInstructions: "",
+    parcelStation: "",
   });
 
   // Geolocation State
@@ -131,8 +132,8 @@ export default function CheckoutPage() {
   // Delivery Calculation State
   const [deliveryCalc, setDeliveryCalc] = useState<DeliveryCalculationData>({
     isDeliverable: true,
-    deliveryFee: 20,
-    originalFee: 20,
+    deliveryFee: 25,
+    originalFee: 25,
     distanceKm: undefined,
     zoneName: "Greater Accra Standard",
     pricingType: "FLAT",
@@ -145,6 +146,9 @@ export default function CheckoutPage() {
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Helper boolean: Greater Accra or Nationwide
+  const isGreaterAccra = formData.region === "Greater Accra";
 
   // Load Saved Addresses — only from the server (session-scoped, never from localStorage)
   useEffect(() => {
@@ -302,12 +306,11 @@ export default function CheckoutPage() {
     setShowSearch(false);
   };
 
-
   // Recalculate delivery fee when location, region or subtotal change
   const packQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const calculateDelivery = useCallback(async () => {
-    if (items.length === 0 || fulfillmentType === "PICKUP") return;
+    if (items.length === 0 || fulfillmentType === "PICKUP" || !isGreaterAccra) return;
     setIsCalculatingDelivery(true);
 
     try {
@@ -335,17 +338,16 @@ export default function CheckoutPage() {
     } finally {
       setIsCalculatingDelivery(false);
     }
-  }, [gpsCoordinates, gpsAccuracy, formData.region, formData.city, formData.area, packQuantity, subtotal, items.length, fulfillmentType]);
-
+  }, [gpsCoordinates, gpsAccuracy, formData.region, formData.city, formData.area, packQuantity, subtotal, items.length, fulfillmentType, isGreaterAccra]);
 
   useEffect(() => {
-    if (fulfillmentType === "DELIVERY") {
+    if (fulfillmentType === "DELIVERY" && isGreaterAccra) {
       const timer = setTimeout(() => {
         calculateDelivery();
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [calculateDelivery, fulfillmentType]);
+  }, [calculateDelivery, fulfillmentType, isGreaterAccra]);
 
   const handleRegionChange = (region: string) => {
     setSelectedRegion(region);
@@ -375,9 +377,6 @@ export default function CheckoutPage() {
       isDefault: savedAddresses.length === 0,
     };
 
-    // Address is saved to the server below — no localStorage write needed
-
-    // If logged in, send to backend address API
     if (session?.user) {
       fetch("/api/account/addresses", {
         method: "POST",
@@ -416,20 +415,27 @@ export default function CheckoutPage() {
     }
 
     if (fulfillmentType === "DELIVERY") {
-      if (!formData.houseAddress.trim() && !formData.digitalAddress.trim() && !formData.city.trim()) {
-        setCheckoutError("Please provide your city and building/street or digital address.");
-        return;
-      }
+      if (isGreaterAccra) {
+        if (!formData.houseAddress.trim() && !formData.digitalAddress.trim() && !formData.city.trim()) {
+          setCheckoutError("Please provide your delivery city, area, and street/digital address.");
+          return;
+        }
 
-      if (!deliveryCalc.isDeliverable) {
-        setCheckoutError(deliveryCalc.reason || "Delivery is unavailable to the selected location.");
-        return;
+        if (!deliveryCalc.isDeliverable) {
+          setCheckoutError(deliveryCalc.reason || "Delivery is unavailable to the selected location.");
+          return;
+        }
+      } else {
+        // Nationwide delivery checks
+        if (!formData.city.trim()) {
+          setCheckoutError("Please specify your destination city/town.");
+          return;
+        }
       }
     }
 
     setIsSubmitting(true);
 
-    // If customer opted to save address, save it now
     if (saveAddressForFuture && fulfillmentType === "DELIVERY") {
       saveAddressLocally();
     }
@@ -461,14 +467,15 @@ export default function CheckoutPage() {
                 fullName: formData.fullName,
                 phone: formData.phone,
                 region: formData.region,
-                city: formData.city || "Accra",
+                city: formData.city || (isGreaterAccra ? "Accra" : ""),
                 area: formData.area,
                 digitalAddress: formData.digitalAddress,
                 houseOrBuilding: formData.houseAddress,
                 landmark: formData.landmark,
                 deliveryInstructions: formData.deliveryInstructions,
-                coordinates: gpsCoordinates,
-                gpsAccuracy: gpsAccuracy ?? undefined,
+                parcelStation: formData.parcelStation,
+                coordinates: isGreaterAccra ? gpsCoordinates : undefined,
+                gpsAccuracy: isGreaterAccra ? (gpsAccuracy ?? undefined) : undefined,
                 addressSource,
               },
 
@@ -494,8 +501,6 @@ export default function CheckoutPage() {
 
       const { authorizationUrl, orderId, reference } = result.data;
 
-      // Order is persisted in the database — no localStorage write to avoid cross-account leakage
-
       // Clear cart
       clearCart();
 
@@ -512,16 +517,8 @@ export default function CheckoutPage() {
     }
   };
 
-  const effectiveDeliveryFee =
-    fulfillmentType === "PICKUP"
-      ? 0
-      : deliveryCalc.isDeliverable
-      ? deliveryCalc.isFreeDelivery
-        ? 0
-        : deliveryCalc.deliveryFee
-      : 0;
-
-  const effectiveTotal = subtotal + effectiveDeliveryFee;
+  // Online total is subtotal ONLY (delivery fee is paid separately to courier)
+  const onlineTotalToPay = subtotal;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-blue-500 selection:text-white">
@@ -620,8 +617,12 @@ export default function CheckoutPage() {
                     <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
                       <Truck className="w-4 h-4" />
                     </div>
-                    <span className="font-black text-sm text-slate-900">Door Delivery</span>
-                    <span className="text-[11px] font-medium text-slate-500">Delivered directly to your address</span>
+                    <span className="font-black text-sm text-slate-900">
+                      {isGreaterAccra ? "Yango Door Delivery" : "Nationwide Delivery"}
+                    </span>
+                    <span className="text-[11px] font-medium text-slate-500">
+                      {isGreaterAccra ? "Accra Door-to-Door" : "All 16 Regions (Parcel Station)"}
+                    </span>
                   </button>
 
                   <button
@@ -642,7 +643,7 @@ export default function CheckoutPage() {
                         FREE
                       </span>
                     </div>
-                    <span className="text-[11px] font-medium text-slate-500">Collect at depot / hub</span>
+                    <span className="text-[11px] font-medium text-slate-500">Collect at East Legon Hub</span>
                   </button>
                 </div>
 
@@ -722,50 +723,62 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Door Delivery Address Fields */}
+                {/* Door / Parcel Delivery Address Fields */}
                 {fulfillmentType === "DELIVERY" && (
                   <div className="space-y-4 pt-3 border-t border-slate-100">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-xs text-slate-500 uppercase tracking-wider">
-                        Doorstep Delivery Address
-                      </h3>
-
-                      {/* Location action buttons */}
-                      <div className="flex items-center gap-2">
-                        {/* Address Search */}
-                        <button
-                          type="button"
-                          onClick={() => { setShowSearch(!showSearch); setSearchResults([]); setSearchQuery(""); }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
-                        >
-                          <Search className="w-3.5 h-3.5" />
-                          <span>Search</span>
-                        </button>
-
-                        {/* GPS Button */}
-                        <button
-                          type="button"
-                          onClick={handleDetectLocation}
-                          disabled={isLocating}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
-                        >
-                          {isLocating ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                              <span>Detecting...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Navigation className="w-3.5 h-3.5" />
-                              <span>Use GPS</span>
-                            </>
-                          )}
-                        </button>
+                      <div className="space-y-0.5">
+                        <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <span>{isGreaterAccra ? "Yango Door Delivery Details" : "Nationwide Parcel Destination"}</span>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                            {isGreaterAccra ? "Greater Accra" : `${formData.region}`}
+                          </span>
+                        </h3>
+                        <span className="text-[11px] text-slate-400 font-medium block">
+                          {isGreaterAccra
+                            ? "Delivered directly by Yango rider. Estimated fee payable on drop-off."
+                            : "Sent via courier to your preferred regional parcel station / depot."}
+                        </span>
                       </div>
+
+                      {/* Location action buttons (Only for Greater Accra) */}
+                      {isGreaterAccra && (
+                        <div className="flex items-center gap-2">
+                          {/* Address Search */}
+                          <button
+                            type="button"
+                            onClick={() => { setShowSearch(!showSearch); setSearchResults([]); setSearchQuery(""); }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
+                          >
+                            <Search className="w-3.5 h-3.5" />
+                            <span>Search</span>
+                          </button>
+
+                          {/* GPS Button */}
+                          <button
+                            type="button"
+                            onClick={handleDetectLocation}
+                            disabled={isLocating}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                          >
+                            {isLocating ? (
+                              <>
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                <span>Detecting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Navigation className="w-3.5 h-3.5" />
+                                <span>Use GPS</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Address Search Box */}
-                    {showSearch && (
+                    {/* Address Search Box (Accra) */}
+                    {isGreaterAccra && showSearch && (
                       <div className="relative">
                         <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl">
                           <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
@@ -773,7 +786,7 @@ export default function CheckoutPage() {
                             type="text"
                             value={searchQuery}
                             onChange={(e) => handleAddressSearch(e.target.value)}
-                            placeholder="Search your area, street or landmark..."
+                            placeholder="Search your area, street or landmark in Accra..."
                             autoFocus
                             className="flex-1 text-xs bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
                           />
@@ -801,7 +814,7 @@ export default function CheckoutPage() {
                     )}
 
                     {/* GPS Status Banner */}
-                    {locationStatus && (
+                    {isGreaterAccra && locationStatus && (
                       <div
                         className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border ${
                           gpsCoordinates
@@ -818,17 +831,6 @@ export default function CheckoutPage() {
                             ~{gpsAccuracy}m
                           </span>
                         )}
-                      </div>
-                    )}
-
-                    {/* GPS accuracy warning */}
-                    {deliveryCalc.gpsAccuracyWarning && gpsCoordinates && (
-                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                        <TriangleAlert className="w-4 h-4 flex-shrink-0 text-amber-500 mt-0.5" />
-                        <span>
-                          <strong>Low GPS accuracy</strong> — your location signal is weak. Please confirm your
-                          region, city, and area below to ensure the correct delivery fee.
-                        </span>
                       </div>
                     )}
 
@@ -883,6 +885,7 @@ export default function CheckoutPage() {
                                 area: "",
                                 digitalAddress: "",
                                 landmark: "",
+                                parcelStation: "",
                               }));
                               setGpsCoordinates(null);
                               setLocationStatus(null);
@@ -904,7 +907,7 @@ export default function CheckoutPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                            Region *
+                            Destination Region *
                           </label>
                           <select
                             value={formData.region}
@@ -913,7 +916,7 @@ export default function CheckoutPage() {
                           >
                             {GHANA_REGIONS.map((r) => (
                               <option key={r} value={r}>
-                                {r} Region
+                                {r} Region {r === "Greater Accra" ? "(Yango Door Delivery)" : "(Nationwide Parcel)"}
                               </option>
                             ))}
                           </select>
@@ -928,55 +931,90 @@ export default function CheckoutPage() {
                             required
                             value={formData.city}
                             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                            placeholder="e.g. Accra, Tema, Kumasi"
+                            placeholder={isGreaterAccra ? "e.g. Accra, Tema, Madina" : "e.g. Kumasi, Takoradi, Tamale, Sunyani"}
                             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
                           />
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                            Area / Neighborhood
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.area}
-                            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                            placeholder="e.g. East Legon, Spintex, Osu"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
-                          />
-                        </div>
+                      {/* Greater Accra specific fields */}
+                      {isGreaterAccra ? (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                                Area / Neighborhood
+                              </label>
+                              <input
+                                type="text"
+                                value={formData.area}
+                                onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                                placeholder="e.g. East Legon, Spintex, Osu, Cantonments"
+                                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                              />
+                            </div>
 
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                            GhanaPost GPS Digital Address
-                          </label>
-                          <input
-                            type="text"
-                            value={formData.digitalAddress}
-                            onChange={(e) =>
-                              setFormData({ ...formData, digitalAddress: e.target.value.toUpperCase() })
-                            }
-                            placeholder="e.g. GA-183-9022"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-mono placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden uppercase"
-                          />
-                        </div>
-                      </div>
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                                GhanaPost GPS Digital Address (Optional)
+                              </label>
+                              <input
+                                type="text"
+                                value={formData.digitalAddress}
+                                onChange={(e) =>
+                                  setFormData({ ...formData, digitalAddress: e.target.value.toUpperCase() })
+                                }
+                                placeholder="e.g. GA-183-9022"
+                                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-mono placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden uppercase"
+                              />
+                            </div>
+                          </div>
 
-                      <div>
-                        <label className="text-[11px] font-bold text-slate-700 block mb-1">
-                          Street / House / Building Address *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.houseAddress}
-                          onChange={(e) => setFormData({ ...formData, houseAddress: e.target.value })}
-                          placeholder="e.g. No. 14 Boundary Road, Near Shell Station"
-                          className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
-                        />
-                      </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                              Street / House / Building Address *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.houseAddress}
+                              onChange={(e) => setFormData({ ...formData, houseAddress: e.target.value })}
+                              placeholder="e.g. House No. 24, Boundary Road, Near Shell Station"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                            />
+                          </div>
+                        </>
+                      ) : (
+                        /* Nationwide Parcel specific fields */
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                              Preferred Parcel Station / Bus Terminal / Depot *
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              value={formData.parcelStation}
+                              onChange={(e) => setFormData({ ...formData, parcelStation: e.target.value })}
+                              placeholder="e.g. VIP Bus Station (Asafo, Kumasi) / STC Terminal / Imperial Express"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                              Destination Area / Suburb in {formData.region}
+                            </label>
+                            <input
+                              type="text"
+                              value={formData.area}
+                              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                              placeholder="e.g. Adum, Bantama, Market Circle, Tamale Central"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                            />
+                          </div>
+                        </div>
+                      )}
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
@@ -987,7 +1025,7 @@ export default function CheckoutPage() {
                             type="text"
                             value={formData.landmark}
                             onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                            placeholder="e.g. Opposite A&C Mall"
+                            placeholder="e.g. Opposite Total Filling Station"
                             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
                           />
                         </div>
@@ -1002,7 +1040,7 @@ export default function CheckoutPage() {
                             onChange={(e) =>
                               setFormData({ ...formData, deliveryInstructions: e.target.value })
                             }
-                            placeholder="e.g. Call when at the security gate"
+                            placeholder="e.g. Call my recipient phone before arrival"
                             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
                           />
                         </div>
@@ -1027,7 +1065,7 @@ export default function CheckoutPage() {
                 )}
               </div>
 
-              {/* Step 2: Live Location-Based Delivery Calculation (Only for Door Delivery) */}
+              {/* Step 2: Live Location-Based Delivery Calculation & Courier Fee Information */}
               {fulfillmentType === "DELIVERY" && (
                 <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -1037,68 +1075,88 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <h2 className="font-black text-sm uppercase tracking-wide text-slate-900">
-                          Delivery Calculation &amp; Estimate
+                          {isGreaterAccra ? "Yango Delivery Fee Estimate" : "Nationwide Parcel Handling"}
                         </h2>
                         <span className="text-[11px] text-slate-400 font-medium">
-                          Calculated from East Legon Warehouse Hub
+                          {isGreaterAccra
+                            ? "Calculated from East Legon Warehouse Hub"
+                            : `Inter-region parcel delivery to ${formData.region}`}
                         </span>
                       </div>
                     </div>
 
-                    {isCalculatingDelivery && (
+                    {isCalculatingDelivery && isGreaterAccra && (
                       <span className="text-[11px] text-blue-600 font-bold flex items-center gap-1">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Calculating...</span>
+                        <span>Estimating fee...</span>
                       </span>
                     )}
                   </div>
 
-                  {deliveryCalc.isDeliverable ? (
-                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="space-y-0.5">
-                          <span className="font-black text-sm text-slate-900 block">
-                            {deliveryCalc.zoneName}
-                          </span>
-                          <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                            {deliveryCalc.distanceKm !== undefined ? (
-                              <span>📍 {deliveryCalc.distanceKm} km from warehouse</span>
-                            ) : (
-                              <span>📍 Regional Delivery</span>
-                            )}
-                            <span>•</span>
-                            <span className="flex items-center gap-1 text-slate-700 font-bold">
-                              <Clock className="w-3.5 h-3.5 text-blue-600" />
-                              {deliveryCalc.estimatedDeliveryTime}
+                  {isGreaterAccra ? (
+                    deliveryCalc.isDeliverable ? (
+                      <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="space-y-0.5">
+                            <span className="font-black text-sm text-slate-900 block">
+                              {deliveryCalc.zoneName}
                             </span>
+                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                              {deliveryCalc.distanceKm !== undefined ? (
+                                <span>📍 {deliveryCalc.distanceKm} km from warehouse</span>
+                              ) : (
+                                <span>📍 Greater Accra Service Area</span>
+                              )}
+                              <span>•</span>
+                              <span className="flex items-center gap-1 text-slate-700 font-bold">
+                                <Clock className="w-3.5 h-3.5 text-blue-600" />
+                                {deliveryCalc.estimatedDeliveryTime}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="text-left sm:text-right">
+                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                              Estimated Courier Fee
+                            </div>
+                            <div className="font-black text-base text-blue-900">
+                              {formatCurrency(deliveryCalc.deliveryFee)}
+                            </div>
                           </div>
                         </div>
 
-                        <div className="text-left sm:text-right">
-                          {deliveryCalc.isFreeDelivery ? (
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">
-                              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>FREE DELIVERY</span>
-                            </div>
-                          ) : (
-                            <div className="font-black text-base text-slate-900">
-                              {formatCurrency(deliveryCalc.deliveryFee)}
-                            </div>
-                          )}
+                        <div className="p-2.5 rounded-xl bg-white/80 border border-blue-200 text-[11px] text-blue-900 font-medium flex items-center gap-2">
+                          <Truck className="w-4 h-4 text-blue-600 shrink-0" />
+                          <span>
+                            <strong>Payment Notice:</strong> This estimated fee is <strong>paid separately to the Yango rider</strong> upon delivery. Your online Paystack checkout covers products only.
+                          </span>
                         </div>
                       </div>
-
-                      {deliveryCalc.isFreeDelivery && (
-                        <p className="text-[11px] text-emerald-700 font-semibold pt-1 border-t border-emerald-200/60">
-                          🎉 Free delivery unlocked! (Orders above{" "}
-                          {formatCurrency(deliveryCalc.freeDeliveryThreshold || 350)})
-                        </p>
-                      )}
-                    </div>
+                    ) : (
+                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs space-y-1">
+                        <span className="font-bold block text-rose-900">Delivery Unavailable</span>
+                        <p>{deliveryCalc.reason}</p>
+                      </div>
+                    )
                   ) : (
-                    <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs space-y-1">
-                      <span className="font-bold block text-rose-900">Delivery Unavailable</span>
-                      <p>{deliveryCalc.reason}</p>
+                    /* Nationwide Information Card */
+                    <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0">
+                          <Truck className="w-4 h-4" />
+                        </div>
+                        <div className="space-y-1">
+                          <h4 className="font-black text-sm text-amber-950">
+                            Inter-Regional Parcel Dispatch to {formData.region}
+                          </h4>
+                          <p className="text-xs text-amber-900 leading-relaxed">
+                            Your order will be securely packaged at our central depot and dispatched via registered courier / bus parcel service to {formData.city || "your destination town"}.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="p-2.5 rounded-xl bg-white/80 border border-amber-200 text-[11px] text-amber-900 font-medium">
+                        💡 <strong>Parcel Fee Payment:</strong> Courier delivery fee is determined by the transport operator and paid separately upon parcel collection at the station.
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1112,10 +1170,10 @@ export default function CheckoutPage() {
                   </div>
                   <div>
                     <h2 className="font-black text-sm uppercase tracking-wide text-slate-900">
-                      Payment Gateway
+                      Product Payment Gateway
                     </h2>
                     <span className="text-[11px] text-slate-400 font-medium">
-                      Secure checkout powered by Paystack
+                      Secure checkout for your water products powered by Paystack
                     </span>
                   </div>
                 </div>
@@ -1153,7 +1211,7 @@ export default function CheckoutPage() {
                   <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-start gap-2.5">
                     <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
-                      After clicking <strong>Pay with Paystack</strong>, you will be securely redirected to authorize your payment prompt or card. Your water order is immediately reserved and confirmed.
+                      After clicking <strong>Pay {formatCurrency(onlineTotalToPay)} with Paystack</strong>, you will be securely redirected to complete your product payment.
                     </span>
                   </div>
                 </div>
@@ -1221,44 +1279,66 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="pt-3 border-t border-slate-100 space-y-2 text-xs">
+                <div className="pt-3 border-t border-slate-100 space-y-2.5 text-xs">
                   <div className="flex justify-between text-slate-600">
-                    <span>Subtotal</span>
+                    <span>Products Subtotal</span>
                     <span className="font-bold text-slate-900">{formatCurrency(subtotal)}</span>
                   </div>
 
-                  <div className="flex justify-between text-slate-600">
-                    <div className="flex items-center gap-1">
-                      <span>Fulfillment</span>
+                  <div className="flex justify-between items-start text-slate-600">
+                    <div>
+                      <span>Delivery Fee</span>
+                      <span className="block text-[10px] text-slate-400 font-medium">
+                        {fulfillmentType === "PICKUP"
+                          ? "Self-collection at depot"
+                          : isGreaterAccra
+                          ? "Paid separately to Yango rider"
+                          : "Paid separately upon parcel collection"}
+                      </span>
+                    </div>
+                    <div className="text-right">
                       {fulfillmentType === "PICKUP" ? (
-                        <span className="text-[10px] text-emerald-600 font-bold">(Self Pickup)</span>
+                        <span className="font-bold text-emerald-600">FREE</span>
+                      ) : isGreaterAccra ? (
+                        <span className="font-bold text-blue-900">
+                          Est. {formatCurrency(deliveryCalc.deliveryFee)}
+                        </span>
                       ) : (
-                        deliveryCalc.distanceKm !== undefined && (
-                          <span className="text-[10px] text-slate-400">({deliveryCalc.distanceKm} km)</span>
-                        )
+                        <span className="font-bold text-amber-700">Courier Rate</span>
                       )}
                     </div>
-                    {fulfillmentType === "PICKUP" ? (
-                      <span className="font-bold text-emerald-600">FREE</span>
-                    ) : deliveryCalc.isFreeDelivery ? (
-                      <span className="font-bold text-emerald-600">FREE</span>
-                    ) : (
-                      <span className="font-bold text-slate-900">
-                        {formatCurrency(deliveryCalc.deliveryFee)}
-                      </span>
-                    )}
                   </div>
 
-                  <div className="pt-3 border-t border-slate-200 flex justify-between text-base font-black text-slate-900">
-                    <span>Total</span>
-                    <span className="text-blue-600 text-lg">{formatCurrency(effectiveTotal)}</span>
+                  <div className="pt-3 border-t border-slate-200 space-y-1">
+                    <div className="flex justify-between text-base font-black text-slate-900">
+                      <span>Total Due Online</span>
+                      <span className="text-blue-600 text-lg">{formatCurrency(onlineTotalToPay)}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 block font-medium">
+                      Covers purchased products. Courier fee paid directly on delivery.
+                    </span>
                   </div>
+                </div>
+
+                {/* Reassurance delivery note */}
+                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/80 text-[11px] text-blue-900 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-950">
+                    <Truck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>Courier Payment Reminder</span>
+                  </div>
+                  <p className="text-slate-600 leading-normal">
+                    {fulfillmentType === "PICKUP"
+                      ? "Pick up your water packages free of charge at our East Legon hub."
+                      : isGreaterAccra
+                      ? "Paystack processes product payment online. Please pay the estimated Yango delivery fee directly to the rider."
+                      : "Paystack processes product payment online. Transport/parcel fee is payable at the parcel station."}
+                  </p>
                 </div>
 
                 {/* CTA Button */}
                 <button
                   type="submit"
-                  disabled={isSubmitting || (fulfillmentType === "DELIVERY" && !deliveryCalc.isDeliverable)}
+                  disabled={isSubmitting || (fulfillmentType === "DELIVERY" && isGreaterAccra && !deliveryCalc.isDeliverable)}
                   className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-98 disabled:opacity-75 disabled:cursor-not-allowed text-white font-black text-sm rounded-2xl shadow-xl shadow-blue-600/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {isSubmitting ? (
@@ -1269,14 +1349,14 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       <Lock className="w-4 h-4" />
-                      <span>Pay {formatCurrency(effectiveTotal)} with Paystack</span>
+                      <span>Pay {formatCurrency(onlineTotalToPay)} with Paystack</span>
                     </>
                   )}
                 </button>
 
                 <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium pt-1">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>Guaranteed safe and secure checkout</span>
+                  <span>Guaranteed safe &amp; SSL encrypted Paystack gateway</span>
                 </div>
               </div>
             </div>

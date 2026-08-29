@@ -27,17 +27,46 @@ export type PaymentStatus =
 export type PaymentMethod = "MOBILE_MONEY" | "BANK";
 
 // ─── Delivery ─────────────────────────────────────────────────────────────────
+export type DeliveryMethod =
+  | "YANGO_DOOR"
+  | "NATIONWIDE_PARCEL"
+  | "SELF_PICKUP";
+
+export type DeliveryPaymentStatus =
+  | "NOT_REQUIRED"
+  | "EXPECTED"
+  | "COLLECTED"
+  | "CONFIRMED"
+  | "DISPUTED"
+  | "FAILED";
+
+export type DeliveryPaymentMethod =
+  | "CASH_TO_COURIER"
+  | "MOMO_TO_COURIER"
+  | "NOT_APPLICABLE";
+
 export type DeliveryStatus =
   | "PENDING"
-  | "CREATED"
-  | "DRIVER_ASSIGNED"
+  | "AWAITING_COURIER"
+  | "COURIER_ASSIGNED"
+  | "PICKUP_PENDING"
   | "PICKED_UP"
+  | "IN_TRANSIT"
+  | "AT_STATION"
   | "OUT_FOR_DELIVERY"
   | "DELIVERED"
   | "FAILED"
-  | "CANCELLED";
+  | "RETURNED"
+  | "CANCELLED"
+  // Legacy aliases
+  | "CREATED"
+  | "DRIVER_ASSIGNED";
 
-export type DeliveryProvider = "YANGO" | "INTERNAL";
+export type DeliveryProvider =
+  | "YANGO"
+  | "MANUAL_RIDER"
+  | "STATION_COURIER"
+  | "INTERNAL";
 
 // ─── Inventory ────────────────────────────────────────────────────────────────
 export type InventoryTransactionType =

@@ -147,6 +147,12 @@ interface Order {
   statusLabel: string;
   statusColor: string;
   total: number;
+  subtotal?: number;
+  deliveryFee?: number;
+  estimatedDeliveryFee?: number;
+  deliveryMethod?: string;
+  deliveryPaymentStatus?: string;
+  parcelStation?: string;
   items: OrderItem[];
   rider?: { name: string; phone: string; eta: string; vehicle: string };
 }
@@ -317,6 +323,20 @@ function AccountContent() {
             statusLabel: o.status || "Order Placed",
             statusColor: "bg-blue-50 text-blue-700 border-blue-200",
             total: o.total || 0,
+            subtotal: o.subtotal || o.total || 0,
+            deliveryFee: o.deliveryFee || 0,
+            estimatedDeliveryFee: o.estimatedDeliveryFee || o.deliveryFee || 0,
+            deliveryMethod: o.deliveryMethod || "YANGO_DOOR",
+            deliveryPaymentStatus: o.deliveryPaymentStatus || "EXPECTED",
+            parcelStation: o.deliveryAddress?.parcelStation,
+            rider: o.courierName
+              ? {
+                  name: o.courierName,
+                  phone: o.courierPhone || "024 000 0000",
+                  eta: "On route",
+                  vehicle: o.courierProvider === "YANGO" ? "Yango Dispatch" : "Courier",
+                }
+              : undefined,
             items: (o.items || []).map((i: any) => ({
               name: i.productName || i.name || "Water Pack",
               quantity: i.quantity || 1,
@@ -1566,9 +1586,34 @@ function AccountContent() {
                           </div>
                           {isExpanded && (
                             <div className={`border-t px-4 pb-4 pt-3 space-y-2.5 ${isDarkMode ? "border-slate-800 bg-slate-900/60" : "border-slate-100 bg-slate-50"}`}>
+                              {/* Delivery Method & Fee breakdown */}
+                              <div className="p-3 rounded-xl bg-blue-50/60 dark:bg-slate-800 border border-blue-100 dark:border-slate-700 text-xs space-y-1">
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-slate-700 dark:text-slate-200">
+                                    {ord.deliveryMethod === "YANGO_DOOR"
+                                      ? "Yango Door Delivery"
+                                      : ord.deliveryMethod === "NATIONWIDE_PARCEL"
+                                      ? "Nationwide Parcel Delivery"
+                                      : "Self Pickup"}
+                                  </span>
+                                  <span className="font-black text-blue-600">
+                                    {ord.deliveryMethod === "SELF_PICKUP"
+                                      ? "FREE"
+                                      : ord.deliveryMethod === "YANGO_DOOR"
+                                      ? `Est. GH₵${(ord.estimatedDeliveryFee || 25).toFixed(2)}`
+                                      : "Courier Rate"}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  {ord.deliveryMethod === "SELF_PICKUP"
+                                    ? "Collect your packages free at East Legon Hub."
+                                    : "Delivery fee is paid directly to the courier upon delivery."}
+                                </p>
+                              </div>
+
                               {ord.rider ? (
                                 <>
-                                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Rider Details</p>
+                                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Courier / Rider Details</p>
                                   <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold text-sm shrink-0">{ord.rider.name.charAt(0)}</div>
                                     <div className="flex-1">
@@ -1579,18 +1624,15 @@ function AccountContent() {
                                       <Phone className="w-4 h-4" />
                                     </a>
                                   </div>
-                                  <div className={`p-3 rounded-xl text-xs font-medium ${isDarkMode ? "bg-slate-800 text-slate-200" : "bg-amber-50 text-amber-800"}`}>
-                                    ⏱ Your rider is approximately <strong>{ord.rider.eta}</strong> away.
-                                  </div>
-                                  <button className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors">
-                                    <Navigation className="w-3.5 h-3.5" /> View Live Location
-                                  </button>
                                 </>
-                              ) : (
-                                <div className="text-center py-4 text-slate-400 text-xs">
-                                  {ord.status === "delivered" ? "✅ This order has been delivered." : "Rider details will appear once your order is out for delivery."}
-                                </div>
-                              )}
+                              ) : null}
+
+                              <Link
+                                href={`/orders/${ord.id || ord._id}`}
+                                className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors mt-2"
+                              >
+                                <Navigation className="w-3.5 h-3.5" /> View Live Order Tracking
+                              </Link>
                             </div>
                           )}
                         </div>

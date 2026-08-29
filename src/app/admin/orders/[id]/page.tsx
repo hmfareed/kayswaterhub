@@ -43,6 +43,16 @@ export default function AdminOrderDetailsPage({
   const [statusNote, setStatusNote] = useState("");
   const [error, setError] = useState("");
 
+  // Courier state
+  const [courierProvider, setCourierProvider] = useState("YANGO");
+  const [courierName, setCourierName] = useState("");
+  const [courierPhone, setCourierPhone] = useState("");
+  const [actualDeliveryFee, setActualDeliveryFee] = useState<number>(0);
+  const [deliveryPaymentStatus, setDeliveryPaymentStatus] = useState("EXPECTED");
+  const [deliveryPaymentMethod, setDeliveryPaymentMethod] = useState("CASH_TO_COURIER");
+  const [trackingReference, setTrackingReference] = useState("");
+  const [isSavingCourier, setIsSavingCourier] = useState(false);
+
   const fetchOrder = async () => {
     setIsLoading(true);
     try {
@@ -50,6 +60,13 @@ export default function AdminOrderDetailsPage({
       const json = await res.json();
       if (json.success) {
         setOrder(json.data);
+        setCourierProvider(json.data.courierProvider || (json.data.deliveryMethod === "NATIONWIDE_PARCEL" ? "STATION_COURIER" : "YANGO"));
+        setCourierName(json.data.courierName || "");
+        setCourierPhone(json.data.courierPhone || "");
+        setActualDeliveryFee(json.data.actualDeliveryFee ?? json.data.estimatedDeliveryFee ?? json.data.deliveryFee ?? 0);
+        setDeliveryPaymentStatus(json.data.deliveryPaymentStatus || "EXPECTED");
+        setDeliveryPaymentMethod(json.data.deliveryPaymentMethod || "CASH_TO_COURIER");
+        setTrackingReference(json.data.trackingReference || "");
       } else {
         setError(json.error || "Order not found");
       }
@@ -86,6 +103,37 @@ export default function AdminOrderDetailsPage({
       alert(e.message);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleSaveCourierDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingCourier(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          courierProvider,
+          courierName,
+          courierPhone,
+          actualDeliveryFee: Number(actualDeliveryFee),
+          deliveryPaymentStatus,
+          deliveryPaymentMethod,
+          trackingReference,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setOrder(json.data);
+        alert("Courier and delivery payment details updated successfully.");
+      } else {
+        alert(json.error || "Failed to update courier details");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to update courier details");
+    } finally {
+      setIsSavingCourier(false);
     }
   };
 
@@ -214,7 +262,7 @@ export default function AdminOrderDetailsPage({
               disabled={isUpdating}
               className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
             >
-              🚗 Dispatch & Out for Delivery
+              🚗 Dispatch &amp; Out for Delivery
             </button>
           )}
 
@@ -275,7 +323,7 @@ export default function AdminOrderDetailsPage({
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase">
                     <th className="pb-3">Pack Item</th>
-                    <th className="pb-3">Size & Units</th>
+                    <th className="pb-3">Size &amp; Units</th>
                     <th className="pb-3">Unit Price</th>
                     <th className="pb-3">Qty</th>
                     <th className="pb-3 text-right">Subtotal</th>
@@ -302,9 +350,9 @@ export default function AdminOrderDetailsPage({
             </div>
 
             {/* Financial Summary */}
-            <div className="pt-4 border-t border-slate-100 space-y-2 max-w-xs ml-auto text-xs">
+            <div className="pt-4 border-t border-slate-100 space-y-2 max-w-sm ml-auto text-xs">
               <div className="flex items-center justify-between text-slate-500 font-medium">
-                <span>Subtotal:</span>
+                <span>Products Subtotal:</span>
                 <span className="font-bold text-slate-800">{formatCurrency(order.subtotal)}</span>
               </div>
               {order.discount > 0 && (
@@ -314,21 +362,39 @@ export default function AdminOrderDetailsPage({
                 </div>
               )}
               <div className="flex items-center justify-between text-slate-500 font-medium">
-                <span>Delivery Fee:</span>
+                <span>Paid Online via Paystack:</span>
+                <span className="font-extrabold text-blue-600">{formatCurrency(order.total)}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-500 font-medium pt-2 border-t border-slate-100">
+                <span>Estimated Courier Delivery Fee:</span>
                 <span className="font-bold text-slate-800">
-                  {order.deliveryFee === 0 ? "FREE" : formatCurrency(order.deliveryFee)}
+                  {formatCurrency(order.estimatedDeliveryFee || order.deliveryFee || 0)}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-100">
-                <span>Grand Total:</span>
-                <span className="text-blue-600 font-black">{formatCurrency(order.total)}</span>
+              <div className="flex items-center justify-between text-slate-500 font-medium">
+                <span>Actual Courier Fee Charged:</span>
+                <span className="font-black text-slate-900">
+                  {formatCurrency(order.actualDeliveryFee || order.estimatedDeliveryFee || order.deliveryFee || 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[11px] text-slate-400">Delivery Payment Status:</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                  order.deliveryPaymentStatus === "CONFIRMED" || order.deliveryPaymentStatus === "COLLECTED"
+                    ? "bg-emerald-100 text-emerald-800"
+                    : order.deliveryPaymentStatus === "DISPUTED" || order.deliveryPaymentStatus === "FAILED"
+                    ? "bg-rose-100 text-rose-800"
+                    : "bg-amber-100 text-amber-800"
+                }`}>
+                  {order.deliveryPaymentStatus || "EXPECTED"}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Chronological Lifecycle Timeline */}
           <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
-            <h3 className="font-black text-base text-slate-900">Order Audit & Lifecycle Timeline</h3>
+            <h3 className="font-black text-base text-slate-900">Order Audit &amp; Lifecycle Timeline</h3>
 
             <div className="space-y-4 relative pl-6 before:content-[''] before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
               {order.timeline && order.timeline.length > 0 ? (
@@ -361,7 +427,7 @@ export default function AdminOrderDetailsPage({
           </div>
         </div>
 
-        {/* Right Column: Customer Details, Delivery & GPS Map, Payment */}
+        {/* Right Column: Customer Details, Delivery & GPS Map, Courier Management, Payment */}
         <div className="lg:col-span-4 space-y-6">
           {/* Customer Card */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-3">
@@ -387,12 +453,134 @@ export default function AdminOrderDetailsPage({
             </div>
           </div>
 
+          {/* Courier & Delivery Dispatch Card */}
+          <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Truck className="w-4 h-4 text-blue-600" />
+                <h3 className="font-bold text-sm text-slate-900">Courier &amp; Delivery Management</h3>
+              </div>
+              <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-black rounded-full">
+                {order.deliveryMethod === "YANGO_DOOR"
+                  ? "Yango Door"
+                  : order.deliveryMethod === "NATIONWIDE_PARCEL"
+                  ? "Nationwide Parcel"
+                  : "Pickup"}
+              </span>
+            </div>
+
+            <form onSubmit={handleSaveCourierDetails} className="space-y-3 text-xs">
+              {order.deliveryAddress?.parcelStation && (
+                <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-900">
+                  <span className="font-bold block text-[10px] uppercase">Destination Parcel Station:</span>
+                  <span className="font-black text-xs">{order.deliveryAddress.parcelStation}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Courier Provider
+                </label>
+                <select
+                  value={courierProvider}
+                  onChange={(e) => setCourierProvider(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden"
+                >
+                  <option value="YANGO">Yango Delivery (Rider / Courier)</option>
+                  <option value="MANUAL_RIDER">Manual / Third-Party Rider</option>
+                  <option value="STATION_COURIER">Station Courier (VIP / STC / OA)</option>
+                  <option value="INTERNAL">Internal Fleet / Depot Staff</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Courier / Rider Name
+                  </label>
+                  <input
+                    type="text"
+                    value={courierName}
+                    onChange={(e) => setCourierName(e.target.value)}
+                    placeholder="e.g. John (Yango Rider)"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Rider / Station Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={courierPhone}
+                    onChange={(e) => setCourierPhone(e.target.value)}
+                    placeholder="e.g. 024 000 0000"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Actual Delivery Fee (GH₵)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={actualDeliveryFee}
+                    onChange={(e) => setActualDeliveryFee(parseFloat(e.target.value) || 0)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-slate-800 focus:bg-white focus:outline-hidden"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Delivery Payment Status
+                  </label>
+                  <select
+                    value={deliveryPaymentStatus}
+                    onChange={(e) => setDeliveryPaymentStatus(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-hidden"
+                  >
+                    <option value="EXPECTED">EXPECTED (Pending Arrival)</option>
+                    <option value="COLLECTED">COLLECTED (Paid to Rider)</option>
+                    <option value="CONFIRMED">CONFIRMED (Reconciled)</option>
+                    <option value="DISPUTED">DISPUTED (Fee Mismatch)</option>
+                    <option value="FAILED">FAILED (Refused Payment)</option>
+                    <option value="NOT_REQUIRED">NOT REQUIRED (Pickup)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                  Tracking Ref / Waybill #
+                </label>
+                <input
+                  type="text"
+                  value={trackingReference}
+                  onChange={(e) => setTrackingReference(e.target.value)}
+                  placeholder="e.g. YNG-98421 or VIP-ACC-KMS-481"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-800 placeholder:text-slate-400 focus:bg-white focus:outline-hidden"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingCourier}
+                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                {isSavingCourier ? "Saving Courier Details..." : "Save Courier & Payment Info"}
+              </button>
+            </form>
+          </div>
+
           {/* Delivery & GPS Location */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-3">
             <div className="flex items-center justify-between pb-2 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-purple-600" />
-                <h3 className="font-bold text-sm text-slate-900">Delivery & GPS</h3>
+                <h3 className="font-bold text-sm text-slate-900">Destination Address</h3>
               </div>
               {mapLink && (
                 <a
@@ -411,7 +599,7 @@ export default function AdminOrderDetailsPage({
               <div>
                 <span className="text-slate-400 font-semibold block text-[11px]">Area / Street</span>
                 <span className="font-bold text-slate-800">
-                  {order.deliveryAddress?.area || "East Legon"}, {order.deliveryAddress?.city}
+                  {order.deliveryAddress?.houseOrBuilding || order.deliveryAddress?.area || "East Legon"}, {order.deliveryAddress?.city}
                 </span>
               </div>
               {order.deliveryAddress?.digitalAddress && (
@@ -433,15 +621,15 @@ export default function AdminOrderDetailsPage({
               )}
               <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-[11px]">
                 <div>
-                  <span className="text-slate-400 block">Calculated Distance</span>
+                  <span className="text-slate-400 block">Region</span>
                   <span className="font-bold text-slate-700">
-                    {order.deliveryAddress?.distanceKm ?? 3.2} km
+                    {order.deliveryAddress?.region || "Greater Accra"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block">Assigned Zone</span>
+                  <span className="text-slate-400 block">Landmark</span>
                   <span className="font-bold text-slate-700">
-                    {order.deliveryAddress?.zoneName || "Zone 1"}
+                    {order.deliveryAddress?.landmark || "None"}
                   </span>
                 </div>
               </div>
@@ -452,7 +640,7 @@ export default function AdminOrderDetailsPage({
           <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-100">
               <CreditCard className="w-4 h-4 text-emerald-600" />
-              <h3 className="font-bold text-sm text-slate-900">Payment Summary</h3>
+              <h3 className="font-bold text-sm text-slate-900">Online Payment Summary</h3>
             </div>
 
             <div className="space-y-2 text-xs">

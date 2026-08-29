@@ -299,8 +299,8 @@ export class NotificationService {
         event: "PAYMENT_SUCCESS",
         category: "PAYMENTS",
         priority: "NORMAL",
-        title: "Payment Confirmed ✅",
-        message: `Payment of GH₵${(order.total || 0).toFixed(2)} for order #${order.orderNumber} was received successfully.`,
+        title: "Product Payment Confirmed ✅",
+        message: `Product payment of GH₵${(order.total || 0).toFixed(2)} for order #${order.orderNumber} was received successfully. Delivery fee will be paid directly to your courier upon arrival.`,
         entityType: "ORDER",
         entityId: order.orderNumber,
         actionUrl: "/account?tab=orders",
@@ -313,8 +313,8 @@ export class NotificationService {
         event: "PAYMENT_RECEIVED",
         category: "PAYMENTS",
         priority: "NORMAL",
-        title: `Payment Received: Order #${order.orderNumber}`,
-        message: `Payment of GH₵${(order.total || 0).toFixed(2)} received via ${paymentMethod} from ${order.guestInformation?.name || "Customer"}.`,
+        title: `Product Payment Received: Order #${order.orderNumber}`,
+        message: `Product payment of GH₵${(order.total || 0).toFixed(2)} received via ${paymentMethod} from ${order.guestInformation?.name || "Customer"}. Delivery fee to be collected by courier.`,
         entityType: "ORDER",
         entityId: order.orderNumber,
         actionUrl: `/admin/orders/${order.orderNumber || order._id.toString()}`,
@@ -457,7 +457,7 @@ export class NotificationService {
       case "ORDER_PROCESSING":
         return `Order Being Prepared #${orderNumber}`;
       case "DELIVERY_ASSIGNED":
-        return `Driver Assigned for #${orderNumber}`;
+        return `Courier Assigned for #${orderNumber}`;
       case "OUT_FOR_DELIVERY":
         return `Out for Delivery 🚐 #${orderNumber}`;
       case "DELIVERED":
@@ -478,13 +478,13 @@ export class NotificationService {
       case "ORDER_PLACED":
         return `Your order #${orderNumber} has been received and is being processed.`;
       case "ORDER_CONFIRMED":
-        return `Your order #${orderNumber} has been verified and confirmed.`;
+        return `Your order #${orderNumber} has been verified. Product payment is confirmed.`;
       case "ORDER_PROCESSING":
         return `Our warehouse team is packing your items for order #${orderNumber}.`;
       case "DELIVERY_ASSIGNED":
-        return `A delivery driver has been assigned to transport your order #${orderNumber}.`;
+        return `A courier/rider has been assigned to transport order #${orderNumber}. Please prepare delivery payment upon arrival.`;
       case "OUT_FOR_DELIVERY":
-        return `Your order #${orderNumber} is on its way to your delivery address.`;
+        return `Your order #${orderNumber} is on its way. Delivery fee is payable to the courier upon arrival.`;
       case "DELIVERED":
         return `Your order #${orderNumber} was delivered successfully. Enjoy your hydration!`;
       case "ORDER_CANCELLED":

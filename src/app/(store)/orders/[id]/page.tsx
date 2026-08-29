@@ -56,6 +56,7 @@ interface OrderData {
     houseOrBuilding?: string;
     landmark?: string;
     deliveryInstructions?: string;
+    parcelStation?: string;
     coordinates?: { lat: number; lng: number };
     distanceKm?: number;
     zoneName?: string;
@@ -63,6 +64,10 @@ interface OrderData {
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
+  estimatedDeliveryFee?: number;
+  actualDeliveryFee?: number;
+  deliveryMethod?: "YANGO_DOOR" | "NATIONWIDE_PARCEL" | "SELF_PICKUP";
+  deliveryPaymentStatus?: "NOT_REQUIRED" | "EXPECTED" | "COLLECTED" | "CONFIRMED" | "DISPUTED" | "FAILED";
   discount: number;
   total: number;
   status: string;
@@ -119,7 +124,7 @@ export default function OrderConfirmationPage() {
         if (data.success && data.data) {
           if (isMounted) setOrder(data.data);
         } else {
-          // Fallback mock order data for direct preview matching design mockups
+          // Fallback mock order data
           if (isMounted) {
             setOrder({
               _id: "mock_123",
@@ -164,21 +169,14 @@ export default function OrderConfirmationPage() {
                   unitPrice: 40,
                   totalPrice: 40,
                 },
-                {
-                  productName: "Aqua Splash Water",
-                  brandName: "Aqua Splash",
-                  variantName: "500ml x 24",
-                  bottleSize: "500ml",
-                  unitsPerPack: 24,
-                  quantity: 2,
-                  unitPrice: 38,
-                  totalPrice: 76,
-                },
               ],
-              subtotal: 206,
-              deliveryFee: 15,
+              subtotal: 130,
+              deliveryFee: 25,
+              estimatedDeliveryFee: 25,
+              deliveryMethod: "YANGO_DOOR",
+              deliveryPaymentStatus: "EXPECTED",
               discount: 0,
-              total: 221,
+              total: 130,
               status: "PAID",
               createdAt: new Date().toISOString(),
             });
@@ -198,6 +196,10 @@ export default function OrderConfirmationPage() {
     };
   }, [rawId, paymentRef]);
 
+  const deliveryMethod = order?.deliveryMethod || "YANGO_DOOR";
+  const isNationwide = deliveryMethod === "NATIONWIDE_PARCEL";
+  const isPickup = deliveryMethod === "SELF_PICKUP";
+
   // Stepper mapping
   const getStepIndex = (status: string) => {
     switch (status) {
@@ -210,6 +212,7 @@ export default function OrderConfirmationPage() {
         return 2;
       case "READY_FOR_DELIVERY":
       case "OUT_FOR_DELIVERY":
+      case "IN_TRANSIT":
         return 3;
       case "DELIVERED":
         return 4;
@@ -218,13 +221,29 @@ export default function OrderConfirmationPage() {
     }
   };
 
-  const steps = [
-    { title: "Order Placed", icon: CheckCircle2 },
-    { title: "Payment Confirmed", icon: CreditCard },
-    { title: "Preparing Order", icon: Package },
-    { title: "Out for Delivery", icon: Truck },
-    { title: "Delivered", icon: Home },
-  ];
+  const steps = isNationwide
+    ? [
+        { title: "Order Placed", icon: CheckCircle2 },
+        { title: "Paid Online", icon: CreditCard },
+        { title: "Parcel Packed", icon: Package },
+        { title: "In Transit", icon: Truck },
+        { title: "At Station", icon: Home },
+      ]
+    : isPickup
+    ? [
+        { title: "Order Placed", icon: CheckCircle2 },
+        { title: "Paid Online", icon: CreditCard },
+        { title: "Packing", icon: Package },
+        { title: "Ready for Pickup", icon: Clock },
+        { title: "Collected", icon: Home },
+      ]
+    : [
+        { title: "Order Placed", icon: CheckCircle2 },
+        { title: "Paid Online", icon: CreditCard },
+        { title: "Preparing Order", icon: Package },
+        { title: "Yango Out for Delivery", icon: Truck },
+        { title: "Delivered", icon: Home },
+      ];
 
   if (isLoading) {
     return (
@@ -266,19 +285,19 @@ export default function OrderConfirmationPage() {
 
           <div className="space-y-1">
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {isPaid ? "Order & Payment Confirmed!" : "Order Placed Successfully"}
+              {isPaid ? "Product Payment Confirmed!" : "Order Placed Successfully"}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600">
-              Thank you, <span className="font-bold text-slate-900">{customerName}</span>! Your order has been securely registered and scheduled for dispatch.
+              Thank you, <span className="font-bold text-slate-900">{customerName}</span>! Your product payment of <span className="font-extrabold text-blue-600">{formatCurrency(order?.total || 0)}</span> has been received.
             </p>
           </div>
 
           <div className="inline-flex flex-wrap items-center justify-center gap-3 px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-600">
             <span>Order ID: <strong className="text-blue-600 font-extrabold">{order?.orderNumber || rawId}</strong></span>
             <span>•</span>
-            <span>Payment: <strong className="text-emerald-600 font-bold">{isPaid ? "Paid (Paystack)" : "Pending"}</strong></span>
+            <span>Product Payment: <strong className="text-emerald-600 font-bold">{isPaid ? "Paid (Paystack)" : "Pending"}</strong></span>
             <span>•</span>
-            <span>{order?.createdAt ? new Date(order.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "Today"}</span>
+            <span>Delivery Method: <strong className="text-slate-800 font-bold">{deliveryMethod === "YANGO_DOOR" ? "Yango Door Delivery" : deliveryMethod === "NATIONWIDE_PARCEL" ? "Nationwide Parcel" : "Self Pickup"}</strong></span>
           </div>
 
           {/* ─── 5-Step Order Stepper ─────────────────────────────────────────── */}
@@ -334,7 +353,13 @@ export default function OrderConfirmationPage() {
           <div className="md:col-span-6 bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
             <h2 className="font-black text-sm uppercase tracking-wide text-slate-900 pb-2 border-b border-slate-100 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-blue-600" />
-              <span>Delivery Details & Location</span>
+              <span>
+                {deliveryMethod === "YANGO_DOOR"
+                  ? "Yango Delivery Location"
+                  : deliveryMethod === "NATIONWIDE_PARCEL"
+                  ? "Parcel Destination Details"
+                  : "Depot Pickup Location"}
+              </span>
             </h2>
 
             <div className="space-y-3 text-xs text-slate-600">
@@ -345,6 +370,13 @@ export default function OrderConfirmationPage() {
                   <span>{customerPhone}</span>
                 </div>
               </div>
+
+              {order?.deliveryAddress.parcelStation && (
+                <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200 text-amber-900">
+                  <span className="font-bold block text-[11px]">Destination Station / Terminal:</span>
+                  <span className="font-black text-xs">{order.deliveryAddress.parcelStation}</span>
+                </div>
+              )}
 
               <div className="space-y-0.5 pt-1">
                 <p className="font-medium text-slate-800">
@@ -367,7 +399,7 @@ export default function OrderConfirmationPage() {
               {order?.deliveryAddress.coordinates?.lat && order?.deliveryAddress.coordinates?.lng && (
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-[11px] text-slate-500">
-                    Location Snapshot: {order.deliveryAddress.coordinates.lat.toFixed(4)}, {order.deliveryAddress.coordinates.lng.toFixed(4)}
+                    Location: {order.deliveryAddress.coordinates.lat.toFixed(4)}, {order.deliveryAddress.coordinates.lng.toFixed(4)}
                   </span>
                   <a
                     href={`https://www.google.com/maps/search/?api=1&query=${order.deliveryAddress.coordinates.lat},${order.deliveryAddress.coordinates.lng}`}
@@ -378,15 +410,6 @@ export default function OrderConfirmationPage() {
                     <span>View Map</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
-                </div>
-              )}
-
-              {order?.deliveryAddress.distanceKm !== undefined && (
-                <div className="text-[11px] text-slate-500">
-                  <span>Distance from Warehouse: <strong>{order.deliveryAddress.distanceKm} km</strong></span>
-                  {order.deliveryAddress.zoneName && (
-                    <span> • Zone: <strong>{order.deliveryAddress.zoneName}</strong></span>
-                  )}
                 </div>
               )}
 
@@ -403,6 +426,27 @@ export default function OrderConfirmationPage() {
                   <span>{order.deliveryAddress.deliveryInstructions}</span>
                 </div>
               )}
+
+              {/* Delivery Payment Notice Box */}
+              {!isPickup && (
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-blue-950">Courier Delivery Fee:</span>
+                      <span className="font-black text-blue-900">
+                        {deliveryMethod === "YANGO_DOOR"
+                          ? `Est. ${formatCurrency(order?.estimatedDeliveryFee || order?.deliveryFee || 25)}`
+                          : "Courier Rate"}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-blue-800 font-medium">
+                      {deliveryMethod === "YANGO_DOOR"
+                        ? "🚚 Please pay this delivery charge directly to the Yango rider."
+                        : "🚚 Transport fee is paid directly upon collecting your parcel at the station."}
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -410,7 +454,7 @@ export default function OrderConfirmationPage() {
           <div className="md:col-span-6 bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
             <h2 className="font-black text-sm uppercase tracking-wide text-slate-900 pb-2 border-b border-slate-100 flex items-center gap-2">
               <Package className="w-4 h-4 text-blue-600" />
-              <span>Order Summary</span>
+              <span>Products Purchased</span>
             </h2>
 
             <div className="divide-y divide-slate-100 max-h-60 overflow-y-auto pr-1">
@@ -433,15 +477,19 @@ export default function OrderConfirmationPage() {
               ))}
             </div>
 
-            <div className="pt-3 border-t border-slate-200 space-y-1.5 text-xs">
+            <div className="pt-3 border-t border-slate-200 space-y-2 text-xs">
               <div className="flex justify-between text-slate-500">
-                <span>Subtotal</span>
+                <span>Products Subtotal</span>
                 <span className="font-bold text-slate-800">{formatCurrency(order?.subtotal || 0)}</span>
               </div>
               <div className="flex justify-between text-slate-500">
-                <span>Delivery Fee (Locked Snapshot)</span>
+                <span>Delivery Fee (Paid to Courier)</span>
                 <span className="font-bold text-slate-800">
-                  {order?.deliveryFee === 0 ? "FREE" : formatCurrency(order?.deliveryFee || 0)}
+                  {isPickup
+                    ? "FREE"
+                    : deliveryMethod === "YANGO_DOOR"
+                    ? `Est. ${formatCurrency(order?.estimatedDeliveryFee || order?.deliveryFee || 25)}`
+                    : "Courier Rate"}
                 </span>
               </div>
               {order?.discount ? (
@@ -451,7 +499,7 @@ export default function OrderConfirmationPage() {
                 </div>
               ) : null}
               <div className="pt-2 border-t border-slate-100 flex justify-between text-sm sm:text-base font-black text-slate-900">
-                <span>Total Paid</span>
+                <span>Total Paid Online (Paystack)</span>
                 <span className="text-blue-600">{formatCurrency(order?.total || 0)}</span>
               </div>
             </div>

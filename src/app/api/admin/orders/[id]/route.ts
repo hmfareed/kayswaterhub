@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminOrderById, updateOrderStatus } from "@/services/admin/order.service";
+import { getAdminOrderById, updateOrderStatus, updateOrderCourierDetails } from "@/services/admin/order.service";
 
 export async function GET(
   req: NextRequest,
@@ -31,11 +31,25 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, note } = body;
 
+    // Check if updating courier details
+    if (
+      body.courierProvider !== undefined ||
+      body.courierName !== undefined ||
+      body.courierPhone !== undefined ||
+      body.actualDeliveryFee !== undefined ||
+      body.deliveryPaymentStatus !== undefined ||
+      body.deliveryPaymentMethod !== undefined ||
+      body.trackingReference !== undefined
+    ) {
+      const updatedOrder = await updateOrderCourierDetails(id, body);
+      return NextResponse.json({ success: true, data: updatedOrder });
+    }
+
+    const { status, note } = body;
     if (!status) {
       return NextResponse.json(
-        { success: false, error: "Status is required" },
+        { success: false, error: "Status or courier details required" },
         { status: 400 }
       );
     }

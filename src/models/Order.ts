@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document, Model } from "mongoose";
-import type { OrderStatus, RefundStatus, PaymentMethod } from "@/types";
+import type {
+  OrderStatus,
+  RefundStatus,
+  PaymentMethod,
+  DeliveryMethod,
+  DeliveryPaymentStatus,
+  DeliveryPaymentMethod,
+} from "@/types";
 
 // ─── Embedded sub-documents ───────────────────────────────────────────────────
 
@@ -45,6 +52,7 @@ export interface IDeliveryAddress {
   houseOrBuilding?: string;
   landmark?: string;
   deliveryInstructions?: string;
+  parcelStation?: string; // For nationwide parcel delivery
   coordinates?: { lat: number; lng: number };
   gpsAccuracy?: number; // metres
   addressSource?: "GPS" | "SEARCH" | "MANUAL"; // how the address was entered
@@ -85,8 +93,22 @@ export interface IOrder extends Document {
   subtotal: number;
   discount: number;
   couponCode?: string;
-  deliveryFee: number;
-  total: number;
+  // Product payment fields (Online Paystack amount = subtotal - discount)
+  total: number; // Online product payment amount
+  amountPaidOnline?: number;
+  // Delivery fee fields (Paid separately to courier)
+  deliveryFee: number; // Estimated delivery fee (kept for backwards compatibility)
+  estimatedDeliveryFee: number;
+  actualDeliveryFee?: number;
+  deliveryMethod: DeliveryMethod;
+  deliveryPaymentStatus: DeliveryPaymentStatus;
+  deliveryPaymentMethod?: DeliveryPaymentMethod;
+  deliveryPaymentReference?: string;
+  // Courier assignment fields
+  courierProvider?: string; // "YANGO" | "MANUAL_RIDER" | "VIP_PARCEL" | etc.
+  courierName?: string;
+  courierPhone?: string;
+  trackingReference?: string;
   paymentId?: mongoose.Types.ObjectId;
   paymentMethod?: string;
   deliveryId?: mongoose.Types.ObjectId;
@@ -132,8 +154,31 @@ const OrderSchema = new Schema<IOrder>(
     subtotal: { type: Number, required: true },
     discount: { type: Number, default: 0 },
     couponCode: { type: String, uppercase: true, trim: true },
-    deliveryFee: { type: Number, required: true },
-    total: { type: Number, required: true },
+    total: { type: Number, required: true }, // Online product amount
+    amountPaidOnline: { type: Number, default: 0 },
+    deliveryFee: { type: Number, default: 0 }, // Estimated fee
+    estimatedDeliveryFee: { type: Number, default: 0 },
+    actualDeliveryFee: { type: Number },
+    deliveryMethod: {
+      type: String,
+      enum: ["YANGO_DOOR", "NATIONWIDE_PARCEL", "SELF_PICKUP"],
+      default: "YANGO_DOOR",
+    },
+    deliveryPaymentStatus: {
+      type: String,
+      enum: ["NOT_REQUIRED", "EXPECTED", "COLLECTED", "CONFIRMED", "DISPUTED", "FAILED"],
+      default: "EXPECTED",
+    },
+    deliveryPaymentMethod: {
+      type: String,
+      enum: ["CASH_TO_COURIER", "MOMO_TO_COURIER", "NOT_APPLICABLE"],
+      default: "CASH_TO_COURIER",
+    },
+    deliveryPaymentReference: String,
+    courierProvider: { type: String, default: "YANGO" },
+    courierName: String,
+    courierPhone: String,
+    trackingReference: String,
     paymentId: { type: Schema.Types.ObjectId, ref: "Payment" },
     paymentMethod: { type: String, default: "PAYSTACK" },
     deliveryId: { type: Schema.Types.ObjectId, ref: "DeliveryOrder" },
@@ -147,6 +192,7 @@ const OrderSchema = new Schema<IOrder>(
       houseOrBuilding: String,
       landmark: String,
       deliveryInstructions: String,
+      parcelStation: String,
       coordinates: { lat: Number, lng: Number },
       gpsAccuracy: Number,
       addressSource: { type: String, enum: ["GPS", "SEARCH", "MANUAL"] },
