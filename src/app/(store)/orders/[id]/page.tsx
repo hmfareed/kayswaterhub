@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import {
@@ -75,7 +75,7 @@ interface OrderData {
   createdAt: string;
 }
 
-export default function OrderConfirmationPage() {
+function OrderConfirmationContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const rawId = (params?.id as string) || "";
@@ -525,5 +525,19 @@ export default function OrderConfirmationPage() {
 
       <MobileBottomNav />
     </div>
+  );
+}
+
+export default function OrderConfirmationPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        </div>
+      }
+    >
+      <OrderConfirmationContent />
+    </Suspense>
   );
 }
