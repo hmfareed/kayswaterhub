@@ -123,46 +123,31 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  // Load Saved Addresses from localStorage & Server
+  // Load Saved Addresses — only from the server (session-scoped, never from localStorage)
   useEffect(() => {
-    try {
-      const local = localStorage.getItem("kays_user_addresses");
-      if (local) {
-        const parsed = JSON.parse(local);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setSavedAddresses(parsed);
-          const defaultAddr = parsed.find((a: SavedAddress) => a.isDefault) || parsed[0];
-          if (defaultAddr && selectedAddressId === "NEW") {
+    if (!session?.user) return;
+
+    // Pre-fill name/email/phone from session
+    setFormData((prev) => ({
+      ...prev,
+      fullName: prev.fullName || session.user.name || "",
+      email: prev.email || session.user.email || "",
+      phone: prev.phone || (session.user as { phone?: string }).phone || "",
+    }));
+
+    // Fetch addresses from the server (already scoped to the logged-in user)
+    fetch("/api/account/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.addresses) && data.addresses.length > 0) {
+          setSavedAddresses(data.addresses);
+          const defaultAddr = data.addresses.find((a: SavedAddress) => a.isDefault) || data.addresses[0];
+          if (defaultAddr) {
             applySavedAddress(defaultAddr);
           }
         }
-      }
-    } catch {}
-
-    if (session?.user) {
-      setFormData((prev) => ({
-        ...prev,
-        fullName: prev.fullName || session.user.name || "",
-        email: prev.email || session.user.email || "",
-        phone: prev.phone || (session.user as { phone?: string }).phone || "",
-      }));
-
-      fetch("/api/account/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.addresses) && data.addresses.length > 0) {
-            setSavedAddresses((prev) => {
-              const combined = [...data.addresses];
-              return combined;
-            });
-            const defaultAddr = data.addresses.find((a: SavedAddress) => a.isDefault) || data.addresses[0];
-            if (defaultAddr) {
-              applySavedAddress(defaultAddr);
-            }
-          }
-        })
-        .catch(() => {});
-    }
+      })
+      .catch(() => {});
   }, [session]);
 
   const applySavedAddress = (addr: SavedAddress) => {
@@ -292,21 +277,7 @@ export default function CheckoutPage() {
       isDefault: savedAddresses.length === 0,
     };
 
-    try {
-      const existing = localStorage.getItem("kays_user_addresses");
-      const list: SavedAddress[] = existing ? JSON.parse(existing) : [];
-      // Replace duplicate or prepend
-      const filtered = list.filter(
-        (a) =>
-          !(
-            a.region === newAddr.region &&
-            a.city === newAddr.city &&
-            (a.houseOrBuilding === newAddr.houseOrBuilding || a.street === newAddr.street)
-          )
-      );
-      const updated = [newAddr, ...filtered];
-      localStorage.setItem("kays_user_addresses", JSON.stringify(updated));
-    } catch {}
+    // Address is saved to the server below — no localStorage write needed
 
     // If logged in, send to backend address API
     if (session?.user) {
@@ -422,22 +393,7 @@ export default function CheckoutPage() {
 
       const { authorizationUrl, orderId, reference } = result.data;
 
-      // Save order record locally for guest/account history
-      try {
-        const orderHistoryItem = {
-          id: orderId,
-          orderNumber: result.data.orderNumber,
-          date: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
-          status: "pending",
-          statusLabel: "Order Placed",
-          statusColor: "bg-blue-50 text-blue-700 border-blue-200",
-          total: effectiveTotal,
-          items: items.map((i) => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
-        };
-        const existingOrders = localStorage.getItem("kays_user_orders");
-        const list = existingOrders ? JSON.parse(existingOrders) : [];
-        localStorage.setItem("kays_user_orders", JSON.stringify([orderHistoryItem, ...list]));
-      } catch {}
+      // Order is persisted in the database — no localStorage write to avoid cross-account leakage
 
       // Clear cart
       clearCart();

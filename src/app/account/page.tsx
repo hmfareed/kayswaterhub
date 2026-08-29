@@ -141,6 +141,7 @@ interface OrderItem {
 
 interface Order {
   id: string;
+  _id?: string;
   date: string;
   status: OrderStatus;
   statusLabel: string;
@@ -284,89 +285,49 @@ function AccountContent() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // Load addresses, orders, and payment methods from localStorage / API
+  // Load addresses and orders — ONLY from server API after session is confirmed.
+  // Never read from localStorage for user-specific data to prevent cross-account leakage.
   useEffect(() => {
-    try {
-      const savedAddrs = localStorage.getItem("kays_user_addresses");
-      if (savedAddrs) {
-        const parsed = JSON.parse(savedAddrs);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setAddresses(parsed);
-        }
-      }
-      const savedOrders = localStorage.getItem("kays_user_orders");
-      if (savedOrders) {
-        const parsedOrders = JSON.parse(savedOrders);
-        if (Array.isArray(parsedOrders) && parsedOrders.length > 0) {
-          setOrders(parsedOrders);
-        }
-      }
-      const savedPays = localStorage.getItem("kays_user_payments");
-      if (savedPays) {
-        const parsedPays = JSON.parse(savedPays);
-        if (Array.isArray(parsedPays) && parsedPays.length > 0) {
-          setPaymentMethods(parsedPays);
-        }
-      }
-    } catch {}
+    if (!session?.user?.id) return;
 
-    if (session?.user) {
-      // Fetch user profile addresses from API
-      fetch("/api/account/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.addresses) && data.addresses.length > 0) {
-            setAddresses(data.addresses);
-          }
-        })
-        .catch(() => {});
+    // Fetch user addresses (server-scoped to the logged-in user)
+    fetch("/api/account/addresses")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.addresses)) {
+          setAddresses(data.addresses);
+        }
+      })
+      .catch(() => {});
 
-      // Fetch user orders from API
-      fetch("/api/customer/orders")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            const mappedOrders: Order[] = data.data.map((o: any) => ({
-              id: o.orderNumber || o._id,
-              date: new Date(o.createdAt || Date.now()).toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-              }),
-              status: (o.status || "pending").toLowerCase(),
-              statusLabel: o.status || "Order Placed",
-              statusColor: "bg-blue-50 text-blue-700 border-blue-200",
-              total: o.total || 0,
-              items: (o.items || []).map((i: any) => ({
-                name: i.productName || i.name || "Water Pack",
-                quantity: i.quantity || 1,
-                price: i.unitPrice || i.price || 0,
-              })),
-            }));
-            setOrders(mappedOrders);
-          }
-        })
-        .catch(() => {});
-    }
+    // Fetch user orders from API
+    fetch("/api/orders")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && Array.isArray(data.data)) {
+          const mappedOrders: Order[] = data.data.map((o: any) => ({
+            id: o.orderNumber || o._id,
+            _id: o._id,
+            date: new Date(o.createdAt || Date.now()).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }),
+            status: (o.status || "PENDING").toLowerCase() as OrderStatus,
+            statusLabel: o.status || "Order Placed",
+            statusColor: "bg-blue-50 text-blue-700 border-blue-200",
+            total: o.total || 0,
+            items: (o.items || []).map((i: any) => ({
+              name: i.productName || i.name || "Water Pack",
+              quantity: i.quantity || 1,
+              price: i.unitPrice || i.price || 0,
+            })),
+          }));
+          setOrders(mappedOrders);
+        }
+      })
+      .catch(() => {});
   }, [session]);
-
-  // Sync addresses to localStorage
-  useEffect(() => {
-    if (addresses.length > 0) {
-      try {
-        localStorage.setItem("kays_user_addresses", JSON.stringify(addresses));
-      } catch {}
-    }
-  }, [addresses]);
-
-  // Sync payments to localStorage
-  useEffect(() => {
-    if (paymentMethods.length > 0) {
-      try {
-        localStorage.setItem("kays_user_payments", JSON.stringify(paymentMethods));
-      } catch {}
-    }
-  }, [paymentMethods]);
 
   // ── Notification filter ───────────────────────────────────────────────────
   const [notifFilter, setNotifFilter] = useState<NotifFilter>("all");
@@ -589,6 +550,21 @@ function AccountContent() {
 
   const handleSignOut = async () => {
     setSigningOut(true);
+    // Clear all user-scoped data from localStorage on sign-out
+    // to prevent any residual data from showing to the next user on this device.
+    try {
+      const keysToRemove = [
+        "kays_user_addresses",
+        "kays_user_orders",
+        "kays_user_payments",
+        "kays_packs_cart",
+        "kays_waterhub_cart",
+        "kays_packs_wishlist",
+        "kays_waterhub_wishlist",
+        "kays_packs_recent",
+      ];
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
+    } catch {}
     await signOut({ callbackUrl: "/" });
   };
 
@@ -603,6 +579,46 @@ function AccountContent() {
     orderFilter === "all"
       ? orders
       : orders.filter((o) => o.status === orderFilter);
+
+  // Cancel order state
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
+  const CANCELLABLE_STATUSES: OrderStatus[] = ["pending", "confirmed"];
+
+  const handleCancelOrder = async (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId || o._id === orderId);
+    if (!order) return;
+    // Use MongoDB _id for the API call if available
+    const apiId = (order as any)._id || orderId;
+    setCancellingOrderId(orderId);
+    setCancelError(null);
+    try {
+      const res = await fetch(`/api/orders/${apiId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CANCELLED" }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Failed to cancel order.");
+      }
+      // Update local state immediately
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId || (o as any)._id === apiId
+            ? { ...o, status: "cancelled", statusLabel: "Cancelled", statusColor: "bg-rose-50 text-rose-700 border-rose-200" }
+            : o
+        )
+      );
+      setCancelConfirmId(null);
+    } catch (err) {
+      setCancelError((err as Error).message || "Could not cancel order.");
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
 
   // ── Change password ───────────────────────────────────────────────────────
   const handleChangePassword = async (e: React.FormEvent) => {
@@ -1501,6 +1517,51 @@ function AccountContent() {
                                 <span>Track Order</span>
                                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                               </button>
+                            )}
+                            {/* Cancel Order — only for cancellable statuses */}
+                            {CANCELLABLE_STATUSES.includes(ord.status) && (
+                              cancelConfirmId === ord.id ? (
+                                <div className={`mt-1 p-3 rounded-xl border ${isDarkMode ? "bg-slate-800 border-slate-700" : "bg-rose-50 border-rose-200"}`}>
+                                  <p className={`text-xs font-bold mb-2 ${isDarkMode ? "text-rose-400" : "text-rose-700"}`}>
+                                    Are you sure you want to cancel this order?
+                                  </p>
+                                  {cancelError && (
+                                    <p className="text-[11px] text-rose-500 mb-2">{cancelError}</p>
+                                  )}
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => { setCancelConfirmId(null); setCancelError(null); }}
+                                      className={`flex-1 py-2 rounded-lg text-xs font-bold ${isDarkMode ? "bg-slate-700 text-slate-300" : "bg-white text-slate-600 border border-slate-200"}`}
+                                    >
+                                      Keep Order
+                                    </button>
+                                    <button
+                                      onClick={() => handleCancelOrder(ord.id)}
+                                      disabled={cancellingOrderId === ord.id}
+                                      className="flex-1 py-2 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-1.5"
+                                    >
+                                      {cancellingOrderId === ord.id ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                      ) : (
+                                        <Ban className="w-3.5 h-3.5" />
+                                      )}
+                                      {cancellingOrderId === ord.id ? "Cancelling..." : "Yes, Cancel"}
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => { setCancelConfirmId(ord.id); setCancelError(null); }}
+                                  className={`w-full py-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-colors mt-1 border ${
+                                    isDarkMode
+                                      ? "border-rose-800 text-rose-400 hover:bg-rose-900/30"
+                                      : "border-rose-200 text-rose-600 hover:bg-rose-50"
+                                  }`}
+                                >
+                                  <Ban className="w-3.5 h-3.5" />
+                                  <span>Cancel Order</span>
+                                </button>
+                              )
                             )}
                           </div>
                           {isExpanded && (
