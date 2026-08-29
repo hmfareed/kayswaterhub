@@ -714,18 +714,25 @@ function AccountContent() {
     setTimeout(() => setIsRefreshing(false), 800);
   };
 
-  // ── Order actions ─────────────────────────────────────────────────────────
-  const filteredOrders =
-    orderFilter === "all"
-      ? orders
-      : orders.filter((o) => o.status === orderFilter);
-
   // Cancel order state
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
   const [cancelConfirmId, setCancelConfirmId] = useState<string | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
+  const [justCancelledIds, setJustCancelledIds] = useState<string[]>([]);
 
   const CANCELLABLE_STATUSES: OrderStatus[] = ["pending", "confirmed"];
+
+  // ── Order actions ─────────────────────────────────────────────────────────
+  const filteredOrders =
+    orderFilter === "all"
+      ? orders
+      : orders.filter(
+          (o) =>
+            o.status === orderFilter ||
+            justCancelledIds.includes(o.id) ||
+            (o._id && justCancelledIds.includes(o._id))
+        );
 
   const handleCancelOrder = async (orderId: string) => {
     const order = orders.find((o) => o.id === orderId || o._id === orderId);
@@ -752,6 +759,9 @@ function AccountContent() {
             : o
         )
       );
+      setJustCancelledIds((prev) => [...prev, orderId, apiId]);
+      setCancelSuccessMsg(`Order #${order.id} was cancelled successfully.`);
+      setTimeout(() => setCancelSuccessMsg(null), 5000);
       setCancelConfirmId(null);
     } catch (err) {
       setCancelError((err as Error).message || "Could not cancel order.");
@@ -1695,6 +1705,22 @@ function AccountContent() {
                   ))}
                 </div>
 
+                {/* Cancel confirmation banner */}
+                {cancelSuccessMsg && (
+                  <div className="mx-4 mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between shadow-2xs animate-fadeIn">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                      <span>{cancelSuccessMsg}</span>
+                    </div>
+                    <button
+                      onClick={() => setCancelSuccessMsg(null)}
+                      className="text-emerald-600 hover:text-emerald-900 p-1"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="p-4 space-y-3.5">
                   {loadingOrders ? (
                     <div className="space-y-3 py-2">
@@ -1741,7 +1767,12 @@ function AccountContent() {
                     filteredOrders.map((ord) => {
                       const isExpanded = expandedOrder === ord.id;
                       return (
-                        <div key={ord.id} className={`rounded-2xl border overflow-hidden ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`}>
+                        <div
+                          key={ord.id}
+                          className={`rounded-2xl border overflow-hidden transition-all duration-300 ease-out transform ${
+                            isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+                          } ${cancellingOrderId === ord.id ? "opacity-60 scale-[0.99]" : "opacity-100 scale-100"}`}
+                        >
                           <div className="p-4 space-y-3">
                             <div className="flex items-center justify-between">
                               <div>

@@ -118,9 +118,29 @@ export async function PATCH(
     const isAdmin =
       session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN";
 
+    let wasCancelled = false;
+
     if (isAdmin) {
       // Admins can update any field freely
-      if (status) order.status = status;
+      if (status) {
+        if (status.toUpperCase() === "CANCELLED" && order.status !== "CANCELLED") {
+          wasCancelled = true;
+          order.cancellation = {
+            reason: body.reason || "Cancelled by admin",
+            cancelledBy: "ADMIN",
+            cancelledAt: new Date(),
+          };
+          order.timeline = order.timeline || [];
+          order.timeline.push({
+            status: "CANCELLED",
+            title: "Order Cancelled by Admin",
+            description: body.reason || "Admin marked the order as cancelled.",
+            actor: "ADMIN",
+            timestamp: new Date(),
+          });
+        }
+        order.status = status;
+      }
       if (notes !== undefined) order.notes = notes;
     } else {
       // Customers: check ownership
@@ -158,10 +178,79 @@ export async function PATCH(
         );
       }
 
+      wasCancelled = true;
       order.status = "CANCELLED";
+      order.cancellation = {
+        reason: body.reason || "Cancelled by customer",
+        cancelledBy: "CUSTOMER",
+        cancelledAt: new Date(),
+      };
+      order.timeline = order.timeline || [];
+      order.timeline.push({
+        status: "CANCELLED",
+        title: "Order Cancelled by Customer",
+        description: body.reason || "Customer cancelled the order from account.",
+        actor: "CUSTOMER",
+        timestamp: new Date(),
+      });
     }
 
     await order.save();
+
+    // If order was cancelled, release stock and notify Admin Panel
+    if (wasCancelled) {
+      // 1. Release reserved stock
+      try {
+        const { InventoryService } = await import("@/services/inventory/InventoryService");
+        if (Array.isArray(order.items)) {
+          for (const item of order.items) {
+            if (item.variantId) {
+              await InventoryService.release(item.variantId.toString(), order._id.toString());
+            }
+          }
+        }
+      } catch (invErr) {
+        console.warn("[api/orders/[id]] Stock release warning on cancel:", invErr);
+      }
+
+      // 2. Dispatch Admin Panel Notification
+      try {
+        const { notificationService } = await import("@/services/notification/NotificationService");
+        const customerName =
+          order.guestInformation?.name ||
+          session.user.name ||
+          (session.user.email ? session.user.email.split("@")[0] : "Customer");
+
+        await notificationService.notifyAdminEvent({
+          event: "ORDER_CANCELLED",
+          category: "ORDERS",
+          priority: "HIGH",
+          title: `Order Cancelled: #${order.orderNumber}`,
+          message: `Customer ${customerName} has cancelled order #${order.orderNumber} (GH₵${(order.total || 0).toFixed(2)}).`,
+          entityType: "ORDER",
+          entityId: order.orderNumber,
+          actionUrl: `/admin/orders/${order.orderNumber || order._id.toString()}`,
+          actionLabel: "View Order",
+          metadata: {
+            orderId: order._id.toString(),
+            orderNumber: order.orderNumber,
+            total: order.total,
+            cancelledBy: isAdmin ? "ADMIN" : "CUSTOMER",
+            reason: body.reason || (isAdmin ? "Cancelled by admin" : "Cancelled by customer"),
+          },
+        });
+
+        // 3. Customer In-App Notification
+        await notificationService.notifyCustomerOrderEvent(
+          order,
+          "ORDER_CANCELLED",
+          "Order Cancelled",
+          `Your order #${order.orderNumber} was cancelled successfully.`
+        );
+      } catch (notifErr) {
+        console.error("[api/orders/[id]] Notification error on cancel:", notifErr);
+      }
+    }
 
     return NextResponse.json({ success: true, data: order });
   } catch (error) {
