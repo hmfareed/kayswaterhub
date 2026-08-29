@@ -372,12 +372,16 @@ function AccountContent() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
 
   // Load addresses and orders — ONLY from server API after session is confirmed.
   // Never read from localStorage for user-specific data to prevent cross-account leakage.
   const fetchUserOrders = async () => {
     try {
-      const res = await fetch("/api/orders");
+      setLoadingOrders(true);
+      const res = await fetch("/api/orders", {
+        headers: { "Cache-Control": "no-cache" },
+      });
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         const mappedOrders: Order[] = data.data.map((o: any) => {
@@ -420,11 +424,17 @@ function AccountContent() {
       }
     } catch (err) {
       console.error("Failed to fetch customer orders:", err);
+    } finally {
+      setLoadingOrders(false);
     }
   };
 
   useEffect(() => {
-    if (!session?.user?.id) return;
+    if (status === "loading") return;
+    if (!session?.user?.id) {
+      setLoadingOrders(false);
+      return;
+    }
 
     // Fetch user addresses (server-scoped to the logged-in user)
     fetch("/api/account/addresses")
@@ -456,7 +466,7 @@ function AccountContent() {
 
     // Fetch user orders from API
     fetchUserOrders();
-  }, [session]);
+  }, [session, status]);
 
   // ── Notification filter ───────────────────────────────────────────────────
   const [notifFilter, setNotifFilter] = useState<NotifFilter>("all");
@@ -1210,7 +1220,13 @@ function AccountContent() {
             <div className="w-6 h-6 flex items-center justify-center mb-1 text-blue-600">
               <Package className="w-5 h-5 stroke-[1.8]" />
             </div>
-            <span className="text-xl font-black tracking-tight leading-tight">{orderCount}</span>
+            {loadingOrders ? (
+              <div className="h-7 flex items-center justify-center">
+                <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin inline-block" />
+              </div>
+            ) : (
+              <span className="text-xl font-black tracking-tight leading-tight">{orderCount}</span>
+            )}
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mt-0.5">ORDERS</span>
           </button>
         </div>
@@ -1262,7 +1278,11 @@ function AccountContent() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">{orderCount}</span>
+              {loadingOrders ? (
+                <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin inline-block" />
+              ) : (
+                <span className="bg-blue-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">{orderCount}</span>
+              )}
               <ChevronRight className="w-4 h-4 text-slate-300 stroke-[2]" />
             </div>
           </button>
@@ -1676,7 +1696,27 @@ function AccountContent() {
                 </div>
 
                 <div className="p-4 space-y-3.5">
-                  {filteredOrders.length === 0 ? (
+                  {loadingOrders ? (
+                    <div className="space-y-3 py-2">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className={`p-4 rounded-2xl border animate-pulse space-y-3 ${
+                            isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="space-y-1.5 w-1/3">
+                              <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-full" />
+                              <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded w-2/3" />
+                            </div>
+                            <div className="h-5 w-20 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                          </div>
+                          <div className="h-10 bg-slate-100 dark:bg-slate-800/60 rounded-xl" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : filteredOrders.length === 0 ? (
                     <div className="text-center py-16 px-4 text-slate-400 space-y-3">
                       <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-slate-900 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
                         <Package className="w-8 h-8 stroke-[1.8]" />

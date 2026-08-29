@@ -49,38 +49,49 @@ export async function GET(req: NextRequest) {
 
       query.$or = userConditions;
 
-      // Auto-link any matching unlinked guest orders to this customerId in background
-      try {
-        if (mongoose.Types.ObjectId.isValid(session.user.id) && (session.user.email || session.user.phone)) {
-          const unlinkedQuery: any = { customerId: { $exists: false } };
-          const unlinkedOr: any[] = [];
-          if (session.user.email) {
-            unlinkedOr.push({
-              "guestInformation.email": {
-                $regex: new RegExp(`^${session.user.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
-              },
-            });
+      // Auto-link any matching unlinked guest orders to this customerId asynchronously in background (non-blocking)
+      if (mongoose.Types.ObjectId.isValid(session.user.id) && (session.user.email || session.user.phone)) {
+        const userId = session.user.id;
+        const userEmail = session.user.email;
+        const userPhone = session.user.phone;
+        (async () => {
+          try {
+            const unlinkedOr: any[] = [];
+            if (userEmail) {
+              unlinkedOr.push({
+                "guestInformation.email": {
+                  $regex: new RegExp(`^${userEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+                },
+              });
+            }
+            if (userPhone) {
+              unlinkedOr.push({ "guestInformation.phone": userPhone });
+            }
+            if (unlinkedOr.length > 0) {
+              await Order.updateMany(
+                { customerId: { $exists: false }, $or: unlinkedOr },
+                { $set: { customerId: new mongoose.Types.ObjectId(userId) } }
+              );
+            }
+          } catch (err) {
+            console.warn("[api/orders] Background guest link warning:", err);
           }
-          if (session.user.phone) {
-            unlinkedOr.push({ "guestInformation.phone": session.user.phone });
-          }
-          if (unlinkedOr.length > 0) {
-            unlinkedQuery.$or = unlinkedOr;
-            await Order.updateMany(unlinkedQuery, {
-              $set: { customerId: new mongoose.Types.ObjectId(session.user.id) },
-            });
-          }
-        }
-      } catch (linkErr) {
-        console.warn("[api/orders] Non-blocking error linking past orders:", linkErr);
+        })();
       }
     } else if (!session?.user?.id) {
       // Unauthenticated visitor fetching /api/orders without session
-      return NextResponse.json({
-        success: true,
-        data: [],
-        pagination: { total: 0, page: 1, limit, totalPages: 0 },
-      });
+      return NextResponse.json(
+        {
+          success: true,
+          data: [],
+          pagination: { total: 0, page: 1, limit, totalPages: 0 },
+        },
+        {
+          headers: {
+            "Cache-Control": "private, no-cache, no-store, must-revalidate",
+          },
+        }
+      );
     }
 
     if (status && status !== "all") {
@@ -116,29 +127,42 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const total = await Order.countDocuments(query);
-    const orders = await Order.find(query)
-      .populate("paymentId")
-      .populate("deliveryId")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit);
+    const [total, orders] = await Promise.all([
+      Order.countDocuments(query),
+      Order.find(query)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean(),
+    ]);
 
-    return NextResponse.json({
-      success: true,
-      data: orders,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
+    return NextResponse.json(
+      {
+        success: true,
+        data: orders,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      }
+    );
   } catch (error) {
     console.error("[api/orders GET]", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch orders" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+        },
+      }
     );
   }
 }

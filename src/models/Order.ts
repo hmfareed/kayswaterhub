@@ -259,6 +259,8 @@ const OrderSchema = new Schema<IOrder>(
 
 OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ customerId: 1, createdAt: -1 });
+OrderSchema.index({ "guestInformation.email": 1, createdAt: -1 });
+OrderSchema.index({ "guestInformation.phone": 1, createdAt: -1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ createdAt: -1 });
 
