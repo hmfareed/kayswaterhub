@@ -3,21 +3,29 @@
 import React, { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Home, ShoppingBag, Package, Store, User } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 
 function MobileBottomNavInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { data: session, status } = useSession();
   const { itemCount } = useCart();
   const tab = searchParams?.get("tab");
+
+  const isAuthenticated = status === "authenticated" && !!session?.user;
+
+  // New unauthenticated users clicking Account or Orders go to Sign Up / Sign In
+  const accountHref = isAuthenticated ? "/account" : "/register?callbackUrl=/account";
+  const ordersHref = isAuthenticated ? "/account?tab=orders" : "/login?callbackUrl=/account?tab=orders";
 
   const navItems = [
     { label: "Home", href: "/", icon: Home },
     { label: "Shop", href: "/shop", icon: Store },
     { label: "Cart", href: "/cart", icon: ShoppingBag, badge: itemCount },
-    { label: "Orders", href: "/account?tab=orders", icon: Package },
-    { label: "Account", href: "/account", icon: User },
+    { label: "Orders", href: ordersHref, icon: Package },
+    { label: "Account", href: accountHref, icon: User },
   ];
 
   return (
@@ -26,12 +34,12 @@ function MobileBottomNavInner() {
       <div className="flex items-center justify-around max-w-md mx-auto">
         {navItems.map((item) => {
           let isActive = false;
-          if (item.href === "/") {
+          if (item.label === "Home") {
             isActive = pathname === "/";
           } else if (item.label === "Orders") {
             isActive = (pathname === "/account" && tab === "orders") || pathname.startsWith("/orders");
           } else if (item.label === "Account") {
-            isActive = pathname === "/account" && tab !== "orders";
+            isActive = (pathname === "/account" && tab !== "orders") || pathname.startsWith("/register") || pathname.startsWith("/login");
           } else {
             isActive = pathname.startsWith(item.href);
           }
@@ -63,7 +71,11 @@ function MobileBottomNavInner() {
                   </span>
                 )}
               </div>
-              <span className={`text-[10px] mt-0.5 tracking-tight ${isActive ? "font-bold text-blue-600" : "font-medium"}`}>
+              <span
+                className={`text-[10px] mt-0.5 tracking-tight ${
+                  isActive ? "font-bold text-blue-600" : "font-medium"
+                }`}
+              >
                 {item.label}
               </span>
             </Link>

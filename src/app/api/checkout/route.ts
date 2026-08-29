@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     const session = await auth();
     const body = await req.json();
 
-    const { items, deliveryAddress, customerInfo, paymentMethod } = body;
+    const { items, deliveryAddress, customerInfo, paymentMethod, fulfillmentType } = body;
+    const isPickup = fulfillmentType === "PICKUP";
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
@@ -26,7 +27,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!deliveryAddress?.region || !deliveryAddress?.city) {
+    if (!isPickup && (!deliveryAddress?.region || !deliveryAddress?.city)) {
       return NextResponse.json(
         { success: false, error: "Delivery address region and city are required." },
         { status: 400 }
@@ -91,26 +92,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Calculate Location-Based Delivery Fee
-    const deliveryCalc = await resolveDeliveryFee({
-      coordinates: deliveryAddress.coordinates,
-      region: deliveryAddress.region,
-      city: deliveryAddress.city,
-      area: deliveryAddress.area,
-      subtotal,
-    });
+    // 2. Calculate Delivery Fee or Self Pickup
+    let deliveryFee = 0;
+    let zoneName = "Self Pickup (Depot Hub)";
+    let distanceKm: number | undefined = undefined;
 
-    if (!deliveryCalc.isDeliverable) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: deliveryCalc.reason || "We are unable to deliver to this location.",
-        },
-        { status: 400 }
-      );
+    if (!isPickup) {
+      const deliveryCalc = await resolveDeliveryFee({
+        coordinates: deliveryAddress?.coordinates,
+        region: deliveryAddress?.region || "Greater Accra",
+        city: deliveryAddress?.city || "Accra",
+        area: deliveryAddress?.area,
+        subtotal,
+      });
+
+      if (!deliveryCalc.isDeliverable) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: deliveryCalc.reason || "We are unable to deliver to this location.",
+          },
+          { status: 400 }
+        );
+      }
+
+      deliveryFee = deliveryCalc.deliveryFee;
+      zoneName = deliveryCalc.zoneName;
+      distanceKm = deliveryCalc.distanceKm;
     }
 
-    const deliveryFee = deliveryCalc.deliveryFee;
     const discount = 0;
     const total = subtotal + deliveryFee - discount;
 
@@ -142,8 +152,8 @@ export async function POST(req: NextRequest) {
         landmark: deliveryAddress.landmark,
         deliveryInstructions: deliveryAddress.deliveryInstructions,
         coordinates: deliveryAddress.coordinates,
-        distanceKm: deliveryCalc.distanceKm,
-        zoneName: deliveryCalc.zoneName,
+        distanceKm,
+        zoneName,
       },
     });
 
@@ -172,7 +182,7 @@ export async function POST(req: NextRequest) {
         orderId,
         orderNumber,
         customerId: customerId || "guest",
-        deliveryZone: deliveryCalc.zoneName,
+        deliveryZone: zoneName,
       },
       transactions: [],
     });
@@ -206,8 +216,8 @@ export async function POST(req: NextRequest) {
         total,
         subtotal,
         deliveryFee,
-        distanceKm: deliveryCalc.distanceKm,
-        zoneName: deliveryCalc.zoneName,
+        distanceKm,
+        zoneName,
         authorizationUrl: paymentInitResult.authorizationUrl,
         accessCode: paymentInitResult.accessCode,
         isSimulated: paymentInitResult.isSimulated,

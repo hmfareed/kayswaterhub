@@ -61,6 +61,20 @@ body {
   outline-offset: 2px;
 }
 
+/* ─── Placeholder & Input defaults ─────────────────────────────────────────── */
+::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.85 !important;
+  font-weight: 400 !important;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8 !important;
+  opacity: 0.85 !important;
+  font-weight: 400 !important;
+}
+
 /* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar        { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track  { background: hsl(var(--color-bg)); }

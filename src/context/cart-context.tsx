@@ -46,22 +46,9 @@ const REGION_DELIVERY_RATES: Record<string, number> = {
 };
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    // Initial state with 3 popular items like in the UI design mockups!
-    const defaultItems: CartItem[] = [
-      { product: STORE_PRODUCTS[0], quantity: 2 }, // Voltic 500ml x 24 (2) = 90
-      { product: STORE_PRODUCTS[1], quantity: 1 }, // Bel Aqua 500ml x 24 (1) = 40
-      { product: STORE_PRODUCTS[2], quantity: 2 }, // Aqua Splash 500ml x 24 (2) = 76
-    ];
-    return defaultItems;
-  });
-
+  const [items, setItems] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
-  const [recentlyViewed, setRecentlyViewed] = useState<string[]>(() => [
-    STORE_PRODUCTS[0].id,
-    STORE_PRODUCTS[1].id,
-    STORE_PRODUCTS[2].id,
-  ]);
+  const [recentlyViewed, setRecentlyViewed] = useState<string[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string>("Greater Accra");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);

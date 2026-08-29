@@ -150,104 +150,9 @@ interface Order {
   rider?: { name: string; phone: string; eta: string; vehicle: string };
 }
 
-const INITIAL_ADDRESSES: Address[] = [
-  {
-    id: "addr-1",
-    label: "HOME",
-    fullName: "Mohammed Fareed",
-    phone: "+233 20 987 8744",
-    region: "Greater Accra",
-    city: "Accra",
-    area: "East Legon",
-    street: "Boundary Road",
-    houseNumber: "House 14",
-    digitalAddress: "GA-123-4567",
-    landmark: "Near American House",
-    deliveryInstructions: "Call when at the black security gate",
-    isDefault: true,
-  },
-  {
-    id: "addr-2",
-    label: "OFFICE",
-    fullName: "Mohammed Fareed",
-    phone: "+233 20 987 8744",
-    region: "Greater Accra",
-    city: "Accra",
-    area: "Airport Residential",
-    street: "Ambassadorial Enclave",
-    houseNumber: "Silver Star Tower, 4th Floor",
-    digitalAddress: "GA-456-7890",
-    landmark: "Opposite Marina Mall",
-    deliveryInstructions: "Leave with front desk reception",
-    isDefault: false,
-  },
-];
-
-const INITIAL_ORDERS: Order[] = [
-  {
-    id: "ORD-8943",
-    date: "Aug 27, 2026",
-    status: "out_for_delivery",
-    statusLabel: "Out for Delivery",
-    statusColor: "bg-amber-50 text-amber-700 border-amber-200",
-    total: 225.0,
-    items: [
-      { name: "Bel-Aqua Natural Mineral Water 750ml x15", quantity: 3, price: 55.0 },
-      { name: "Ice Block 5kg", quantity: 2, price: 30.0 },
-    ],
-    rider: {
-      name: "Kwame Asante",
-      phone: "+233 24 456 7890",
-      vehicle: "Honda CB 125",
-      eta: "~15 minutes",
-    },
-  },
-  {
-    id: "ORD-8942",
-    date: "Aug 26, 2026",
-    status: "delivered",
-    statusLabel: "Delivered",
-    statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    total: 180.0,
-    items: [{ name: "Voltic Natural Mineral Water 500ml x15", quantity: 4, price: 45.0 }],
-  },
-  {
-    id: "ORD-8721",
-    date: "Aug 21, 2026",
-    status: "delivered",
-    statusLabel: "Delivered",
-    statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    total: 310.0,
-    items: [
-      { name: "Bel-Aqua Natural Mineral Water 750ml x15", quantity: 5, price: 50.0 },
-      { name: "Verna Purified Water 500ml x16", quantity: 1, price: 42.0 },
-    ],
-  },
-  {
-    id: "ORD-8510",
-    date: "Aug 15, 2026",
-    status: "delivered",
-    statusLabel: "Delivered",
-    statusColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    total: 90.0,
-    items: [{ name: "Voltic Natural Mineral Water 500ml x15", quantity: 2, price: 45.0 }],
-  },
-  {
-    id: "ORD-8101",
-    date: "Aug 10, 2026",
-    status: "cancelled",
-    statusLabel: "Cancelled",
-    statusColor: "bg-rose-50 text-rose-700 border-rose-200",
-    total: 60.0,
-    items: [{ name: "Ice Block 10kg", quantity: 2, price: 30.0 }],
-  },
-];
-
-const INITIAL_PAYMENT_METHODS: PaymentMethod[] = [
-  { id: "pay-1", type: "MOMO", provider: "MTN Mobile Money", number: "024 **** 892", isDefault: true },
-  { id: "pay-2", type: "MOMO", provider: "Telecel Cash", number: "020 **** 744", isDefault: false },
-  { id: "pay-3", type: "BANK", provider: "GCB Bank", number: "•••• •••• 4128", bankName: "GCB Bank", isDefault: false },
-];
+const INITIAL_ADDRESSES: Address[] = [];
+const INITIAL_ORDERS: Order[] = [];
+const INITIAL_PAYMENT_METHODS: PaymentMethod[] = [];
 
 // ─── Utility: Order Timeline ──────────────────────────────────────────────────
 const ORDER_STEPS: { key: OrderStatus; label: string; icon: string }[] = [
@@ -354,10 +259,17 @@ function Toggle({
 
 // ─── Main Account Content ─────────────────────────────────────────────────────
 function AccountContent() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { itemCount, wishlist, toggleWishlist, recentlyViewed, addItem } = useCart();
+
+  // Redirect unauthenticated visitors to signup
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/register?callbackUrl=/account");
+    }
+  }, [status, router]);
 
   // ── Modal/Drawer state ────────────────────────────────────────────────────
   const [activeModal, setActiveModal] = useState<string | null>(null);
@@ -368,9 +280,93 @@ function AccountContent() {
   // ── Core data ─────────────────────────────────────────────────────────────
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loadingNotifs, setLoadingNotifs] = useState(false);
-  const [addresses, setAddresses] = useState<Address[]>(INITIAL_ADDRESSES);
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>(INITIAL_PAYMENT_METHODS);
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+
+  // Load addresses, orders, and payment methods from localStorage / API
+  useEffect(() => {
+    try {
+      const savedAddrs = localStorage.getItem("kays_user_addresses");
+      if (savedAddrs) {
+        const parsed = JSON.parse(savedAddrs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setAddresses(parsed);
+        }
+      }
+      const savedOrders = localStorage.getItem("kays_user_orders");
+      if (savedOrders) {
+        const parsedOrders = JSON.parse(savedOrders);
+        if (Array.isArray(parsedOrders) && parsedOrders.length > 0) {
+          setOrders(parsedOrders);
+        }
+      }
+      const savedPays = localStorage.getItem("kays_user_payments");
+      if (savedPays) {
+        const parsedPays = JSON.parse(savedPays);
+        if (Array.isArray(parsedPays) && parsedPays.length > 0) {
+          setPaymentMethods(parsedPays);
+        }
+      }
+    } catch {}
+
+    if (session?.user) {
+      // Fetch user profile addresses from API
+      fetch("/api/account/addresses")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.addresses) && data.addresses.length > 0) {
+            setAddresses(data.addresses);
+          }
+        })
+        .catch(() => {});
+
+      // Fetch user orders from API
+      fetch("/api/customer/orders")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            const mappedOrders: Order[] = data.data.map((o: any) => ({
+              id: o.orderNumber || o._id,
+              date: new Date(o.createdAt || Date.now()).toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }),
+              status: (o.status || "pending").toLowerCase(),
+              statusLabel: o.status || "Order Placed",
+              statusColor: "bg-blue-50 text-blue-700 border-blue-200",
+              total: o.total || 0,
+              items: (o.items || []).map((i: any) => ({
+                name: i.productName || i.name || "Water Pack",
+                quantity: i.quantity || 1,
+                price: i.unitPrice || i.price || 0,
+              })),
+            }));
+            setOrders(mappedOrders);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
+
+  // Sync addresses to localStorage
+  useEffect(() => {
+    if (addresses.length > 0) {
+      try {
+        localStorage.setItem("kays_user_addresses", JSON.stringify(addresses));
+      } catch {}
+    }
+  }, [addresses]);
+
+  // Sync payments to localStorage
+  useEffect(() => {
+    if (paymentMethods.length > 0) {
+      try {
+        localStorage.setItem("kays_user_payments", JSON.stringify(paymentMethods));
+      } catch {}
+    }
+  }, [paymentMethods]);
 
   // ── Notification filter ───────────────────────────────────────────────────
   const [notifFilter, setNotifFilter] = useState<NotifFilter>("all");
@@ -513,7 +509,7 @@ function AccountContent() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   // ── Settings: profile ─────────────────────────────────────────────────────
-  const [userName, setUserName] = useState(session?.user?.name || "Moh Fareed");
+  const [userName, setUserName] = useState(session?.user?.name || "");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
 
@@ -530,7 +526,7 @@ function AccountContent() {
   const [phoneOtp, setPhoneOtp] = useState("");
   const [phoneStep, setPhoneStep] = useState<"input" | "otp" | "done">("input");
   const [phoneLoading, setPhoneLoading] = useState(false);
-  const [userPhone, setUserPhone] = useState(session?.user?.phone || "+233 20 987 8744");
+  const [userPhone, setUserPhone] = useState(session?.user?.phone || "");
 
   // ── Settings: notification preferences ───────────────────────────────────
   const [notifPrefs, setNotifPrefs] = useState({
@@ -846,10 +842,10 @@ function AccountContent() {
   // ── Derived values ────────────────────────────────────────────────────────
   const wishlistedProducts = STORE_PRODUCTS.filter((p) => wishlist.includes(p.id));
   const recentProducts = STORE_PRODUCTS.filter((p) => recentlyViewed?.includes(p.id));
-  const displayName = session?.user?.name || "Moh Fareed";
-  const displayEmail = session?.user?.email || "mohammedfareed.dev@gmail.com";
+  const displayName = session?.user?.name || (session?.user?.email ? session.user.email.split("@")[0] : "Customer");
+  const displayEmail = session?.user?.email || "No email on file";
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const orderCount = 13;
+  const orderCount = orders.length;
 
   // ── Shared class helpers ──────────────────────────────────────────────────
   const cardBase = `rounded-2xl border transition-colors ${isDarkMode ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"}`;
@@ -1450,9 +1446,25 @@ function AccountContent() {
 
                 <div className="p-4 space-y-3.5">
                   {filteredOrders.length === 0 ? (
-                    <div className="text-center py-16 text-slate-400">
-                      <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                      <p className="text-sm font-bold">No orders in this category</p>
+                    <div className="text-center py-16 px-4 text-slate-400 space-y-3">
+                      <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-slate-900 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400">
+                        <Package className="w-8 h-8 stroke-[1.8]" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">No orders placed yet</p>
+                        <p className="text-xs text-slate-400 max-w-xs mx-auto">
+                          When you place orders, you can track real-time delivery and rider details here.
+                        </p>
+                      </div>
+                      <div className="pt-2">
+                        <Link
+                          href="/shop"
+                          onClick={closeModal}
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-all"
+                        >
+                          <span>Shop Water Packs</span>
+                        </Link>
+                      </div>
                     </div>
                   ) : (
                     filteredOrders.map((ord) => {

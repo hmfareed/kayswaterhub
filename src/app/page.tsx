@@ -2,13 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import {
-  Truck,
-  ShieldCheck,
-  CreditCard,
-  Headphones,
-  ShoppingBag,
-} from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import { STORE_PRODUCTS, WATER_BRANDS, STORE_WHATSAPP_LINK } from "@/lib/constants";
 import { StoreNavbar } from "@/components/store/navbar";
 import { StoreFooter } from "@/components/store/footer";
@@ -114,55 +108,8 @@ export default function HomePage() {
 
       {/* ─── The Rest of the Page (Pure Crisp White) ────────────────────────── */}
       <main className="flex-1 bg-white pb-16 lg:pb-0">
-        {/* ─── 4 Feature Highlights Banner ─────────────────────────────────── */}
-        <section className="py-10 bg-white border-b border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
-                  <Truck className="w-5 h-5 stroke-[1.8]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900">Fast Delivery</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Quick delivery to your doorstep</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
-                  <ShieldCheck className="w-5 h-5 stroke-[1.8]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900">Original Products</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">100% authentic water brands</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
-                  <CreditCard className="w-5 h-5 stroke-[1.8]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900">Secure Payment</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">Pay online safely and securely</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
-                  <Headphones className="w-5 h-5 stroke-[1.8]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-sm text-slate-900">Customer Support</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">We&apos;re here to help 24/7</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ─── Shop By Brand Section ─────────────────────────────────────────── */}
-        <section id="brands" className="py-14 lg:py-16 bg-white border-t border-slate-100">
+        <section id="brands" className="py-14 lg:py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between mb-8">
               <div>
