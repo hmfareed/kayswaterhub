@@ -353,7 +353,16 @@ function AccountContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { itemCount, wishlist, toggleWishlist, recentlyViewed, addItem } = useCart();
+  const {
+    itemCount,
+    wishlist,
+    toggleWishlist,
+    recentlyViewed,
+    addItem,
+    removeItem,
+    updateQuantity,
+    clearCart,
+  } = useCart();
   const { openChat } = useChat();
   const { isDarkMode, toggleDarkMode } = useTheme();
 
@@ -1080,76 +1089,6 @@ function AccountContent() {
 
   const handleDeletePayment = (id: string) =>
     setPaymentMethods((prev) => prev.filter((p) => p.id !== id));
-
-  // ── Chat ──────────────────────────────────────────────────────────────────
-  const handleSendMessage = async (textToSend?: string) => {
-    const text = textToSend || inputMessage.trim();
-    if (!text || isBotTyping) return;
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const userMsg = { sender: "user" as const, text, time };
-    setChatMessages((prev) => [...prev, userMsg]);
-    if (!textToSend) setInputMessage("");
-    setIsBotTyping(true);
-
-    try {
-      const clientCartItems = items.map((i) => ({
-        productId: i.product.id,
-        quantity: i.quantity,
-      }));
-
-      const apiMessages = [...chatMessages, userMsg].map((m) => ({
-        role: m.sender === "user" ? "user" : "assistant",
-        content: m.text,
-      }));
-
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: apiMessages,
-          clientCartItems,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.clientActions && Array.isArray(data.clientActions)) {
-        for (const action of data.clientActions) {
-          if (action.type === "ADD_TO_CART" && action.payload?.product) {
-            addItem(action.payload.product, action.payload.quantity || 1);
-          } else if (action.type === "REMOVE_FROM_CART" && action.payload?.productId) {
-            removeItem(action.payload.productId);
-          } else if (action.type === "UPDATE_QUANTITY" && action.payload?.productId) {
-            updateQuantity(action.payload.productId, action.payload.quantity);
-          } else if (action.type === "CLEAR_CART") {
-            clearCart();
-          } else if (action.type === "NAVIGATE_TO_CHECKOUT" && action.payload?.url) {
-            router.push(action.payload.url);
-          }
-        }
-      }
-
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: data.reply || "I am ready to help you with your order!",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-      ]);
-    } catch {
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          sender: "bot",
-          text: "Thank you for reaching out! You can also chat with our support team on WhatsApp at +233 20 987 8744.",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        },
-      ]);
-    } finally {
-      setIsBotTyping(false);
-    }
-  };
 
   // ── Quick add ─────────────────────────────────────────────────────────────
   const handleQuickAdd = (product: StoreProduct) => {
