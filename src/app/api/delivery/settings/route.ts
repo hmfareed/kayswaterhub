@@ -37,12 +37,26 @@ export async function PUT(req: NextRequest) {
       defaultDeliveryFee,
       pricePerKm,
       freeDeliveryThreshold,
+      freeDeliveryEnabled,
       maxDeliveryRadiusKm,
     } = body;
 
     let settings = await Settings.findOne();
     if (!settings) {
       settings = new Settings();
+    }
+
+    const isFreeEnabled =
+      freeDeliveryEnabled !== undefined
+        ? Boolean(freeDeliveryEnabled)
+        : freeDeliveryThreshold !== null &&
+          freeDeliveryThreshold !== undefined &&
+          Number(freeDeliveryThreshold) > 0;
+
+    let parsedThreshold: number | null = null;
+    if (isFreeEnabled && freeDeliveryThreshold !== null && freeDeliveryThreshold !== undefined && freeDeliveryThreshold !== "") {
+      const parsed = Number(freeDeliveryThreshold);
+      parsedThreshold = !isNaN(parsed) && parsed > 0 ? parsed : null;
     }
 
     settings.storeLocation = {
@@ -54,12 +68,14 @@ export async function PUT(req: NextRequest) {
         lat: coordinates?.lat !== undefined ? Number(coordinates.lat) : 5.6356,
         lng: coordinates?.lng !== undefined ? Number(coordinates.lng) : -0.1601,
       },
-      defaultDeliveryFee: Number(defaultDeliveryFee) || 20,
-      pricePerKm: Number(pricePerKm) || 2.5,
-      freeDeliveryThreshold: Number(freeDeliveryThreshold) || 350,
-      maxDeliveryRadiusKm: Number(maxDeliveryRadiusKm) || 60,
+      defaultDeliveryFee: defaultDeliveryFee !== undefined ? Number(defaultDeliveryFee) : 20,
+      pricePerKm: pricePerKm !== undefined ? Number(pricePerKm) : 2.5,
+      freeDeliveryThreshold: parsedThreshold,
+      freeDeliveryEnabled: isFreeEnabled,
+      maxDeliveryRadiusKm: maxDeliveryRadiusKm !== undefined ? Number(maxDeliveryRadiusKm) : 60,
     };
 
+    settings.markModified("storeLocation");
     await settings.save();
 
     return NextResponse.json({

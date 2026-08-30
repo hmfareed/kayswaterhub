@@ -18,6 +18,7 @@ export async function GET() {
         defaultDeliveryFee: 20,
         pricePerKm: 2.5,
         freeDeliveryThreshold: 350,
+        freeDeliveryEnabled: true,
         maxDeliveryRadiusKm: 60,
       },
     });

@@ -85,7 +85,8 @@ export default function StoreLocationPage() {
           coordinates: { lat: parseFloat(lat.toString()), lng: parseFloat(lng.toString()) },
           defaultDeliveryFee,
           pricePerKm,
-          freeDeliveryThreshold,
+          freeDeliveryEnabled: Number(freeDeliveryThreshold) > 0,
+          freeDeliveryThreshold: Number(freeDeliveryThreshold) > 0 ? Number(freeDeliveryThreshold) : null,
           maxDeliveryRadiusKm,
         }),
       });

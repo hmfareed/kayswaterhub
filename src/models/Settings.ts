@@ -18,7 +18,8 @@ export interface IStoreLocation {
   };
   defaultDeliveryFee: number;
   pricePerKm: number;
-  freeDeliveryThreshold: number;
+  freeDeliveryThreshold?: number | null;
+  freeDeliveryEnabled?: boolean;
   maxDeliveryRadiusKm: number;
 }
 
@@ -120,7 +121,8 @@ const StoreLocationSchema = new Schema<IStoreLocation>(
     },
     defaultDeliveryFee: { type: Number, default: 20 },
     pricePerKm: { type: Number, default: 2.5 },
-    freeDeliveryThreshold: { type: Number, default: 350 },
+    freeDeliveryThreshold: { type: Number, default: 350, required: false },
+    freeDeliveryEnabled: { type: Boolean, default: true },
     maxDeliveryRadiusKm: { type: Number, default: 60 },
   },
   { _id: false }
@@ -145,6 +147,7 @@ const SettingsSchema = new Schema<ISettings>(
         defaultDeliveryFee: 20,
         pricePerKm: 2.5,
         freeDeliveryThreshold: 350,
+        freeDeliveryEnabled: true,
         maxDeliveryRadiusKm: 60,
       }),
     },

@@ -31,6 +31,7 @@ export async function getAdminDeliveryOverview() {
       defaultDeliveryFee: 20,
       pricePerKm: 2.5,
       freeDeliveryThreshold: 350,
+      freeDeliveryEnabled: true,
       maxDeliveryRadiusKm: 60,
     },
     zones,
@@ -52,19 +53,35 @@ export async function updateStoreLocationSettings(data: any, adminId?: string) {
     settings = await Settings.create({});
   }
 
-  const prevLocation = settings.storeLocation;
+  // Parse free delivery parameters cleanly
+  const freeDeliveryEnabled =
+    data.freeDeliveryEnabled !== undefined
+      ? Boolean(data.freeDeliveryEnabled)
+      : data.freeDeliveryThreshold !== null &&
+        data.freeDeliveryThreshold !== undefined &&
+        Number(data.freeDeliveryThreshold) > 0;
+
+  let freeDeliveryThreshold: number | null = null;
+  if (freeDeliveryEnabled && data.freeDeliveryThreshold !== null && data.freeDeliveryThreshold !== undefined && data.freeDeliveryThreshold !== "") {
+    const parsed = Number(data.freeDeliveryThreshold);
+    freeDeliveryThreshold = !isNaN(parsed) && parsed > 0 ? parsed : null;
+  }
+
   settings.storeLocation = {
     ...settings.storeLocation,
     ...data,
+    freeDeliveryEnabled,
+    freeDeliveryThreshold,
   };
 
+  settings.markModified("storeLocation");
   await settings.save();
 
   await logAdminAction({
     performedBy: adminId,
     action: "STORE_LOCATION_UPDATED",
     resource: "Settings",
-    description: `Updated warehouse origin GPS location to ${data.address || "new address"} (${data.coordinates?.lat}, ${data.coordinates?.lng})`,
+    description: `Updated warehouse delivery settings: base fee GH₵${settings.storeLocation.defaultDeliveryFee}, rate GH₵${settings.storeLocation.pricePerKm}/km, free delivery: ${freeDeliveryEnabled ? `GH₵${freeDeliveryThreshold}+` : "Disabled"}`,
   });
 
   return settings.storeLocation;

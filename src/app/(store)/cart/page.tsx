@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -34,9 +34,39 @@ export default function CartPage() {
   const router = useRouter();
   const { items, updateQuantity, removeItem, clearCart, subtotal, itemCount } = useCart();
 
-  const freeDeliveryThreshold = 350;
-  const progressPercent = Math.min(100, Math.round((subtotal / freeDeliveryThreshold) * 100));
-  const diffForFree = freeDeliveryThreshold - subtotal;
+  const [deliverySettings, setDeliverySettings] = useState<{
+    freeDeliveryEnabled: boolean;
+    freeDeliveryThreshold: number | null;
+  }>({
+    freeDeliveryEnabled: true,
+    freeDeliveryThreshold: 350,
+  });
+
+  useEffect(() => {
+    fetch("/api/delivery/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success && d.data) {
+          const enabled =
+            d.data.freeDeliveryEnabled !== false &&
+            d.data.freeDeliveryThreshold != null &&
+            Number(d.data.freeDeliveryThreshold) > 0;
+          setDeliverySettings({
+            freeDeliveryEnabled: enabled,
+            freeDeliveryThreshold: enabled ? Number(d.data.freeDeliveryThreshold) : null,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const freeThreshold = deliverySettings.freeDeliveryThreshold;
+  const isFreeDeliveryActive =
+    deliverySettings.freeDeliveryEnabled && freeThreshold != null && freeThreshold > 0;
+  const progressPercent = isFreeDeliveryActive
+    ? Math.min(100, Math.round((subtotal / freeThreshold) * 100))
+    : 0;
+  const diffForFree = isFreeDeliveryActive ? freeThreshold - subtotal : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-black text-slate-900 dark:text-neutral-100 selection:bg-blue-500 selection:text-white">
@@ -109,32 +139,42 @@ export default function CartPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Column: Cart Items Table */}
             <div className="lg:col-span-7 space-y-4">
-              {/* Free Delivery Bar */}
-              <div className="bg-white dark:bg-neutral-900/90 rounded-2xl p-4 border border-blue-100 dark:border-neutral-800 shadow-2xs space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <div className="flex items-center gap-2 text-slate-700 dark:text-neutral-300">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
-                    {diffForFree > 0 ? (
-                      <span>
-                        Add <strong className="text-blue-600 dark:text-blue-400">{formatCurrency(diffForFree)}</strong> more for <strong>Free Delivery</strong>
-                      </span>
-                    ) : (
-                      <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-                        🎉 You have unlocked Free Greater Accra Delivery!
-                      </span>
-                    )}
+              {/* Free Delivery Bar or Standard Delivery Bar */}
+              {isFreeDeliveryActive ? (
+                <div className="bg-white dark:bg-neutral-900/90 rounded-2xl p-4 border border-blue-100 dark:border-neutral-800 shadow-2xs space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <div className="flex items-center gap-2 text-slate-700 dark:text-neutral-300">
+                      <Sparkles className="w-4 h-4 text-amber-500" />
+                      {diffForFree > 0 ? (
+                        <span>
+                          Add <strong className="text-blue-600 dark:text-blue-400">{formatCurrency(diffForFree)}</strong> more for <strong>Free Delivery</strong>
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold">
+                          🎉 You have unlocked Free Greater Accra Delivery!
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-slate-400 dark:text-neutral-500 font-mono text-[11px]">{progressPercent}%</span>
                   </div>
-                  <span className="text-slate-400 dark:text-neutral-500 font-mono text-[11px]">{progressPercent}%</span>
+                  <div className="w-full h-2 bg-slate-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-500 rounded-full ${
+                        diffForFree <= 0 ? "bg-emerald-500" : "bg-blue-600"
+                      }`}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-2 bg-slate-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 rounded-full ${
-                      diffForFree <= 0 ? "bg-emerald-500" : "bg-blue-600"
-                    }`}
-                    style={{ width: `${progressPercent}%` }}
-                  />
+              ) : (
+                <div className="bg-white dark:bg-neutral-900/90 rounded-2xl p-4 border border-slate-200/80 dark:border-neutral-800 shadow-2xs flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-slate-700 dark:text-neutral-300 font-medium">
+                    <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>Doorstep delivery &amp; depot pickup available across Greater Accra &amp; nationwide</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-slate-400 dark:text-neutral-500 shrink-0">Live Rates</span>
                 </div>
-              </div>
+              )}
 
               {/* Items Card */}
               <div className="bg-white dark:bg-neutral-900/90 rounded-3xl p-5 sm:p-7 border border-slate-200/80 dark:border-neutral-800 shadow-xs divide-y divide-slate-100 dark:divide-neutral-800">

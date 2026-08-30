@@ -366,6 +366,26 @@ async function handleCheckStock(args: {
   };
 }
 
+// ─── Free Delivery Config Helper ─────────────────────────────────────────────
+
+async function getStoreFreeDeliveryConfig(): Promise<{ enabled: boolean; threshold: number | null }> {
+  try {
+    await connectDB();
+    const settings = await Settings.findOne();
+    const storeLoc = settings?.storeLocation;
+    const enabled =
+      storeLoc?.freeDeliveryEnabled !== false &&
+      storeLoc?.freeDeliveryThreshold != null &&
+      Number(storeLoc.freeDeliveryThreshold) > 0;
+    return {
+      enabled,
+      threshold: enabled ? Number(storeLoc.freeDeliveryThreshold) : null,
+    };
+  } catch {
+    return { enabled: true, threshold: 350 };
+  }
+}
+
 // ─── Price Calculator Tool ────────────────────────────────────────────────────
 
 async function handleCalculatePrice(args: {
@@ -401,7 +421,9 @@ async function handleCalculatePrice(args: {
 
   const unitPrice = product.price;
   const totalPrice = unitPrice * qty;
-  const isFreeDelivery = totalPrice >= 100;
+  const freeConfig = await getStoreFreeDeliveryConfig();
+  const isFreeDelivery =
+    freeConfig.enabled && freeConfig.threshold != null && totalPrice >= freeConfig.threshold;
 
   return {
     toolName: "calculatePrice",
@@ -413,6 +435,7 @@ async function handleCalculatePrice(args: {
       unitPriceInGHS: unitPrice,
       totalPriceInGHS: totalPrice,
       isFreeDelivery,
+      freeDeliveryThresholdInGHS: freeConfig.enabled ? freeConfig.threshold : null,
       product,
     },
     suggestedProducts: [product],
@@ -468,7 +491,13 @@ async function handleGetCart(context: {
 
   const subtotal = mappedItems.reduce((acc, item: any) => acc + item.totalInGHS, 0);
   const itemCount = mappedItems.reduce((acc, item: any) => acc + item.quantity, 0);
-  const deliveryFee = itemCount > 0 ? (subtotal >= 100 ? 0 : 15) : 0;
+  const freeConfig = await getStoreFreeDeliveryConfig();
+  const isFreeDelivery =
+    freeConfig.enabled &&
+    freeConfig.threshold != null &&
+    subtotal >= freeConfig.threshold &&
+    itemCount > 0;
+  const deliveryFee = itemCount > 0 ? (isFreeDelivery ? 0 : 15) : 0;
   const total = subtotal + deliveryFee;
 
   return {
@@ -479,7 +508,8 @@ async function handleGetCart(context: {
       estimatedDeliveryFeeInGHS: deliveryFee,
       totalInGHS: total,
       items: mappedItems,
-      isFreeDelivery: subtotal >= 100 && itemCount > 0,
+      isFreeDelivery,
+      freeDeliveryThresholdInGHS: freeConfig.enabled ? freeConfig.threshold : null,
     },
   };
 }
@@ -841,6 +871,8 @@ async function handleGetDeliveryInformation(args: { region?: string; city?: stri
     resolvedRegion = args.region || "Greater Accra";
   }
 
+  const freeConfig = await getStoreFreeDeliveryConfig();
+
   return {
     toolName: "getDeliveryInformation",
     result: {
@@ -849,7 +881,8 @@ async function handleGetDeliveryInformation(args: { region?: string; city?: stri
       queriedRegion: resolvedRegion,
       queriedCity: resolvedCity,
       deliveryFeeForQueriedRegionInGHS: selectedRate,
-      freeDeliveryThresholdInGHS: 100,
+      freeDeliveryThresholdInGHS: freeConfig.enabled ? freeConfig.threshold : null,
+      freeDeliveryEnabled: freeConfig.enabled,
       sameDayDeliveryCutoff: "2:00 PM (for Greater Accra)",
       deliveryTimeframe: {
         greaterAccra: "Same-day if ordered before 2:00 PM; next-morning if ordered after.",

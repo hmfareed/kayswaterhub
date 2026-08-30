@@ -128,9 +128,11 @@ export async function resolveDeliveryFee(
 
   const packQuantity = Math.max(1, params.packQuantity ?? 1);
   const subtotal = params.subtotal ?? 0;
-  // Free delivery threshold is optional — only active if explicitly set > 0 by Admin
+  // Free delivery threshold is optional — only active if explicitly enabled and set > 0 by Admin
   const globalFreeThreshold =
-    storeLoc?.freeDeliveryThreshold && storeLoc.freeDeliveryThreshold > 0
+    storeLoc?.freeDeliveryEnabled !== false &&
+    storeLoc?.freeDeliveryThreshold != null &&
+    storeLoc.freeDeliveryThreshold > 0
       ? storeLoc.freeDeliveryThreshold
       : undefined;
 
