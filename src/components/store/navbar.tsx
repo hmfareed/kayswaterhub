@@ -16,25 +16,56 @@ import {
   LayoutDashboard,
   Truck,
   Package,
-  Sparkles,
+  Bell,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
-import { useChat } from "@/context/chat-context";
 import { STORE_PHONE_DISPLAY } from "@/lib/constants";
+import {
+  CustomerNotificationsDrawer,
+  CustomerNotificationItem,
+} from "./CustomerNotificationsDrawer";
 
 export function StoreNavbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const { itemCount } = useCart();
-  const { toggleChat } = useChat();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
+  // Notifications state
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<CustomerNotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+
   const isHome = pathname === "/";
   const user = session?.user;
   const isAuthenticated = status === "authenticated" && !!user;
+
+  // Fetch notifications
+  const fetchNotifications = async () => {
+    try {
+      setNotificationsLoading(true);
+      const res = await fetch("/api/notifications?limit=15");
+      const json = await res.json();
+      if (json.success && Array.isArray(json.data)) {
+        setNotifications(json.data);
+        setUnreadCount(typeof json.unreadCount === "number" ? json.unreadCount : 0);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch customer notifications:", err);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [session]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -88,7 +119,7 @@ export function StoreNavbar() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-18 lg:h-20 flex items-center justify-between gap-4">
           {/* Left: Hamburger Button + Kay's Packs Logo */}
           <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-            {/* Hamburger Button (Replaces the water droplet symbol) */}
+            {/* Hamburger Button */}
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-200/90 dark:border-neutral-800 bg-white/90 dark:bg-neutral-900/90 shadow-2xs flex items-center justify-center text-slate-800 dark:text-neutral-200 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-all active:scale-95 cursor-pointer"
@@ -130,18 +161,22 @@ export function StoreNavbar() {
             })}
           </nav>
 
-          {/* Right Desktop: AI Assistant + User Account + Cart */}
+          {/* Right Desktop: Notifications Bell + User Account + Cart */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* Desktop AI Chatbot Button */}
+            {/* Desktop Notification Bell Button (Replaces top nav AI button) */}
             <button
-              id="top-nav-desktop-ai-chat-btn"
-              onClick={toggleChat}
-              className="w-10 h-10 rounded-full border border-blue-200/90 dark:border-blue-500/30 bg-gradient-to-br from-blue-50 to-indigo-50/80 dark:from-blue-950/40 dark:to-indigo-950/40 hover:from-blue-600 hover:to-indigo-600 text-blue-600 dark:text-blue-400 hover:text-white shadow-2xs flex items-center justify-center transition-all active:scale-95 cursor-pointer relative group"
-              aria-label="Open AI Hydration Assistant"
-              title="AI Hydration Assistant"
+              id="top-nav-desktop-notifications-btn"
+              onClick={() => setNotificationsOpen(true)}
+              className="relative w-10 h-10 rounded-full border border-slate-200/90 dark:border-neutral-800 hover:border-blue-600 dark:hover:border-blue-500 bg-white/80 dark:bg-neutral-900/80 hover:bg-blue-50/60 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 shadow-2xs flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              aria-label="View Notifications"
+              title="Notifications"
             >
-              <Sparkles className="w-4.5 h-4.5" />
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-neutral-950 animate-pulse" />
+              <Bell className="w-4.5 h-4.5 stroke-[1.8]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </button>
 
             {isAuthenticated ? (
@@ -259,22 +294,36 @@ export function StoreNavbar() {
             </Link>
           </div>
 
-          {/* Right Mobile: AI Assistant Button in Top Right Corner */}
+          {/* Right Mobile: Notifications Bell in Top Right Corner */}
           <div className="lg:hidden flex items-center gap-2">
             <button
-              id="top-nav-mobile-ai-chat-btn"
-              onClick={toggleChat}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-blue-200/90 dark:border-blue-500/30 bg-gradient-to-br from-blue-50 to-indigo-50/80 dark:from-blue-950/50 dark:to-indigo-950/50 hover:from-blue-600 hover:to-indigo-600 text-blue-600 dark:text-blue-400 hover:text-white shadow-2xs flex items-center justify-center transition-all active:scale-95 cursor-pointer relative group"
-              aria-label="Open AI Hydration Assistant"
-              title="AI Hydration Assistant"
+              id="top-nav-mobile-notifications-btn"
+              onClick={() => setNotificationsOpen(true)}
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-200/90 dark:border-neutral-800 hover:border-blue-600 dark:hover:border-blue-500 bg-white/90 dark:bg-neutral-900/90 hover:bg-blue-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 shadow-2xs flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              aria-label="View Notifications"
+              title="Notifications"
             >
-              <Sparkles className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-neutral-950 animate-pulse" />
+              <Bell className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[1.8]" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-rose-600 text-white text-[9px] font-bold flex items-center justify-center shadow-xs">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
       </header>
       {!isHome && <div className="h-16 sm:h-18 lg:h-20 shrink-0" aria-hidden="true" />}
+
+      {/* Customer Notifications Drawer */}
+      <CustomerNotificationsDrawer
+        isOpen={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+        notifications={notifications}
+        unreadCount={unreadCount}
+        loading={notificationsLoading}
+        onRefresh={fetchNotifications}
+      />
 
       {/* Slide-in Drawer on Mobile & Tablet */}
       {mobileMenuOpen && (
