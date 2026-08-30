@@ -56,6 +56,8 @@ import {
   GHANA_REGIONS,
   StoreProduct,
 } from "@/lib/constants";
+import { PaymentMethodBadge } from "@/components/ui/brand-logos";
+import { PaymentLoadingOverlay } from "@/components/checkout/PaymentLoadingOverlay";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 
 // ─── WhatsApp Brand Icon ──────────────────────────────────────────────────────
@@ -2338,6 +2340,21 @@ function AccountContent() {
           </div>
         </div>
       )}
+
+      {/* Payment Loading Screen for Orders tab retry */}
+      {(() => {
+        const payingOrder = orders.find((o) => o.id === payingOrderId || o._id === payingOrderId);
+        return (
+          <PaymentLoadingOverlay
+            isOpen={!!payingOrderId}
+            amount={payingOrder?.total}
+            orderNumber={payingOrder?.id || payingOrder?._id}
+            customerName={session?.user?.name || ""}
+            itemCount={payingOrder?.items?.reduce((sum, i) => sum + i.quantity, 0)}
+            onCancel={() => setPayingOrderId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }

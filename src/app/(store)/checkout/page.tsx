@@ -33,6 +33,7 @@ import { StoreNavbar } from "@/components/store/navbar";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { RealProductImage } from "@/components/products/real-product-image";
 import { PaymentMethodBadge } from "@/components/ui/brand-logos";
+import { PaymentLoadingOverlay } from "@/components/checkout/PaymentLoadingOverlay";
 
 interface SavedAddress {
   _id?: string;
@@ -145,6 +146,12 @@ export default function CheckoutPage() {
 
   // Submission State
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirectingPayment, setIsRedirectingPayment] = useState(false);
+  const [pendingPaymentSnapshot, setPendingPaymentSnapshot] = useState<{
+    amount: number;
+    itemCount: number;
+    orderNumber?: string;
+  } | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   // Helper boolean: Greater Accra or Nationwide
@@ -439,6 +446,11 @@ export default function CheckoutPage() {
     }
 
     setIsSubmitting(true);
+    setIsRedirectingPayment(true);
+    setPendingPaymentSnapshot({
+      amount: onlineTotalToPay,
+      itemCount: items.reduce((sum, item) => sum + item.quantity, 0),
+    });
 
     if (saveAddressForFuture && fulfillmentType === "DELIVERY") {
       saveAddressLocally();
@@ -503,7 +515,10 @@ export default function CheckoutPage() {
         throw new Error(result.error || "Failed to process checkout.");
       }
 
-      const { authorizationUrl, orderId, reference } = result.data;
+      const { authorizationUrl, orderId, reference, orderNumber } = result.data;
+      if (orderNumber) {
+        setPendingPaymentSnapshot((prev) => (prev ? { ...prev, orderNumber } : null));
+      }
 
       // Clear cart
       clearCart();
@@ -518,6 +533,7 @@ export default function CheckoutPage() {
       console.error("[Checkout] Error:", err);
       setCheckoutError((err as Error).message || "Checkout failed. Please try again.");
       setIsSubmitting(false);
+      setIsRedirectingPayment(false);
     }
   };
 
@@ -568,7 +584,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        {items.length === 0 ? (
+        {items.length === 0 && !isRedirectingPayment ? (
           <div className="bg-white dark:bg-neutral-900/90 rounded-3xl p-12 text-center border border-slate-200/80 dark:border-neutral-800 shadow-xs max-w-lg mx-auto space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-neutral-800 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-inner">
               <Truck className="w-8 h-8" />
@@ -1367,6 +1383,19 @@ export default function CheckoutPage() {
           </form>
         )}
       </main>
+
+      {/* Payment Gateway Loading Screen */}
+      <PaymentLoadingOverlay
+        isOpen={isRedirectingPayment}
+        amount={pendingPaymentSnapshot?.amount || onlineTotalToPay}
+        itemCount={pendingPaymentSnapshot?.itemCount || items.reduce((sum, item) => sum + item.quantity, 0)}
+        orderNumber={pendingPaymentSnapshot?.orderNumber}
+        customerName={formData.fullName}
+        onCancel={() => {
+          setIsSubmitting(false);
+          setIsRedirectingPayment(false);
+        }}
+      />
 
       <MobileBottomNav />
     </div>

@@ -27,6 +27,7 @@ import { formatCurrency } from "@/lib/constants";
 import { StoreNavbar } from "@/components/store/navbar";
 import { MobileBottomNav } from "@/components/store/mobile-bottom-nav";
 import { RealProductImage } from "@/components/products/real-product-image";
+import { PaymentLoadingOverlay } from "@/components/checkout/PaymentLoadingOverlay";
 
 interface OrderItem {
   productName: string;
@@ -743,6 +744,15 @@ function OrderConfirmationContent() {
           )}
         </div>
       </main>
+
+      {/* Payment Gateway Loading Screen */}
+      <PaymentLoadingOverlay
+        isOpen={isPaying}
+        amount={order?.total}
+        orderNumber={order?.orderNumber}
+        customerName={order?.deliveryAddress?.fullName || order?.guestInformation?.name}
+        onCancel={() => setIsPaying(false)}
+      />
 
       <MobileBottomNav />
     </div>
