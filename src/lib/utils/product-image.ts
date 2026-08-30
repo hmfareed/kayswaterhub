@@ -11,7 +11,7 @@ export function getProductImage(item?: {
   bottleSize?: string;
   packSize?: string;
 }): string {
-  if (!item) return "/images/products-clean/voltic-pack.png";
+  if (!item) return "/images/products/newvoltic15x500ml.jpg";
 
   if (item.image && typeof item.image === "string" && item.image.trim() !== "") {
     return item.image;
@@ -28,14 +28,14 @@ export function getProductImage(item?: {
   // Voltic
   if (brand.includes("voltic") || name.includes("voltic")) {
     if (size.includes("350") || name.includes("350") || name.includes("pocket")) {
-      return "/images/products-clean/voltic-pocket-pack.png";
+      return "/images/products/voltic.jpg";
     }
-    return "/images/products-clean/voltic-pack.png";
+    return "/images/products/newvoltic15x500ml.jpg";
   }
 
   // Bel-Aqua
   if (brand.includes("bel") || name.includes("bel")) {
-    return "/images/products-clean/bel-aqua-pack.png";
+    return "/images/products/bel-aqua-15x750ml.jpg";
   }
 
   // Verna
@@ -44,17 +44,17 @@ export function getProductImage(item?: {
       size.includes("15") &&
       (size.includes("l") || size.includes("ltr") || name.includes("jar") || name.includes("dispenser"))
     ) {
-      return "/images/products-clean/verna-jar-pack.png";
+      return "/images/products/verna-jar-15ltr.jpeg";
     }
     if (size.includes("750") || name.includes("750")) {
-      return "/images/products-clean/verna-750-pack.png";
+      return "/images/products/verna-16x750ml.jpg";
     }
-    return "/images/products-clean/verna-500-pack.png";
+    return "/images/products/verna-15x500ml.jpg";
   }
 
   // Awake
   if (brand.includes("awake") || name.includes("awake")) {
-    return "/images/products-clean/awake-pack.png";
+    return "/images/products/awake-16x750ml.jpg";
   }
 
   // Slem Fit / Slim Fit
@@ -64,9 +64,9 @@ export function getProductImage(item?: {
     brand.includes("slim") ||
     name.includes("slim")
   ) {
-    return "/images/products-clean/slemfit-pack.png";
+    return "/images/products/slemfit-16x500ml.jpg";
   }
 
   // Default fallback
-  return "/images/products-clean/voltic-pack.png";
+  return "/images/products/newvoltic15x500ml.jpg";
 }

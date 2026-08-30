@@ -44,8 +44,6 @@ const PricingRuleSchema = new Schema<IPricingRule>(
   { timestamps: true }
 );
 
-PricingRuleSchema.index({ variantId: 1 });
-
 const PricingRule: Model<IPricingRule> =
   mongoose.models.PricingRule ??
   mongoose.model<IPricingRule>("PricingRule", PricingRuleSchema);

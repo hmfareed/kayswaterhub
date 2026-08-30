@@ -9,59 +9,59 @@ import { STORE_PHONE_DISPLAY, STORE_WHATSAPP_LINK } from "@/lib/constants";
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-black text-slate-900 dark:text-neutral-100 selection:bg-blue-500 selection:text-white">
       <StoreNavbar />
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="py-16 sm:py-24 bg-gradient-to-b from-blue-50/50 via-white to-white text-center">
+        <section className="py-16 sm:py-24 bg-gradient-to-b from-blue-50/50 via-white to-white dark:from-neutral-950 dark:via-black dark:to-black text-center border-b border-slate-100 dark:border-neutral-850">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 text-xs font-bold tracking-wide">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50 text-xs font-bold tracking-wide">
               <Droplets className="w-3.5 h-3.5 fill-current" />
               <span>Pure Hydration For Ghana</span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 dark:text-neutral-50 tracking-tight leading-tight">
               Pure Water. Reliable Delivery. <br className="hidden sm:inline" />
-              <span className="text-blue-600">Zero Hassle.</span>
+              <span className="text-blue-600 dark:text-blue-400">Zero Hassle.</span>
             </h1>
 
-            <p className="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-slate-600 dark:text-neutral-400 font-normal leading-relaxed max-w-2xl mx-auto">
               Kay&apos;s Packs connects Ghanaian households, corporate offices, and event organizers with Ghana&apos;s most trusted natural mineral and purified water brands.
             </p>
           </div>
         </section>
 
         {/* Core Pillars */}
-        <section className="py-16 bg-white border-t border-slate-100">
+        <section className="py-16 bg-white dark:bg-black">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
+              <div className="p-8 rounded-2xl bg-slate-50 dark:bg-neutral-900/90 border border-slate-100 dark:border-neutral-800 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">100% Authentic Quality</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-neutral-100">100% Authentic Quality</h3>
+                <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed">
                   Direct partnership with certified manufacturers including Voltic, Bel-Aqua, Verna, Awake, and Slem Fit to ensure sealed purity and genuine products.
                 </p>
               </div>
 
-              <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
-                <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <div className="p-8 rounded-2xl bg-slate-50 dark:bg-neutral-900/90 border border-slate-100 dark:border-neutral-800 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Truck className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">Fast Doorstep Delivery</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-neutral-100">Fast Doorstep Delivery</h3>
+                <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed">
                   Same-day and scheduled dispatch across Accra and surrounding regions. We carry the heavy lifting right into your kitchen or office dispenser.
                 </p>
               </div>
 
-              <div className="p-8 rounded-2xl bg-slate-50 border border-slate-100 space-y-4">
-                <div className="w-12 h-12 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center">
+              <div className="p-8 rounded-2xl bg-slate-50 dark:bg-neutral-900/90 border border-slate-100 dark:border-neutral-800 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <HeartHandshake className="w-6 h-6" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900">Retail & Wholesale Solutions</h3>
-                <p className="text-sm text-slate-600 leading-relaxed">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-neutral-100">Retail & Wholesale Solutions</h3>
+                <p className="text-sm text-slate-600 dark:text-neutral-400 leading-relaxed">
                   Whether you need 2 packs for your apartment or 200 cases for a wedding or corporate conference, we offer transparent volume pricing.
                 </p>
               </div>
@@ -70,10 +70,10 @@ export default function AboutPage() {
         </section>
 
         {/* CTA section */}
-        <section className="py-16 bg-slate-900 text-white">
+        <section className="py-16 bg-slate-900 dark:bg-neutral-950 text-white border-t border-slate-800 dark:border-neutral-850">
           <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">Ready to stay refreshed?</h2>
-            <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
+            <p className="text-sm sm:text-base text-slate-300 dark:text-neutral-400 max-w-xl mx-auto">
               Explore our wide variety of 500ml, 750ml, 1.5L and dispenser jars with convenient online payment or WhatsApp orders.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4 pt-2">

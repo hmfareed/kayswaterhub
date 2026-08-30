@@ -250,7 +250,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.9,
     reviewCount: 342,
     description: "Pure, refreshing and naturally mineralized water from the hills of Ghana. Packaged in a shrink wrap of 15 convenient 500ml bottles.",
-    images: ["/images/products-clean/voltic-pack.png", "/images/products/newvoltic15x500ml.jpg", "/images/products/voltic-15x500ml.jpg"],
+    images: ["/images/products/newvoltic15x500ml.jpg", "/images/products/voltic-15x500ml.jpg"],
   },
   {
     id: "prod-bel-aqua-750-15",
@@ -272,7 +272,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.8,
     reviewCount: 256,
     description: "Mineral-rich premium drinking water that keeps you energized and hydrated throughout your day. 15 bottles of 750ml per pack.",
-    images: ["/images/products-clean/bel-aqua-pack.png", "/images/products/bel-aqua-15x750ml.jpg"],
+    images: ["/images/products/bel-aqua-15x750ml.jpg"],
   },
   {
     id: "prod-verna-500-15",
@@ -293,7 +293,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.8,
     reviewCount: 145,
     description: "Naturally purified water with balanced minerals, suitable for infants, adults, and wellness-focused lifestyles.",
-    images: ["/images/products-clean/verna-500-pack.png", "/images/products/verna-15x500ml.jpg"],
+    images: ["/images/products/verna-15x500ml.jpg"],
   },
   {
     id: "prod-verna-750-16",
@@ -315,7 +315,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.9,
     reviewCount: 160,
     description: "Full case of 16 premium 750ml Verna mineral water bottles for optimal daily hydration.",
-    images: ["/images/products-clean/verna-750-pack.png", "/images/products/verna-16x750ml.jpg"],
+    images: ["/images/products/verna-16x750ml.jpg"],
   },
   {
     id: "prod-awake-750-16",
@@ -337,7 +337,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.8,
     reviewCount: 178,
     description: "Clean, ultra-pure water supporting charity and community cardiac healthcare across Ghana. Case of 16 bottles of 750ml.",
-    images: ["/images/products-clean/awake-pack.png", "/images/products/awake-16x750ml.jpg", "/images/products/awake-12x750ml.jpg"],
+    images: ["/images/products/awake-16x750ml.jpg", "/images/products/awake-12x750ml.jpg"],
   },
   {
     id: "prod-slem-fit-500-16",
@@ -358,7 +358,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.7,
     reviewCount: 64,
     description: "Special alkaline balanced pH water formulated for fitness routines and active daily lifestyles.",
-    images: ["/images/products-clean/slemfit-pack.png", "/images/products/slemfit-16x500ml.jpg"],
+    images: ["/images/products/slemfit-16x500ml.jpg"],
   },
   {
     id: "prod-verna-jar-15l",
@@ -379,7 +379,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.9,
     reviewCount: 78,
     description: "Standard 15-litre water cooler jar refill, thoroughly sanitized and bottled under strict laboratory conditions.",
-    images: ["/images/products-clean/verna-jar-pack.png", "/images/products/verna-jar-15ltr.jpeg"],
+    images: ["/images/products/verna-jar-15ltr.jpeg"],
   },
   {
     id: "prod-voltic-350-15",
@@ -400,7 +400,7 @@ export const STORE_PRODUCTS: StoreProduct[] = [
     rating: 4.8,
     reviewCount: 88,
     description: "Pocket-sized Voltic bottles designed for events, schools, meetings, and quick on-the-go hydration.",
-    images: ["/images/products-clean/voltic-pocket-pack.png", "/images/products/voltic.jpg"],
+    images: ["/images/products/voltic.jpg"],
   },
 ];
 

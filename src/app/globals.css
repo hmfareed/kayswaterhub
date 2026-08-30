@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ─── Design Tokens ──────────────────────────────────────────────────────────── */
 :root {
   /* Brand palette — deep ocean blue + clean white */
@@ -35,6 +37,8 @@
 }
 
 /* ─── AMOLED Black Tokens ─────────────────────────────────────────────────────── */
+:root.dark,
+html.dark,
 .dark {
   /* Brand palette in Dark Mode */
   --color-primary:        210 100% 52%;
@@ -75,8 +79,9 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
-.dark html,
-.dark body {
+html.dark,
+html.dark body,
+body.dark {
   background-color: #000000 !important;
   color: #f8fafc;
   color-scheme: dark;

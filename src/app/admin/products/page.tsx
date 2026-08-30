@@ -541,7 +541,7 @@ export default function AdminProductsPage() {
               ) : (
                 products.map((item) => {
                   const primaryImage =
-                    item.images?.[0] || "/images/products-clean/voltic-pack.png";
+                    item.images?.[0] || "/images/products/newvoltic15x500ml.jpg";
                   const isLow = item.totalStock <= 15 && item.totalStock > 0;
                   const isOut = item.totalStock === 0;
 

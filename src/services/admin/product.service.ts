@@ -334,7 +334,7 @@ export async function createAdminProduct(data: {
     brandId: new mongoose.Types.ObjectId(data.brandId),
     categoryId: new mongoose.Types.ObjectId(data.categoryId),
     description: data.description || "",
-    images: data.images && data.images.length > 0 ? data.images : ["/images/products-clean/voltic-pack.png"],
+    images: data.images && data.images.length > 0 ? data.images : ["/images/products/newvoltic15x500ml.jpg"],
     isFeatured: data.isFeatured || false,
     isActive: data.isActive !== undefined ? data.isActive : true,
   });

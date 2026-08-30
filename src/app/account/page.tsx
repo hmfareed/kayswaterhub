@@ -698,6 +698,10 @@ function AccountContent() {
   const [cancelSuccessMsg, setCancelSuccessMsg] = useState<string | null>(null);
   const [justCancelledIds, setJustCancelledIds] = useState<string[]>([]);
 
+  // Payment re-initiation state
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [payError, setPayError] = useState<{ id: string; message: string } | null>(null);
+
   const CANCELLABLE_STATUSES: OrderStatus[] = ["pending", "confirmed"];
 
   // ── Order actions ─────────────────────────────────────────────────────────
@@ -710,6 +714,46 @@ function AccountContent() {
             justCancelledIds.includes(o.id) ||
             (o._id && justCancelledIds.includes(o._id))
         );
+
+  const handlePayOrder = async (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId || o._id === orderId);
+    if (!order) return;
+    const apiId = (order as any)._id || orderId;
+    setPayingOrderId(orderId);
+    setPayError(null);
+
+    try {
+      const res = await fetch(`/api/orders/${apiId}/pay`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        if (data.isAlreadyPaid) {
+          await fetchUserOrders();
+          throw new Error("This order has already been paid.");
+        }
+        if (data.isCancelled) {
+          await fetchUserOrders();
+          throw new Error("This order has been cancelled and cannot be paid.");
+        }
+        throw new Error(data.error || "Failed to initialize payment.");
+      }
+
+      if (data.data?.authorizationUrl) {
+        window.location.href = data.data.authorizationUrl;
+      } else {
+        router.push(`/orders/${apiId}?ref=${data.data?.reference || ""}`);
+      }
+    } catch (err) {
+      setPayError({
+        id: orderId,
+        message: (err as Error).message || "Could not start payment. Please try again.",
+      });
+      setPayingOrderId(null);
+    }
+  };
 
   const handleCancelOrder = async (orderId: string) => {
     const order = orders.find((o) => o.id === orderId || o._id === orderId);
@@ -1817,11 +1861,62 @@ function AccountContent() {
                                 </div>
                               ))}
                             </div>
+                            {/* Amount Display — distinguish unpaid vs paid */}
                             <div className={`flex items-center justify-between pt-2 border-t text-xs ${isDarkMode ? "border-neutral-800" : "border-slate-200/60"}`}>
-                              <span className="text-slate-500 dark:text-neutral-400 font-medium">Total Paid:</span>
-                              <span className={`font-black text-sm ${isDarkMode ? "text-white" : "text-slate-900"}`}>GH₵{ord.total.toFixed(2)}</span>
+                              {ord.rawStatus === "PENDING_PAYMENT" || (ord.status === "pending" && ord.rawStatus !== "CANCELLED") ? (
+                                <span className="text-amber-600 dark:text-amber-400 font-bold flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Amount Due:</span>
+                                </span>
+                              ) : (
+                                <span className="text-slate-500 dark:text-neutral-400 font-medium">Total Paid:</span>
+                              )}
+                              <span className={`font-black text-sm ${
+                                ord.rawStatus === "PENDING_PAYMENT" || (ord.status === "pending" && ord.rawStatus !== "CANCELLED")
+                                  ? "text-blue-600 dark:text-blue-400"
+                                  : isDarkMode ? "text-white" : "text-slate-900"
+                              }`}>
+                                GH₵{ord.total.toFixed(2)}
+                              </span>
                             </div>
+
                             <OrderTimeline status={ord.status} />
+
+                            {/* Pay Error Alert if any */}
+                            {payError && payError.id === ord.id && (
+                              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs flex items-center justify-between gap-2">
+                                <span>{payError.message}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setPayError(null)}
+                                  className="text-rose-500 hover:text-rose-700 font-bold text-xs shrink-0 cursor-pointer"
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            )}
+
+                            {/* ── Primary Action: Pay Now (if unpaid and not cancelled) ── */}
+                            {(ord.rawStatus === "PENDING_PAYMENT" || (ord.status === "pending" && ord.rawStatus !== "CANCELLED")) && ord.status !== "cancelled" && (
+                              <button
+                                onClick={() => handlePayOrder(ord.id)}
+                                disabled={payingOrderId === ord.id || cancellingOrderId === ord.id}
+                                className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-60"
+                              >
+                                {payingOrderId === ord.id ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Connecting to Paystack...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <CreditCard className="w-3.5 h-3.5" />
+                                    <span>Pay Now (Mobile Money / Card)</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+
                             {ord.status !== "cancelled" && (
                               <button
                                 onClick={() => setExpandedOrder(isExpanded ? null : ord.id)}
@@ -1832,6 +1927,7 @@ function AccountContent() {
                                 {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                               </button>
                             )}
+
                             {/* Cancel Order — only for cancellable statuses */}
                             {CANCELLABLE_STATUSES.includes(ord.status) && (
                               cancelConfirmId === ord.id ? (

@@ -80,14 +80,14 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex relative">
+    <div className="min-h-screen flex relative bg-slate-50 dark:bg-black text-slate-900 dark:text-neutral-100 selection:bg-blue-500 selection:text-white">
       {/* ── Top Left Back Button ─────────────────────────────────────────── */}
       <Link
         href="/"
         aria-label="Back to Store"
-        className="absolute top-4 left-4 z-30 inline-flex items-center justify-center p-2.5 rounded-full bg-white/90 text-slate-700 hover:text-slate-900 border border-slate-200 shadow-xs backdrop-blur-md transition-all hover:bg-white active:scale-95 group"
+        className="absolute top-4 left-4 z-30 inline-flex items-center justify-center p-2.5 rounded-full bg-white/90 dark:bg-neutral-900/90 text-slate-700 dark:text-neutral-200 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-neutral-800 shadow-xs backdrop-blur-md transition-all hover:bg-white dark:hover:bg-neutral-800 active:scale-95 group cursor-pointer"
       >
-        <ArrowLeft className="w-5 h-5 text-slate-600 group-hover:-translate-x-0.5 transition-transform" />
+        <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-neutral-400 group-hover:-translate-x-0.5 transition-transform" />
       </Link>
       {/* ── Left decorative panel (hidden on mobile) ─────────────────────── */}
       <div
@@ -167,15 +167,15 @@ function LoginForm() {
       </div>
 
       {/* ── Right: Login form ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col justify-center py-12 px-6 sm:px-10 lg:px-16 bg-slate-50">
+      <div className="flex-1 flex flex-col justify-center py-12 px-6 sm:px-10 lg:px-16 bg-slate-50 dark:bg-black">
         {/* Mobile logo */}
         <div className="lg:hidden mb-8 text-center">
           <Link href="/" className="inline-flex items-center gap-2.5 group">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-600/30 group-hover:scale-105 transition-transform">
               <Droplets className="w-6 h-6 fill-current" />
             </div>
-            <span className="font-black text-2xl tracking-tight text-slate-900">
-              Kay&apos;s <span className="text-blue-600">Packs</span>
+            <span className="font-black text-2xl tracking-tight text-slate-900 dark:text-neutral-50">
+              Kay&apos;s <span className="text-blue-600 dark:text-blue-400">Packs</span>
             </span>
           </Link>
         </div>
@@ -183,23 +183,23 @@ function LoginForm() {
         <div className="w-full max-w-md mx-auto">
           {/* Centered Welcome Title */}
           <div className="mb-8 text-center">
-            <h1 className="text-3xl font-black text-slate-900">Welcome back</h1>
-            <p className="text-slate-500 text-sm mt-2">
+            <h1 className="text-3xl font-black text-slate-900 dark:text-neutral-100">Welcome back</h1>
+            <p className="text-slate-500 dark:text-neutral-400 text-sm mt-2">
               Sign in to your Kay&apos;s Packs account
             </p>
           </div>
 
           {/* Mode toggle */}
-          <div className="flex gap-1 p-1 bg-slate-200/60 rounded-xl mb-6">
+          <div className="flex gap-1 p-1 bg-slate-200/60 dark:bg-neutral-850 rounded-xl mb-6">
             {(["email", "phone"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
                 onClick={() => handleModeSwitch(m)}
-                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-bold transition-all duration-200 cursor-pointer ${
                   mode === m
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
+                    ? "bg-white dark:bg-neutral-800 text-slate-900 dark:text-neutral-100 shadow-sm"
+                    : "text-slate-500 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-neutral-200"
                 }`}
               >
                 {m === "email" ? (
@@ -217,15 +217,15 @@ function LoginForm() {
             <div>
               <label
                 htmlFor="login-identifier"
-                className="block text-xs font-bold text-slate-700 mb-1.5"
+                className="block text-xs font-bold text-slate-700 dark:text-neutral-300 mb-1.5"
               >
                 {mode === "email" ? "Email address" : "Phone number"}
               </label>
               <div className="relative">
                 {mode === "email" ? (
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-neutral-500 pointer-events-none" />
                 ) : (
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-neutral-500 pointer-events-none" />
                 )}
                 <input
                   id="login-identifier"
@@ -240,7 +240,7 @@ function LoginForm() {
                   placeholder={
                     mode === "email" ? "name@example.com" : "024 123 4567"
                   }
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-sm text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
                 />
               </div>
             </div>
@@ -250,19 +250,19 @@ function LoginForm() {
               <div className="flex items-center justify-between mb-1.5">
                 <label
                   htmlFor="login-password"
-                  className="text-xs font-bold text-slate-700"
+                  className="text-xs font-bold text-slate-700 dark:text-neutral-300"
                 >
                   Password
                 </label>
                 <Link
                   href="/forgot-password"
-                  className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                  className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
                 >
                   Forgot password?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-neutral-500 pointer-events-none" />
                 <input
                   id="login-password"
                   type={showPassword ? "text" : "password"}
@@ -274,13 +274,13 @@ function LoginForm() {
                     setError("");
                   }}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-12 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
+                  className="w-full pl-10 pr-12 py-3 bg-white dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-sm text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-neutral-500 hover:text-slate-600 dark:hover:text-neutral-300 transition-colors cursor-pointer"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -298,11 +298,11 @@ function LoginForm() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                className="w-4 h-4 rounded border-slate-300 dark:border-neutral-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
               />
               <label
                 htmlFor="login-remember"
-                className="text-xs text-slate-600 cursor-pointer"
+                className="text-xs text-slate-600 dark:text-neutral-400 cursor-pointer"
               >
                 Remember me for 30 days
               </label>
@@ -310,9 +310,9 @@ function LoginForm() {
 
             {/* Error */}
             {error && (
-              <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-100 rounded-xl">
-                <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-red-600 font-medium">{error}</p>
+              <div className="flex items-start gap-2.5 p-3.5 bg-red-50 dark:bg-rose-950/40 border border-red-100 dark:border-rose-800/60 rounded-xl">
+                <AlertCircle className="w-4 h-4 text-red-500 dark:text-rose-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-red-600 dark:text-rose-300 font-medium">{error}</p>
               </div>
             )}
 
@@ -321,7 +321,7 @@ function LoginForm() {
               type="submit"
               id="login-submit"
               disabled={loading}
-              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/25 transition-all duration-200 flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/25 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer"
             >
               {loading ? (
                 <>
@@ -337,11 +337,11 @@ function LoginForm() {
             </button>
 
             {/* Don't have an account under Sign In button */}
-            <p className="text-center text-xs text-slate-500 pt-2">
+            <p className="text-center text-xs text-slate-500 dark:text-neutral-400 pt-2">
               Don&apos;t have an account?{" "}
               <Link
                 href="/register"
-                className="text-blue-600 font-bold hover:text-blue-700 transition-colors"
+                className="text-blue-600 dark:text-blue-400 font-bold hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
               >
                 Create one for free →
               </Link>
@@ -349,9 +349,9 @@ function LoginForm() {
           </form>
 
           {/* Trust badges */}
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            <div className="flex items-center justify-center gap-1.5 text-slate-400">
-              <ShieldCheck className="w-3.5 h-3.5 text-green-500" />
+          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-neutral-800">
+            <div className="flex items-center justify-center gap-1.5 text-slate-400 dark:text-neutral-500">
+              <ShieldCheck className="w-3.5 h-3.5 text-green-500 dark:text-emerald-400" />
               <span className="text-[11px]">
                 256-bit SSL encrypted · Your data is always safe
               </span>
@@ -379,8 +379,8 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <div className="min-h-screen bg-slate-50 dark:bg-black flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-spin" />
         </div>
       }
     >

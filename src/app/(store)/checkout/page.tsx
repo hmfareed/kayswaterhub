@@ -525,56 +525,56 @@ export default function CheckoutPage() {
   const onlineTotalToPay = subtotal;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900 selection:bg-blue-500 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-black text-slate-900 dark:text-neutral-100 selection:bg-blue-500 selection:text-white">
       <StoreNavbar />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 pb-28 lg:pb-16">
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-6">
-          <Link href="/" className="hover:text-blue-600 transition-colors">
+        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-neutral-500 mb-6">
+          <Link href="/" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
             Home
           </Link>
           <span>/</span>
-          <Link href="/cart" className="hover:text-blue-600 transition-colors">
+          <Link href="/cart" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
             Cart
           </Link>
           <span>/</span>
-          <span className="text-slate-700">Checkout &amp; Paystack</span>
+          <span className="text-slate-700 dark:text-neutral-300">Checkout &amp; Paystack</span>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-neutral-100 tracking-tight">
               Express Checkout
             </h1>
-            <p className="text-xs sm:text-sm text-slate-500">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-neutral-400">
               Choose Door Delivery or Self Pickup with instant Paystack payment
             </p>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold shadow-2xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-2xs">
             <Lock className="w-3.5 h-3.5" />
             <span>256-Bit SSL Encrypted Paystack Gateway</span>
           </div>
         </div>
 
         {checkoutError && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-start gap-3 shadow-xs">
-            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-start gap-3 shadow-xs">
+            <AlertCircle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <span className="font-bold block text-rose-900">Checkout Notice</span>
+              <span className="font-bold block text-rose-900 dark:text-rose-200">Checkout Notice</span>
               <span>{checkoutError}</span>
             </div>
           </div>
         )}
 
         {items.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200/80 shadow-xs max-w-lg mx-auto space-y-4">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+          <div className="bg-white dark:bg-neutral-900/90 rounded-3xl p-12 text-center border border-slate-200/80 dark:border-neutral-800 shadow-xs max-w-lg mx-auto space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-neutral-800 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto shadow-inner">
               <Truck className="w-8 h-8" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900">Your cart is empty</h2>
-            <p className="text-xs text-slate-500">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-neutral-100">Your cart is empty</h2>
+            <p className="text-xs text-slate-500 dark:text-neutral-400">
               Add some packs of fresh bottled or dispenser water before proceeding to checkout.
             </p>
             <Link
@@ -590,17 +590,17 @@ export default function CheckoutPage() {
             {/* ─── Left Column: Delivery/Pickup & Details ─────────────── */}
             <div className="lg:col-span-7 space-y-6">
               {/* Step 1: Fulfillment Option & Details */}
-              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="bg-white dark:bg-neutral-900/90 rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-neutral-800 shadow-xs space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-neutral-800">
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-md shadow-blue-600/30">
                       1
                     </div>
                     <div>
-                      <h2 className="font-black text-sm uppercase tracking-wide text-slate-900">
+                      <h2 className="font-black text-sm uppercase tracking-wide text-slate-900 dark:text-neutral-100">
                         Delivery or Pickup
                       </h2>
-                      <span className="text-[11px] text-slate-400 font-medium">
+                      <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">
                         Choose your preferred order fulfillment method
                       </span>
                     </div>
@@ -614,17 +614,17 @@ export default function CheckoutPage() {
                     onClick={() => setFulfillmentType("DELIVERY")}
                     className={`p-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
                       fulfillmentType === "DELIVERY"
-                        ? "border-blue-600 bg-blue-50/60 text-blue-900 shadow-xs ring-1 ring-blue-600"
-                        : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+                        ? "border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300 shadow-xs ring-1 ring-blue-600"
+                        : "border-slate-200 dark:border-neutral-750 bg-slate-50 dark:bg-neutral-800/80 text-slate-600 dark:text-neutral-400 hover:border-slate-300 dark:hover:border-neutral-600"
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-600 dark:text-blue-400 flex items-center justify-center">
                       <Truck className="w-4 h-4" />
                     </div>
-                    <span className="font-black text-sm text-slate-900">
+                    <span className="font-black text-sm text-slate-900 dark:text-neutral-100">
                       {isGreaterAccra ? "Yango Door Delivery" : "Nationwide Delivery"}
                     </span>
-                    <span className="text-[11px] font-medium text-slate-500">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400">
                       {isGreaterAccra ? "Accra Door-to-Door" : "All 16 Regions (Parcel Station)"}
                     </span>
                   </button>
@@ -634,44 +634,44 @@ export default function CheckoutPage() {
                     onClick={() => setFulfillmentType("PICKUP")}
                     className={`p-4 rounded-2xl border-2 font-bold text-xs flex flex-col items-center gap-1.5 transition-all cursor-pointer ${
                       fulfillmentType === "PICKUP"
-                        ? "border-blue-600 bg-blue-50/60 text-blue-900 shadow-xs ring-1 ring-blue-600"
-                        : "border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300"
+                        ? "border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-300 shadow-xs ring-1 ring-blue-600"
+                        : "border-slate-200 dark:border-neutral-750 bg-slate-50 dark:bg-neutral-800/80 text-slate-600 dark:text-neutral-400 hover:border-slate-300 dark:hover:border-neutral-600"
                     }`}
                   >
-                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-400 flex items-center justify-center">
                       <Building className="w-4 h-4" />
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-black text-sm text-slate-900">Self Pickup</span>
-                      <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full">
+                      <span className="font-black text-sm text-slate-900 dark:text-neutral-100">Self Pickup</span>
+                      <span className="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-[10px] font-black rounded-full border border-emerald-200/50 dark:border-emerald-800/50">
                         FREE
                       </span>
                     </div>
-                    <span className="text-[11px] font-medium text-slate-500">Collect at East Legon Hub</span>
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-neutral-400">Collect at East Legon Hub</span>
                   </button>
                 </div>
 
                 {/* Self Pickup Depot Info Box */}
                 {fulfillmentType === "PICKUP" && (
-                  <div className="p-4.5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 space-y-3">
+                  <div className="p-4.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/60 space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
                         <Store className="w-4 h-4" />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="font-black text-sm text-emerald-950">
+                        <h4 className="font-black text-sm text-emerald-950 dark:text-emerald-200">
                           Kay&apos;s Packs Central Depot &amp; Hub
                         </h4>
-                        <p className="text-xs text-emerald-900/80 leading-relaxed">
+                        <p className="text-xs text-emerald-900/80 dark:text-emerald-300/80 leading-relaxed">
                           📍 Boundary Road (Near American House &amp; Shell Station), East Legon, Accra
                         </p>
-                        <p className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5 pt-0.5">
+                        <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1.5 pt-0.5">
                           <Clock className="w-3.5 h-3.5" />
                           <span>Open Mon – Sat: 8:00 AM – 6:00 PM</span>
                         </p>
                       </div>
                     </div>
-                    <div className="p-2.5 rounded-xl bg-white/80 border border-emerald-200 text-[11px] text-emerald-900">
+                    <div className="p-2.5 rounded-xl bg-white/80 dark:bg-neutral-900/90 border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-emerald-900 dark:text-emerald-300">
                       💡 <strong>Pickup Note:</strong> Your water packs will be packed and ready within 30 minutes of payment confirmation.
                     </div>
                   </div>
@@ -679,13 +679,13 @@ export default function CheckoutPage() {
 
                 {/* Contact Information (Required for both Delivery & Pickup) */}
                 <div className="space-y-3.5 pt-1">
-                  <h3 className="font-bold text-xs text-slate-500 uppercase tracking-wider">
+                  <h3 className="font-bold text-xs text-slate-500 dark:text-neutral-400 uppercase tracking-wider">
                     {fulfillmentType === "PICKUP" ? "Pickup Contact Person" : "Customer & Contact Info"}
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                         Full Name *
                       </label>
                       <input
@@ -694,12 +694,12 @@ export default function CheckoutPage() {
                         value={formData.fullName}
                         onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                         placeholder="e.g. Kwame Mensah"
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                       />
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                         Phone Number (Mobile Money / SMS) *
                       </label>
                       <input
@@ -708,13 +708,13 @@ export default function CheckoutPage() {
                         value={formData.phone}
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         placeholder="024 123 4567"
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                       Email Address (Optional receipt)
                     </label>
                     <input
@@ -722,23 +722,23 @@ export default function CheckoutPage() {
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="e.g. kwame@example.com"
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                     />
                   </div>
                 </div>
 
                 {/* Door / Parcel Delivery Address Fields */}
                 {fulfillmentType === "DELIVERY" && (
-                  <div className="space-y-4 pt-3 border-t border-slate-100">
+                  <div className="space-y-4 pt-3 border-t border-slate-100 dark:border-neutral-800">
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
-                        <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <h3 className="font-bold text-xs text-slate-900 dark:text-neutral-100 uppercase tracking-wider flex items-center gap-1.5">
                           <span>{isGreaterAccra ? "Yango Door Delivery Details" : "Nationwide Parcel Destination"}</span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/50 dark:border-blue-800/50">
                             {isGreaterAccra ? "Greater Accra" : `${formData.region}`}
                           </span>
                         </h3>
-                        <span className="text-[11px] text-slate-400 font-medium block">
+                        <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium block">
                           {isGreaterAccra
                             ? "Delivered directly by Yango rider. Estimated fee payable on drop-off."
                             : "Sent via courier to your preferred regional parcel station / depot."}
@@ -752,7 +752,7 @@ export default function CheckoutPage() {
                           <button
                             type="button"
                             onClick={() => { setShowSearch(!showSearch); setSearchResults([]); setSearchQuery(""); }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 text-xs font-bold transition-all cursor-pointer"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-neutral-800 hover:bg-slate-100 dark:hover:bg-neutral-750 text-slate-600 dark:text-neutral-300 border border-slate-200 dark:border-neutral-700 text-xs font-bold transition-all cursor-pointer"
                           >
                             <Search className="w-3.5 h-3.5" />
                             <span>Search</span>
@@ -763,7 +763,7 @@ export default function CheckoutPage() {
                             type="button"
                             onClick={handleDetectLocation}
                             disabled={isLocating}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
                           >
                             {isLocating ? (
                               <>
@@ -784,32 +784,32 @@ export default function CheckoutPage() {
                     {/* Address Search Box (Accra) */}
                     {isGreaterAccra && showSearch && (
                       <div className="relative">
-                        <div className="flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl">
-                          <Search className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                        <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl">
+                          <Search className="w-4 h-4 text-slate-400 dark:text-neutral-500 flex-shrink-0" />
                           <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => handleAddressSearch(e.target.value)}
                             placeholder="Search your area, street or landmark in Accra..."
                             autoFocus
-                            className="flex-1 text-xs bg-transparent outline-none text-slate-800 placeholder:text-slate-400"
+                            className="flex-1 text-xs bg-transparent outline-none text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500"
                           />
                           {isSearching && <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-500" />}
-                          <button type="button" onClick={() => { setShowSearch(false); setSearchResults([]); }} className="p-0.5 hover:bg-slate-200 rounded cursor-pointer">
-                            <X className="w-3.5 h-3.5 text-slate-400" />
+                          <button type="button" onClick={() => { setShowSearch(false); setSearchResults([]); }} className="p-0.5 hover:bg-slate-200 dark:hover:bg-neutral-700 rounded cursor-pointer">
+                            <X className="w-3.5 h-3.5 text-slate-400 dark:text-neutral-500" />
                           </button>
                         </div>
                         {searchResults.length > 0 && (
-                          <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden">
+                          <div className="absolute top-full left-0 right-0 z-20 mt-1 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl shadow-lg overflow-hidden">
                             {searchResults.map((result) => (
                               <button
                                 key={result.placeId}
                                 type="button"
                                 onClick={() => handleSelectSearchResult(result)}
-                                className="w-full text-left px-3 py-2.5 hover:bg-blue-50 transition-colors border-b border-slate-100 last:border-0 cursor-pointer"
+                                className="w-full text-left px-3 py-2.5 hover:bg-blue-50 dark:hover:bg-neutral-800 transition-colors border-b border-slate-100 dark:border-neutral-800 last:border-0 cursor-pointer"
                               >
-                                <div className="text-xs font-semibold text-slate-900 truncate">{result.displayName.split(",")[0]}</div>
-                                <div className="text-[10px] text-slate-400 truncate">{result.displayName}</div>
+                                <div className="text-xs font-semibold text-slate-900 dark:text-neutral-100 truncate">{result.displayName.split(",")[0]}</div>
+                                <div className="text-[10px] text-slate-400 dark:text-neutral-500 truncate">{result.displayName}</div>
                               </button>
                             ))}
                           </div>
@@ -822,16 +822,16 @@ export default function CheckoutPage() {
                       <div
                         className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 border ${
                           gpsCoordinates
-                            ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                            : "bg-slate-50 text-slate-700 border-slate-200"
+                            ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
+                            : "bg-slate-50 dark:bg-neutral-800 text-slate-700 dark:text-neutral-300 border-slate-200 dark:border-neutral-700"
                         }`}
                       >
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                          <MapPin className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span className="line-clamp-1">{locationStatus}</span>
                         </div>
                         {gpsAccuracy && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-white border border-emerald-300 font-bold text-emerald-700 whitespace-nowrap">
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-white dark:bg-neutral-900 border border-emerald-300 dark:border-emerald-700 font-bold text-emerald-700 dark:text-emerald-400 whitespace-nowrap">
                             ~{gpsAccuracy}m
                           </span>
                         )}
@@ -841,8 +841,8 @@ export default function CheckoutPage() {
                     {/* Saved Addresses Selector (if saved addresses exist) */}
                     {savedAddresses.length > 0 && (
                       <div className="space-y-2">
-                        <label className="text-[11px] font-bold text-slate-700 flex items-center gap-1.5">
-                          <Bookmark className="w-3.5 h-3.5 text-blue-600" />
+                        <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 flex items-center gap-1.5">
+                          <Bookmark className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                           <span>Saved Addresses</span>
                         </label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -855,24 +855,24 @@ export default function CheckoutPage() {
                                 onClick={() => applySavedAddress(addr)}
                                 className={`p-3 rounded-2xl border cursor-pointer transition-all text-left ${
                                   isSelected
-                                    ? "border-blue-600 bg-blue-50/50 ring-1 ring-blue-600 shadow-2xs"
-                                    : "border-slate-200 hover:border-slate-300 bg-slate-50/50"
+                                    ? "border-blue-600 dark:border-blue-500 bg-blue-50/50 dark:bg-blue-950/40 ring-1 ring-blue-600 dark:ring-blue-500 shadow-2xs"
+                                    : "border-slate-200 dark:border-neutral-800 hover:border-slate-300 dark:hover:border-neutral-700 bg-slate-50/50 dark:bg-neutral-800/50"
                                 }`}
                               >
                                 <div className="flex items-center justify-between mb-1">
-                                  <span className="font-extrabold text-xs text-slate-900">
+                                  <span className="font-extrabold text-xs text-slate-900 dark:text-neutral-100">
                                     {addr.label || "Saved Address"}
                                   </span>
                                   {isSelected && (
-                                    <span className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">
+                                    <span className="w-4 h-4 rounded-full bg-blue-600 dark:bg-blue-500 text-white flex items-center justify-center text-[10px]">
                                       <Check className="w-3 h-3 stroke-[3]" />
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-[11px] text-slate-600 line-clamp-1">
+                                <p className="text-[11px] text-slate-600 dark:text-neutral-300 line-clamp-1">
                                   {addr.houseOrBuilding || addr.street || addr.area || addr.city}
                                 </p>
-                                <p className="text-[10px] text-slate-400 font-semibold">
+                                <p className="text-[10px] text-slate-400 dark:text-neutral-500 font-semibold">
                                   {addr.city}, {addr.region}
                                 </p>
                               </div>
@@ -896,8 +896,8 @@ export default function CheckoutPage() {
                             }}
                             className={`p-3 rounded-2xl border border-dashed cursor-pointer transition-all flex items-center justify-center text-center ${
                               selectedAddressId === "NEW"
-                                ? "border-blue-600 bg-blue-50/30 text-blue-600 font-bold text-xs"
-                                : "border-slate-300 hover:border-slate-400 text-slate-500 text-xs font-semibold"
+                                ? "border-blue-600 dark:border-blue-500 bg-blue-50/30 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 font-bold text-xs"
+                                : "border-slate-300 dark:border-neutral-700 hover:border-slate-400 dark:hover:border-neutral-600 text-slate-500 dark:text-neutral-400 text-xs font-semibold"
                             }`}
                           >
                             <span>+ Enter New Address</span>
@@ -910,13 +910,13 @@ export default function CheckoutPage() {
                     <div className="space-y-3.5">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                          <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                             Destination Region *
                           </label>
                           <select
                             value={formData.region}
                             onChange={(e) => handleRegionChange(e.target.value)}
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs font-bold text-slate-800 dark:text-neutral-100 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                           >
                             {GHANA_REGIONS.map((r) => (
                               <option key={r} value={r}>
@@ -927,7 +927,7 @@ export default function CheckoutPage() {
                         </div>
 
                         <div>
-                          <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                          <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                             City / Town *
                           </label>
                           <input
@@ -936,7 +936,7 @@ export default function CheckoutPage() {
                             value={formData.city}
                             onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                             placeholder={isGreaterAccra ? "e.g. Accra, Tema, Madina" : "e.g. Kumasi, Takoradi, Tamale, Sunyani"}
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                           />
                         </div>
                       </div>
@@ -946,7 +946,7 @@ export default function CheckoutPage() {
                         <>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
-                              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                              <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                                 Area / Neighborhood
                               </label>
                               <input
@@ -954,12 +954,12 @@ export default function CheckoutPage() {
                                 value={formData.area}
                                 onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                                 placeholder="e.g. East Legon, Spintex, Osu, Cantonments"
-                                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                               />
                             </div>
 
                             <div>
-                              <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                              <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                                 GhanaPost GPS Digital Address (Optional)
                               </label>
                               <input
@@ -969,13 +969,13 @@ export default function CheckoutPage() {
                                   setFormData({ ...formData, digitalAddress: e.target.value.toUpperCase() })
                                 }
                                 placeholder="e.g. GA-183-9022"
-                                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-mono placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden uppercase"
+                                className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 font-mono placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden uppercase"
                               />
                             </div>
                           </div>
 
                           <div>
-                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                               Street / House / Building Address *
                             </label>
                             <input
@@ -984,7 +984,7 @@ export default function CheckoutPage() {
                               value={formData.houseAddress}
                               onChange={(e) => setFormData({ ...formData, houseAddress: e.target.value })}
                               placeholder="e.g. House No. 24, Boundary Road, Near Shell Station"
-                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                             />
                           </div>
                         </>
@@ -992,7 +992,7 @@ export default function CheckoutPage() {
                         /* Nationwide Parcel specific fields */
                         <div className="space-y-3">
                           <div>
-                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                               Preferred Parcel Station / Bus Terminal / Depot *
                             </label>
                             <input
@@ -1001,12 +1001,12 @@ export default function CheckoutPage() {
                               value={formData.parcelStation}
                               onChange={(e) => setFormData({ ...formData, parcelStation: e.target.value })}
                               placeholder="e.g. VIP Bus Station (Asafo, Kumasi) / STC Terminal / Imperial Express"
-                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                             />
                           </div>
 
                           <div>
-                            <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                            <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                               Destination Area / Suburb in {formData.region}
                             </label>
                             <input
@@ -1014,7 +1014,7 @@ export default function CheckoutPage() {
                               value={formData.area}
                               onChange={(e) => setFormData({ ...formData, area: e.target.value })}
                               placeholder="e.g. Adum, Bantama, Market Circle, Tamale Central"
-                              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                              className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                             />
                           </div>
                         </div>
@@ -1022,7 +1022,7 @@ export default function CheckoutPage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                          <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                             Landmark (Optional)
                           </label>
                           <input
@@ -1030,12 +1030,12 @@ export default function CheckoutPage() {
                             value={formData.landmark}
                             onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
                             placeholder="e.g. Opposite Total Filling Station"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                           />
                         </div>
 
                         <div>
-                          <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                          <label className="text-[11px] font-bold text-slate-700 dark:text-neutral-300 block mb-1">
                             Delivery Instructions (Optional)
                           </label>
                           <input
@@ -1045,21 +1045,21 @@ export default function CheckoutPage() {
                               setFormData({ ...formData, deliveryInstructions: e.target.value })
                             }
                             placeholder="e.g. Call my recipient phone before arrival"
-                            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:bg-white focus:border-blue-500 focus:outline-hidden"
+                            className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-neutral-800 border border-slate-200 dark:border-neutral-700 rounded-xl text-xs text-slate-800 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:bg-white dark:focus:bg-neutral-800 focus:border-blue-500 dark:focus:border-blue-400 focus:outline-hidden"
                           />
                         </div>
                       </div>
 
                       {/* Checkbox: Save this delivery address for future orders */}
                       <div className="pt-2">
-                        <label className="flex items-center gap-2.5 cursor-pointer select-none bg-slate-50 hover:bg-slate-100/80 p-3 rounded-xl border border-slate-200 transition-colors">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none bg-slate-50 dark:bg-neutral-800 hover:bg-slate-100/80 dark:hover:bg-neutral-750 p-3 rounded-xl border border-slate-200 dark:border-neutral-700 transition-colors">
                           <input
                             type="checkbox"
                             checked={saveAddressForFuture}
                             onChange={(e) => setSaveAddressForFuture(e.target.checked)}
-                            className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            className="w-4 h-4 rounded border-slate-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500 cursor-pointer"
                           />
-                          <span className="text-xs font-bold text-slate-700">
+                          <span className="text-xs font-bold text-slate-700 dark:text-neutral-300">
                             Save this delivery address for future orders
                           </span>
                         </label>
@@ -1071,17 +1071,17 @@ export default function CheckoutPage() {
 
               {/* Step 2: Live Location-Based Delivery Calculation & Courier Fee Information */}
               {fulfillmentType === "DELIVERY" && (
-                <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
-                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div className="bg-white dark:bg-neutral-900/90 rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-neutral-800 shadow-xs space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-neutral-800">
                     <div className="flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-md shadow-blue-600/30">
                         2
                       </div>
                       <div>
-                        <h2 className="font-black text-sm uppercase tracking-wide text-slate-900">
+                        <h2 className="font-black text-sm uppercase tracking-wide text-slate-900 dark:text-neutral-100">
                           {isGreaterAccra ? "Yango Delivery Fee Estimate" : "Nationwide Parcel Handling"}
                         </h2>
-                        <span className="text-[11px] text-slate-400 font-medium">
+                        <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">
                           {isGreaterAccra
                             ? "Calculated from East Legon Warehouse Hub"
                             : `Inter-region parcel delivery to ${formData.region}`}
@@ -1090,7 +1090,7 @@ export default function CheckoutPage() {
                     </div>
 
                     {isCalculatingDelivery && isGreaterAccra && (
-                      <span className="text-[11px] text-blue-600 font-bold flex items-center gap-1">
+                      <span className="text-[11px] text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1">
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
                         <span>Estimating fee...</span>
                       </span>
@@ -1099,66 +1099,66 @@ export default function CheckoutPage() {
 
                   {isGreaterAccra ? (
                     deliveryCalc.isDeliverable ? (
-                      <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/80 space-y-3">
+                      <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                           <div className="space-y-0.5">
-                            <span className="font-black text-sm text-slate-900 block">
+                            <span className="font-black text-sm text-slate-900 dark:text-neutral-100 block">
                               {deliveryCalc.zoneName}
                             </span>
-                            <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+                            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-neutral-400 font-medium">
                               {deliveryCalc.distanceKm !== undefined ? (
                                 <span>📍 {deliveryCalc.distanceKm} km from warehouse</span>
                               ) : (
                                 <span>📍 Greater Accra Service Area</span>
                               )}
                               <span>•</span>
-                              <span className="flex items-center gap-1 text-slate-700 font-bold">
-                                <Clock className="w-3.5 h-3.5 text-blue-600" />
+                              <span className="flex items-center gap-1 text-slate-700 dark:text-neutral-300 font-bold">
+                                <Clock className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                                 {deliveryCalc.estimatedDeliveryTime}
                               </span>
                             </div>
                           </div>
 
                           <div className="text-left sm:text-right">
-                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                            <div className="text-[11px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-wide">
                               Estimated Courier Fee
                             </div>
-                            <div className="font-black text-base text-blue-900">
+                            <div className="font-black text-base text-blue-900 dark:text-blue-300">
                               {formatCurrency(deliveryCalc.deliveryFee)}
                             </div>
                           </div>
                         </div>
 
-                        <div className="p-2.5 rounded-xl bg-white/80 border border-blue-200 text-[11px] text-blue-900 font-medium flex items-center gap-2">
-                          <Truck className="w-4 h-4 text-blue-600 shrink-0" />
+                        <div className="p-2.5 rounded-xl bg-white/80 dark:bg-neutral-900/90 border border-blue-200 dark:border-blue-800/60 text-[11px] text-blue-900 dark:text-blue-300 font-medium flex items-center gap-2">
+                          <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                           <span>
                             <strong>Payment Notice:</strong> This estimated fee is <strong>paid separately to the Yango rider</strong> upon delivery. Your online Paystack checkout covers products only.
                           </span>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs space-y-1">
-                        <span className="font-bold block text-rose-900">Delivery Unavailable</span>
+                      <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300 text-xs space-y-1">
+                        <span className="font-bold block text-rose-900 dark:text-rose-200">Delivery Unavailable</span>
                         <p>{deliveryCalc.reason}</p>
                       </div>
                     )
                   ) : (
                     /* Nationwide Information Card */
-                    <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200 space-y-3">
+                    <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 space-y-3">
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-xl bg-amber-600 text-white flex items-center justify-center shrink-0">
                           <Truck className="w-4 h-4" />
                         </div>
                         <div className="space-y-1">
-                          <h4 className="font-black text-sm text-amber-950">
+                          <h4 className="font-black text-sm text-amber-950 dark:text-amber-200">
                             Inter-Regional Parcel Dispatch to {formData.region}
                           </h4>
-                          <p className="text-xs text-amber-900 leading-relaxed">
+                          <p className="text-xs text-amber-900 dark:text-amber-300 leading-relaxed">
                             Your order will be securely packaged at our central depot and dispatched via registered courier / bus parcel service to {formData.city || "your destination town"}.
                           </p>
                         </div>
                       </div>
-                      <div className="p-2.5 rounded-xl bg-white/80 border border-amber-200 text-[11px] text-amber-900 font-medium">
+                      <div className="p-2.5 rounded-xl bg-white/80 dark:bg-neutral-900/90 border border-amber-200 dark:border-amber-800/60 text-[11px] text-amber-900 dark:text-amber-300 font-medium">
                         💡 <strong>Parcel Fee Payment:</strong> Courier delivery fee is determined by the transport operator and paid separately upon parcel collection at the station.
                       </div>
                     </div>
@@ -1167,16 +1167,16 @@ export default function CheckoutPage() {
               )}
 
               {/* Step 3: Streamlined Paystack Payment Gateway */}
-              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-4">
-                <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">
+              <div className="bg-white dark:bg-neutral-900/90 rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-neutral-800 shadow-xs space-y-4">
+                <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100 dark:border-neutral-800">
                   <div className="w-7 h-7 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-md shadow-blue-600/30">
                     {fulfillmentType === "DELIVERY" ? "3" : "2"}
                   </div>
                   <div>
-                    <h2 className="font-black text-sm uppercase tracking-wide text-slate-900">
+                    <h2 className="font-black text-sm uppercase tracking-wide text-slate-900 dark:text-neutral-100">
                       Product Payment Gateway
                     </h2>
-                    <span className="text-[11px] text-slate-400 font-medium">
+                    <span className="text-[11px] text-slate-400 dark:text-neutral-500 font-medium">
                       Secure checkout for your water products powered by Paystack
                     </span>
                   </div>
@@ -1184,7 +1184,7 @@ export default function CheckoutPage() {
 
                 <div className="space-y-3">
                   {/* Paystack Unified Option */}
-                  <div className="p-4.5 rounded-2xl border border-blue-600 bg-blue-50/40 ring-1 ring-blue-600 space-y-3">
+                  <div className="p-4.5 rounded-2xl border border-blue-600 dark:border-blue-500 bg-blue-50/40 dark:bg-blue-950/40 ring-1 ring-blue-600 dark:ring-blue-500 space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center">
@@ -1192,12 +1192,12 @@ export default function CheckoutPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="font-extrabold text-sm text-slate-900">Paystack Checkout</span>
+                            <span className="font-extrabold text-sm text-slate-900 dark:text-neutral-100">Paystack Checkout</span>
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-black">
                               Secured
                             </span>
                           </div>
-                          <span className="text-xs text-slate-500 block mt-0.5">
+                          <span className="text-xs text-slate-500 dark:text-neutral-400 block mt-0.5">
                             Mobile Money (MTN MoMo, Telecel, AT), Cards (Visa, Mastercard), &amp; Bank
                           </span>
                         </div>
@@ -1212,8 +1212,8 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 flex items-start gap-2.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-neutral-800 border border-slate-200/80 dark:border-neutral-700 text-[11px] text-slate-600 dark:text-neutral-300 flex items-start gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                     <span>
                       After clicking <strong>Pay {formatCurrency(onlineTotalToPay)} with Paystack</strong>, you will be securely redirected to complete your product payment.
                     </span>
@@ -1224,56 +1224,56 @@ export default function CheckoutPage() {
 
             {/* ─── Right Column: Sticky Order Review & Action ──────────────────── */}
             <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-24">
-              <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200/80 shadow-xs space-y-5">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                  <h3 className="font-black text-sm uppercase tracking-wide text-slate-900">
+              <div className="bg-white dark:bg-neutral-900/90 rounded-3xl p-6 sm:p-7 border border-slate-200/80 dark:border-neutral-800 shadow-xs space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-neutral-800">
+                  <h3 className="font-black text-sm uppercase tracking-wide text-slate-900 dark:text-neutral-100">
                     Order Summary
                   </h3>
-                  <span className="text-xs font-bold text-blue-600">
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400">
                     {items.reduce((sum, item) => sum + item.quantity, 0)} items
                   </span>
                 </div>
 
                 {/* Items List */}
-                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 pr-1 space-y-2">
+                <div className="max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-neutral-800 pr-1 space-y-2">
                   {items.map((item) => {
                     const itemTotal = item.product.price * item.quantity;
                     return (
                       <div key={item.product.id} className="pt-2 flex items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="w-11 h-13 bg-slate-50 rounded-xl p-1 flex items-center justify-center shrink-0 border border-slate-100 shadow-2xs">
+                          <div className="w-11 h-13 bg-slate-50 dark:bg-neutral-800 rounded-xl p-1 flex items-center justify-center shrink-0 border border-slate-100 dark:border-neutral-750 shadow-2xs">
                             <RealProductImage item={item.product} />
                           </div>
                           <div className="min-w-0">
-                            <h4 className="font-bold text-slate-900 line-clamp-1">
+                            <h4 className="font-bold text-slate-900 dark:text-neutral-100 line-clamp-1">
                               {item.product.name}
                             </h4>
-                            <span className="text-[11px] text-slate-400">{item.product.packSize}</span>
+                            <span className="text-[11px] text-slate-400 dark:text-neutral-500">{item.product.packSize}</span>
                           </div>
                         </div>
 
                         {/* Quantity Stepper & Total */}
                         <div className="flex items-center gap-2 shrink-0">
-                          <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 px-1 py-0.5">
+                          <div className="flex items-center border border-slate-200 dark:border-neutral-700 rounded-lg bg-slate-50 dark:bg-neutral-800 px-1 py-0.5">
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                              className="w-4 h-4 flex items-center justify-center text-slate-500 hover:text-slate-900"
+                              className="w-4 h-4 flex items-center justify-center text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100"
                             >
                               <Minus className="w-2.5 h-2.5" />
                             </button>
-                            <span className="w-5 text-center text-xs font-bold text-slate-800">
+                            <span className="w-5 text-center text-xs font-bold text-slate-800 dark:text-neutral-200">
                               {item.quantity}
                             </span>
                             <button
                               type="button"
                               onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                              className="w-4 h-4 flex items-center justify-center text-slate-500 hover:text-slate-900"
+                              className="w-4 h-4 flex items-center justify-center text-slate-500 dark:text-neutral-400 hover:text-slate-900 dark:hover:text-neutral-100"
                             >
                               <Plus className="w-2.5 h-2.5" />
                             </button>
                           </div>
-                          <span className="font-black text-slate-900 min-w-[55px] text-right">
+                          <span className="font-black text-slate-900 dark:text-neutral-100 min-w-[55px] text-right">
                             {formatCurrency(itemTotal)}
                           </span>
                         </div>
@@ -1283,16 +1283,16 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Price Breakdown */}
-                <div className="pt-3 border-t border-slate-100 space-y-2.5 text-xs">
-                  <div className="flex justify-between text-slate-600">
+                <div className="pt-3 border-t border-slate-100 dark:border-neutral-800 space-y-2.5 text-xs">
+                  <div className="flex justify-between text-slate-600 dark:text-neutral-400">
                     <span>Products Subtotal</span>
-                    <span className="font-bold text-slate-900">{formatCurrency(subtotal)}</span>
+                    <span className="font-bold text-slate-900 dark:text-neutral-200">{formatCurrency(subtotal)}</span>
                   </div>
 
-                  <div className="flex justify-between items-start text-slate-600">
+                  <div className="flex justify-between items-start text-slate-600 dark:text-neutral-400">
                     <div>
                       <span>Delivery Fee</span>
-                      <span className="block text-[10px] text-slate-400 font-medium">
+                      <span className="block text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
                         {fulfillmentType === "PICKUP"
                           ? "Self-collection at depot"
                           : isGreaterAccra
@@ -1302,35 +1302,35 @@ export default function CheckoutPage() {
                     </div>
                     <div className="text-right">
                       {fulfillmentType === "PICKUP" ? (
-                        <span className="font-bold text-emerald-600">FREE</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">FREE</span>
                       ) : isGreaterAccra ? (
-                        <span className="font-bold text-blue-900">
+                        <span className="font-bold text-blue-900 dark:text-blue-300">
                           Est. {formatCurrency(deliveryCalc.deliveryFee)}
                         </span>
                       ) : (
-                        <span className="font-bold text-amber-700">Courier Rate</span>
+                        <span className="font-bold text-amber-700 dark:text-amber-400">Courier Rate</span>
                       )}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-200 space-y-1">
-                    <div className="flex justify-between text-base font-black text-slate-900">
+                  <div className="pt-3 border-t border-slate-200 dark:border-neutral-800 space-y-1">
+                    <div className="flex justify-between text-base font-black text-slate-900 dark:text-neutral-100">
                       <span>Total Due Online</span>
-                      <span className="text-blue-600 text-lg">{formatCurrency(onlineTotalToPay)}</span>
+                      <span className="text-blue-600 dark:text-blue-400 text-lg">{formatCurrency(onlineTotalToPay)}</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 block font-medium">
+                    <span className="text-[10px] text-slate-400 dark:text-neutral-500 block font-medium">
                       Covers purchased products. Courier fee paid directly on delivery.
                     </span>
                   </div>
                 </div>
 
                 {/* Reassurance delivery note */}
-                <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200/80 text-[11px] text-blue-900 space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-blue-950">
-                    <Truck className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/60 text-[11px] text-blue-900 dark:text-blue-300 space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-blue-950 dark:text-blue-200">
+                    <Truck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                     <span>Courier Payment Reminder</span>
                   </div>
-                  <p className="text-slate-600 leading-normal">
+                  <p className="text-slate-600 dark:text-neutral-300 leading-normal">
                     {fulfillmentType === "PICKUP"
                       ? "Pick up your water packages free of charge at our East Legon hub."
                       : isGreaterAccra
@@ -1358,8 +1358,8 @@ export default function CheckoutPage() {
                   )}
                 </button>
 
-                <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium pt-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 dark:text-neutral-500 font-medium pt-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>Guaranteed safe &amp; SSL encrypted Paystack gateway</span>
                 </div>
               </div>

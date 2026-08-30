@@ -59,7 +59,7 @@ export function ProductCard({ product, variant = "grid" }: ProductCardProps) {
             <img
               src={productImage}
               alt={product.name}
-              className="w-full h-full object-contain dark:mix-blend-normal select-none"
+              className="w-full h-full object-contain select-none"
             />
           ) : (
             <WaterBottleGraphic
@@ -165,7 +165,7 @@ export function ProductCard({ product, variant = "grid" }: ProductCardProps) {
           <img
             src={productImage}
             alt={product.name}
-            className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal select-none"
+            className="w-full h-full object-contain select-none"
           />
         ) : (
           <WaterBottleGraphic
