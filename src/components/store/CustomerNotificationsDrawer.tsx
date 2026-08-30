@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   X,
   Bell,
   Package,
@@ -16,8 +17,10 @@ import {
   Sparkles,
   Info,
   Loader2,
+  Trash2,
   ExternalLink,
 } from "lucide-react";
+import { useTheme } from "@/context/theme-context";
 
 export interface CustomerNotificationItem {
   _id: string;
@@ -28,8 +31,14 @@ export interface CustomerNotificationItem {
   message: string;
   createdAt: string;
   isRead: boolean;
+  read?: boolean;
   actionUrl?: string;
+  actionLabel?: string;
+  entityType?: string;
+  entityId?: string;
 }
+
+type NotifFilter = "all" | "orders" | "payments" | "delivery" | "promotions";
 
 interface CustomerNotificationsDrawerProps {
   isOpen: boolean;
@@ -38,6 +47,9 @@ interface CustomerNotificationsDrawerProps {
   unreadCount: number;
   loading: boolean;
   onRefresh: () => void;
+  onMarkRead?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onMarkAllRead?: () => void;
 }
 
 function formatRelativeTime(dateInput?: string | Date): string {
@@ -66,8 +78,14 @@ export function CustomerNotificationsDrawer({
   onRefresh,
 }: CustomerNotificationsDrawerProps) {
   const router = useRouter();
-  const [markingAll, setMarkingAll] = useState(false);
-  const [filter, setFilter] = useState<"all" | "unread">("all");
+  const { isDarkMode } = useTheme();
+  const [activeFilter, setActiveFilter] = useState<NotifFilter>("all");
+  const [localNotifs, setLocalNotifs] = useState<CustomerNotificationItem[]>(notifications);
+  const [isMarkingAll, setIsMarkingAll] = useState(false);
+
+  useEffect(() => {
+    setLocalNotifs(notifications);
+  }, [notifications]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -81,233 +99,317 @@ export function CustomerNotificationsDrawer({
 
   if (!isOpen) return null;
 
-  const displayedNotifications =
-    filter === "unread"
-      ? notifications.filter((n) => !n.isRead)
-      : notifications;
+  const filteredNotifications = localNotifs.filter((n) => {
+    if (activeFilter === "all") return true;
+    const cat = (n.category || "").toLowerCase();
+    if (activeFilter === "orders") return cat.includes("order");
+    if (activeFilter === "payments") return cat.includes("pay") || cat.includes("refund");
+    if (activeFilter === "delivery") return cat.includes("deliver") || cat.includes("truck");
+    if (activeFilter === "promotions") return cat.includes("promo") || cat.includes("discount");
+    return true;
+  });
+
+  const handleMarkRead = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setLocalNotifs((prev) =>
+      prev.map((n) => (n._id === id || n.id === id ? { ...n, isRead: true, read: true } : n))
+    );
+    try {
+      await fetch(`/api/customer/notifications/${id}/read`, { method: "PATCH" });
+      onRefresh();
+    } catch (err) {
+      console.warn("Failed to mark notification as read:", err);
+    }
+  };
+
+  const handleDelete = async (id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setLocalNotifs((prev) => prev.filter((n) => n._id !== id && n.id !== id));
+    try {
+      await fetch(`/api/customer/notifications/${id}`, { method: "DELETE" });
+      onRefresh();
+    } catch (err) {
+      console.warn("Failed to delete notification:", err);
+    }
+  };
 
   const handleMarkAllRead = async () => {
     try {
-      setMarkingAll(true);
-      await fetch("/api/notifications/read-all", { method: "PATCH" });
+      setIsMarkingAll(true);
+      setLocalNotifs((prev) => prev.map((n) => ({ ...n, isRead: true, read: true })));
+      await fetch("/api/customer/notifications/read-all", { method: "PATCH" });
       onRefresh();
     } catch (err) {
       console.warn("Failed to mark all as read:", err);
     } finally {
-      setMarkingAll(false);
+      setIsMarkingAll(false);
     }
   };
 
   const handleItemClick = async (n: CustomerNotificationItem) => {
-    if (!n.isRead) {
-      fetch(`/api/notifications/${n._id}/read`, { method: "PATCH" }).catch(() => {});
+    const isAlreadyRead = n.isRead || n.read;
+    if (!isAlreadyRead) {
+      await handleMarkRead(n._id || n.id || "");
     }
     onClose();
-    if (n.actionUrl) {
+
+    if (
+      n.actionUrl?.includes("tab=orders") ||
+      n.entityType === "ORDER" ||
+      n.category?.toLowerCase() === "orders" ||
+      n.category?.toLowerCase() === "delivery"
+    ) {
+      router.push("/account?tab=orders");
+    } else if (n.actionUrl) {
       router.push(n.actionUrl);
+    } else {
+      router.push("/account?tab=notifications");
     }
   };
 
-  const getCategoryIcon = (category?: string) => {
-    const c = (category || "").toUpperCase();
-    if (c === "ORDERS") return <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
-    if (c === "PAYMENTS") return <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
-    if (c === "DELIVERY") return <Truck className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
-    if (c === "PROMOTIONS") return <Tag className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
-    if (c === "SECURITY") return <ShieldCheck className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
+  const getNotifIcon = (category?: string) => {
+    const c = (category || "").toLowerCase();
+    if (c.includes("order")) return <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
+    if (c.includes("pay") || c.includes("refund")) return <CreditCard className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />;
+    if (c.includes("deliver") || c.includes("truck")) return <Truck className="w-4 h-4 text-amber-600 dark:text-amber-400" />;
+    if (c.includes("promo") || c.includes("discount")) return <Tag className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
+    if (c.includes("secur") || c.includes("auth")) return <ShieldCheck className="w-4 h-4 text-rose-600 dark:text-rose-400" />;
     return <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
   };
 
-  const getCategoryBg = (category?: string) => {
-    const c = (category || "").toUpperCase();
-    if (c === "ORDERS") return "bg-blue-50 dark:bg-blue-950/60 border-blue-200/50 dark:border-blue-800/50";
-    if (c === "PAYMENTS") return "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200/50 dark:border-emerald-800/50";
-    if (c === "DELIVERY") return "bg-amber-50 dark:bg-amber-950/60 border-amber-200/50 dark:border-amber-800/50";
-    if (c === "PROMOTIONS") return "bg-purple-50 dark:bg-purple-950/60 border-purple-200/50 dark:border-purple-800/50";
-    if (c === "SECURITY") return "bg-rose-50 dark:bg-rose-950/60 border-rose-200/50 dark:border-rose-800/50";
-    return "bg-slate-100 dark:bg-neutral-800 border-slate-200/50 dark:border-neutral-700/50";
+  const getNotifIconBg = (category?: string) => {
+    const c = (category || "").toLowerCase();
+    if (c.includes("order")) return isDarkMode ? "bg-blue-950/60 text-blue-400" : "bg-blue-50 text-blue-600";
+    if (c.includes("pay") || c.includes("refund")) return isDarkMode ? "bg-emerald-950/60 text-emerald-400" : "bg-emerald-50 text-emerald-600";
+    if (c.includes("deliver") || c.includes("truck")) return isDarkMode ? "bg-amber-950/60 text-amber-400" : "bg-amber-50 text-amber-600";
+    if (c.includes("promo") || c.includes("discount")) return isDarkMode ? "bg-purple-950/60 text-purple-400" : "bg-purple-50 text-purple-600";
+    if (c.includes("secur") || c.includes("auth")) return isDarkMode ? "bg-rose-950/60 text-rose-400" : "bg-rose-50 text-rose-600";
+    return isDarkMode ? "bg-blue-950/60 text-blue-400" : "bg-blue-50 text-blue-600";
   };
 
+  const filterTabs: Array<{ key: NotifFilter; label: string }> = [
+    { key: "all", label: "All" },
+    { key: "orders", label: "Orders" },
+    { key: "payments", label: "Payments" },
+    { key: "delivery", label: "Delivery" },
+    { key: "promotions", label: "Promos" },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-50 flex flex-col md:flex-row justify-end overflow-hidden">
       {/* Backdrop */}
       <div
         onClick={onClose}
-        className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
+        className="fixed inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs transition-opacity"
         aria-hidden="true"
       />
 
-      {/* Slide-over Panel */}
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-white dark:bg-neutral-950 shadow-2xl border-l border-slate-200/90 dark:border-neutral-800 flex flex-col justify-between animate-in slide-in-from-right duration-300">
-          {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-neutral-850 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200/60 dark:border-blue-800/50 flex items-center justify-center text-blue-600 dark:text-blue-400 shadow-inner">
-                  <Bell className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-base font-bold text-slate-900 dark:text-neutral-100">
-                      Notifications
-                    </h2>
-                    {unreadCount > 0 && (
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-600 text-white">
-                        {unreadCount} new
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">
-                    Live updates on your water deliveries &amp; offers
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
-                aria-label="Close notifications"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Filter Pills & Mark All Read */}
-            <div className="mt-4 flex items-center justify-between pt-2 border-t border-slate-100 dark:border-neutral-850 text-xs">
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => setFilter("all")}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                    filter === "all"
-                      ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xs"
-                      : "text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-850"
-                  }`}
-                >
-                  All ({notifications.length})
-                </button>
-                <button
-                  onClick={() => setFilter("unread")}
-                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                    filter === "unread"
-                      ? "bg-blue-600 text-white shadow-xs"
-                      : "text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-850"
-                  }`}
-                >
-                  Unread ({unreadCount})
-                </button>
-              </div>
-
-              {unreadCount > 0 && (
-                <button
-                  onClick={handleMarkAllRead}
-                  disabled={markingAll}
-                  className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  {markingAll ? "Marking..." : "Mark all as read"}
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* List Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-2.5 bg-slate-50/50 dark:bg-black/30">
-            {loading && notifications.length === 0 ? (
-              <div className="py-16 text-center space-y-3">
-                <Loader2 className="w-6 h-6 text-blue-600 animate-spin mx-auto" />
-                <p className="text-xs text-slate-500 dark:text-neutral-400">Loading notifications...</p>
-              </div>
-            ) : displayedNotifications.length === 0 ? (
-              <div className="py-16 text-center space-y-3 px-6">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 flex items-center justify-center mx-auto text-slate-400 dark:text-neutral-600">
-                  <Bell className="w-6 h-6" />
-                </div>
-                <h3 className="text-sm font-bold text-slate-800 dark:text-neutral-200">
-                  {filter === "unread" ? "No unread notifications" : "No notifications yet"}
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-neutral-400 max-w-xs mx-auto">
-                  When you place an order, get live delivery status, or receive hydration rewards, they&apos;ll appear here!
-                </p>
-              </div>
-            ) : (
-              displayedNotifications.map((notif) => (
-                <div
-                  key={notif._id}
-                  onClick={() => handleItemClick(notif)}
-                  className={`group relative p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                    notif.isRead
-                      ? "bg-white dark:bg-neutral-900/80 border-slate-200/70 dark:border-neutral-800/80 hover:border-blue-300 dark:hover:border-blue-700/60 shadow-2xs"
-                      : "bg-white dark:bg-neutral-900 border-blue-200 dark:border-blue-800/60 shadow-xs hover:border-blue-400"
-                  }`}
-                >
-                  {/* Unread highlight bar */}
-                  {!notif.isRead && (
-                    <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-                  )}
-
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 mt-0.5 ${getCategoryBg(
-                        notif.category
-                      )}`}
-                    >
-                      {getCategoryIcon(notif.category)}
-                    </div>
-
-                    <div className="flex-1 min-w-0 pr-3">
-                      <div className="flex items-baseline justify-between gap-2">
-                        <h4
-                          className={`text-xs truncate ${
-                            notif.isRead
-                              ? "font-semibold text-slate-800 dark:text-neutral-200"
-                              : "font-bold text-slate-900 dark:text-white"
-                          }`}
-                        >
-                          {notif.title}
-                        </h4>
-                      </div>
-
-                      <p className="text-xs text-slate-600 dark:text-neutral-400 leading-relaxed mt-1 line-clamp-2">
-                        {notif.message}
-                      </p>
-
-                      <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-neutral-850 text-[11px]">
-                        <span className="text-slate-400 dark:text-neutral-500 font-medium">
-                          {formatRelativeTime(notif.createdAt)}
-                        </span>
-                        {notif.actionUrl && (
-                          <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-0.5 group-hover:underline">
-                            View details <ChevronRight className="w-3 h-3" />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
+      {/* Slide-in View (Full Screen on mobile, Elegant Slide Drawer on Desktop) */}
+      <div
+        className={`relative z-50 w-full sm:max-w-md h-full flex flex-col transition-colors duration-200 ${
+          isDarkMode ? "bg-black text-neutral-100 border-l border-neutral-800" : "bg-[#F8FAFC] text-slate-900 border-l border-slate-200"
+        } shadow-2xl animate-in slide-in-from-right duration-250`}
+      >
+        {/* Sticky Header with Back Button (Matches Account Header UX) */}
+        <header
+          className={`shrink-0 sticky top-0 z-10 flex items-center justify-between px-4 h-14 border-b ${
+            isDarkMode
+              ? "bg-black/95 border-neutral-800 text-white"
+              : "bg-white/95 border-slate-100 shadow-2xs text-slate-900"
+          } backdrop-blur-md`}
+        >
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className={`p-2 -ml-2 rounded-xl transition-colors cursor-pointer ${
+                isDarkMode
+                  ? "text-neutral-300 hover:text-white hover:bg-neutral-900"
+                  : "text-slate-700 hover:text-slate-900 hover:bg-slate-100"
+              }`}
+              aria-label="Close"
+            >
+              <ArrowLeft className="w-5 h-5 stroke-[2.2]" />
+            </button>
+            <h2 className="font-serif font-black text-lg tracking-tight leading-none">
+              Notifications
+            </h2>
+            {unreadCount > 0 && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-600 text-white">
+                {unreadCount} new
+              </span>
             )}
           </div>
 
-          {/* Footer Quick Links */}
-          <div className="p-4 border-t border-slate-100 dark:border-neutral-850 bg-slate-50 dark:bg-neutral-950 flex items-center justify-between text-xs">
-            <Link
-              href="/account?tab=orders"
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                disabled={isMarkingAll}
+                className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-neutral-900 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                {isMarkingAll ? "Marking..." : "Mark all read"}
+              </button>
+            )}
+            <button
               onClick={onClose}
-              className="font-semibold text-slate-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1.5"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-neutral-300 hover:bg-slate-100 dark:hover:bg-neutral-900 transition-colors cursor-pointer"
             >
-              <Package className="w-4 h-4 text-slate-400" />
-              <span>Track Orders</span>
-            </Link>
-            <Link
-              href="/shop"
-              onClick={onClose}
-              className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
-            >
-              <span>Order Water</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+              <X className="w-4 h-4" />
+            </button>
           </div>
+        </header>
+
+        {/* Category Filter Tabs */}
+        <div
+          className={`shrink-0 flex gap-1.5 px-4 py-2.5 overflow-x-auto scrollbar-none border-b ${
+            isDarkMode ? "border-neutral-850 bg-black/60" : "border-slate-100 bg-white/60"
+          } backdrop-blur-xs`}
+        >
+          {filterTabs.map((tab) => {
+            const active = activeFilter === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveFilter(tab.key)}
+                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  active
+                    ? "bg-blue-600 text-white shadow-xs"
+                    : isDarkMode
+                    ? "bg-neutral-900 text-neutral-400 hover:text-white hover:bg-neutral-800"
+                    : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Notification List Body */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+          {loading && localNotifs.length === 0 ? (
+            <div className="space-y-3 py-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={`p-3.5 rounded-2xl border animate-pulse flex items-start gap-3 ${
+                    isDarkMode ? "bg-neutral-900 border-neutral-800" : "bg-white border-slate-100"
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-neutral-800 shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-200 dark:bg-neutral-800 rounded w-1/3" />
+                    <div className="h-2.5 bg-slate-200 dark:bg-neutral-800 rounded w-3/4" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : filteredNotifications.length === 0 ? (
+            <div className="text-center py-20 text-slate-400 dark:text-neutral-500 space-y-3 px-4">
+              <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-neutral-900 border border-blue-100 dark:border-neutral-800 flex items-center justify-center mx-auto text-blue-600 dark:text-blue-400 shadow-inner">
+                <Bell className="w-6 h-6 stroke-[1.8]" />
+              </div>
+              <p className="text-sm font-bold text-slate-800 dark:text-neutral-200">You&apos;re all caught up!</p>
+              <p className="text-xs text-slate-400 dark:text-neutral-500 max-w-xs mx-auto leading-relaxed">
+                No notifications in this category. Live updates for order placements, delivery tracking, and payment receipts will appear here.
+              </p>
+            </div>
+          ) : (
+            filteredNotifications.map((n) => {
+              const isRead = n.isRead || n.read;
+              return (
+                <div
+                  key={n._id || n.id}
+                  onClick={() => handleItemClick(n)}
+                  className={`p-3.5 rounded-2xl border transition-all cursor-pointer active:scale-[0.99] ${
+                    isRead
+                      ? isDarkMode
+                        ? "bg-neutral-900/90 border-neutral-800 text-neutral-400 hover:border-neutral-700"
+                        : "bg-white border-slate-100 text-slate-600 hover:border-slate-200 shadow-2xs"
+                      : isDarkMode
+                      ? "bg-blue-950/40 border-blue-900/50 text-neutral-100 hover:border-blue-800"
+                      : "bg-blue-50/70 border-blue-100 text-slate-900 hover:border-blue-200 shadow-2xs"
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${getNotifIconBg(
+                        n.category
+                      )}`}
+                    >
+                      {getNotifIcon(n.category)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-1.5">
+                        <h4
+                          className={`text-xs leading-snug ${
+                            isRead ? "font-medium" : "font-bold text-blue-950 dark:text-blue-100"
+                          }`}
+                        >
+                          {n.title}
+                        </h4>
+                        {!isRead && (
+                          <span className="w-2 h-2 rounded-full bg-blue-600 shrink-0 mt-1 shadow-xs" />
+                        )}
+                      </div>
+                      <p className="text-[11px] mt-1 text-slate-500 dark:text-neutral-400 leading-relaxed">
+                        {n.message}
+                      </p>
+                      <div className="flex items-center justify-between mt-2.5 pt-1.5 border-t border-slate-100/60 dark:border-neutral-800/80">
+                        <span className="text-[10px] text-slate-400 dark:text-neutral-500 font-medium">
+                          {formatRelativeTime(n.createdAt)}
+                        </span>
+                        <div
+                          className="flex items-center gap-1.5"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {!isRead && (
+                            <button
+                              onClick={(e) => handleMarkRead(n._id || n.id || "", e)}
+                              className="text-[10px] font-bold text-blue-600 hover:text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-md hover:bg-blue-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                            >
+                              Mark read
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => handleDelete(n._id || n.id || "", e)}
+                            className="p-1 rounded-md text-slate-400 dark:text-neutral-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                            title="Remove notification"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer Quick Links (Matches Account style) */}
+        <div
+          className={`shrink-0 p-3.5 border-t ${
+            isDarkMode ? "border-neutral-800 bg-neutral-950" : "border-slate-100 bg-white"
+          } flex items-center justify-between text-xs`}
+        >
+          <Link
+            href="/account?tab=orders"
+            onClick={onClose}
+            className="font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+          >
+            <Package className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span>Track My Orders</span>
+          </Link>
+          <Link
+            href="/shop"
+            onClick={onClose}
+            className="font-semibold text-slate-600 dark:text-neutral-400 hover:text-blue-600 flex items-center gap-0.5"
+          >
+            <span>Store Catalog</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
     </div>

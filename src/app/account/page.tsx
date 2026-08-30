@@ -523,6 +523,12 @@ function AccountContent() {
     fetchCustomerNotifications();
   }, [session]);
 
+  useEffect(() => {
+    if (activeModal === "notifications") {
+      fetchCustomerNotifications();
+    }
+  }, [activeModal]);
+
   // ── Notification actions ──────────────────────────────────────────────────
   const markNotifRead = async (id: string) => {
     setNotifications((prev) =>

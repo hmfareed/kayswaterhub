@@ -128,7 +128,11 @@ export async function resolveDeliveryFee(
 
   const packQuantity = Math.max(1, params.packQuantity ?? 1);
   const subtotal = params.subtotal ?? 0;
-  const freeThreshold = storeLoc?.freeDeliveryThreshold ?? 350;
+  // Free delivery threshold is optional — only active if explicitly set > 0 by Admin
+  const globalFreeThreshold =
+    storeLoc?.freeDeliveryThreshold && storeLoc.freeDeliveryThreshold > 0
+      ? storeLoc.freeDeliveryThreshold
+      : undefined;
 
   // GPS accuracy check
   const accuracyThreshold = delivSettings.gpsAccuracyThresholdMeters ?? 500;
@@ -166,9 +170,20 @@ export async function resolveDeliveryFee(
     pricingType: DeliveryCalculationResult["pricingType"],
     estimatedDeliveryTime: string,
     pricingRule?: string,
-    distanceKm?: number
+    distanceKm?: number,
+    zoneFreeThreshold?: number
   ): DeliveryCalculationResult {
-    const isFree = subtotal > 0 && subtotal >= freeThreshold;
+    const effectiveThreshold =
+      zoneFreeThreshold !== undefined && zoneFreeThreshold > 0
+        ? zoneFreeThreshold
+        : globalFreeThreshold;
+
+    const isFree = Boolean(
+      effectiveThreshold &&
+      effectiveThreshold > 0 &&
+      subtotal > 0 &&
+      subtotal >= effectiveThreshold
+    );
     const finalFee = isFree ? 0 : Math.max(delivSettings.minimumDeliveryFee ?? 0, fee);
 
     const snapshot: IDeliverySnapshot = {
@@ -192,7 +207,7 @@ export async function resolveDeliveryFee(
       pricingRule,
       estimatedDeliveryTime,
       isFreeDelivery: isFree,
-      freeDeliveryThreshold: freeThreshold,
+      freeDeliveryThreshold: effectiveThreshold,
       gpsAccuracyWarning,
       storeLocation: storeLocationResult,
       snapshot,
@@ -277,7 +292,9 @@ export async function resolveDeliveryFee(
           matchedZone.name,
           "ZONE",
           matchedZone.estimatedDeliveryTime,
-          pricingRule
+          pricingRule,
+          undefined,
+          matchedZone.freeDeliveryThreshold
         );
       }
 

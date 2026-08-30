@@ -250,9 +250,11 @@ export default function StoreLocationPage() {
                 type="number"
                 min="0"
                 value={freeDeliveryThreshold}
-                onChange={(e) => setFreeDeliveryThreshold(parseFloat(e.target.value))}
+                onChange={(e) => setFreeDeliveryThreshold(e.target.value ? parseFloat(e.target.value) : 0)}
+                placeholder="e.g. 350 or 0 to disable"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 font-bold text-slate-900 focus:outline-hidden focus:bg-white"
               />
+              <p className="text-xs text-slate-400">Set to 0 to turn off free delivery storewide.</p>
             </div>
 
             <div className="space-y-1">

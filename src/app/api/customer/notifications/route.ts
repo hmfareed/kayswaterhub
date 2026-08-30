@@ -6,36 +6,55 @@ import mongoose from "mongoose";
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!session?.user?.id && !session?.user?.email) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized. Please log in to view notifications." },
-        { status: 401 }
-      );
-    }
-
     await connectDB();
+    const session = await auth();
+    const user = session?.user;
 
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const isReadParam = searchParams.get("isRead");
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "30", 10)));
     const skip = (page - 1) * limit;
 
-    const userObjectId = session.user.id && mongoose.Types.ObjectId.isValid(session.user.id)
-      ? new mongoose.Types.ObjectId(session.user.id)
-      : null;
-    const userEmail = session.user.email?.toLowerCase().trim();
+    // If visitor is not logged in, return empty notifications with 0 unread
+    if (!user || (!user.id && !user.email)) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        unreadCount: 0,
+        pagination: {
+          page: 1,
+          limit,
+          total: 0,
+          totalPages: 0,
+        },
+      });
+    }
 
-    // Query filter for customer notifications:
-    // Either assigned specifically to this user (userId or recipientEmail) OR non-order general broadcast
+    const userObjectId = user.id && mongoose.Types.ObjectId.isValid(user.id)
+      ? new mongoose.Types.ObjectId(user.id)
+      : null;
+    const userEmail = user.email ? user.email.toLowerCase().trim() : null;
+    const userPhone = (user as any).phone ? (user as any).phone.trim() : null;
+
+    // Build conditions matching this customer's notifications
     const userMatchConditions: any[] = [];
-    if (userObjectId) userMatchConditions.push({ userId: userObjectId });
-    if (userEmail && !userEmail.endsWith("@khadyswater.com")) {
+
+    if (userObjectId) {
+      userMatchConditions.push({ userId: userObjectId });
+    }
+    if (user.id) {
+      userMatchConditions.push({ userId: user.id });
+    }
+    if (userEmail) {
       userMatchConditions.push({ recipientEmail: userEmail });
     }
-    // General system announcements / promotions only — NEVER order/payment/delivery events
+    if (userPhone) {
+      userMatchConditions.push({ recipientPhone: userPhone });
+    }
+
+    // Also match general announcements targeted to all customers
     userMatchConditions.push({
       recipientRole: "ALL",
       category: { $nin: ["ORDERS", "PAYMENTS", "DELIVERY"] },
@@ -53,8 +72,7 @@ export async function GET(req: NextRequest) {
     };
 
     if (category && category !== "all") {
-      const normalizedCat = category.toUpperCase();
-      query.category = normalizedCat;
+      query.category = category.toUpperCase();
     }
 
     if (isReadParam !== null && isReadParam !== undefined && isReadParam !== "") {
@@ -89,7 +107,7 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error("[api/customer/notifications GET]", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch notifications" },
+      { success: false, error: error.message || "Failed to fetch customer notifications" },
       { status: 500 }
     );
   }

@@ -103,7 +103,6 @@ export function buildPriceCalculationResponse(
   const unitPrice = product.price;
   const totalPrice = unitPrice * quantity;
   const packsLabel = quantity === 1 ? "pack" : "packs";
-  const isFreeDelivery = totalPrice >= 100;
 
   return {
     reply:
@@ -112,9 +111,7 @@ export function buildPriceCalculationResponse(
       `- 💰 **Unit Price:** ${ghc(unitPrice)} per pack\n` +
       `- 🔢 **Quantity:** **${quantity} ${packsLabel}**\n\n` +
       `💵 **Total Price: ${ghc(totalPrice)}** (${quantity} × ${ghc(unitPrice)})\n\n` +
-      (isFreeDelivery
-        ? `🎉 **FREE Delivery included!** (Order is ${ghc(totalPrice)}, exceeding the ${ghc(100)} free delivery threshold).\n\n`
-        : `🚚 **Greater Accra Delivery:** Flat ${ghc(15)} *(Free on orders of ${ghc(100)} or more)*.\n\n`) +
+      `🚚 **Greater Accra Delivery:** Flat ${ghc(15)} (bulk promotions & free delivery thresholds may apply).\n\n` +
       `Would you like me to add **${quantity} ${packsLabel}** of **${product.name}** to your cart? 🛒`,
     suggestedProducts: [product],
   };
@@ -148,7 +145,7 @@ export function buildBudgetRecommendationResponse(
       `💰 **What you can purchase with a budget of ${ghc(budget)}:**\n\n` +
       `Here are the best water packs that fit comfortably within your budget:\n\n` +
       `${lines.join("\n")}\n\n` +
-      `💡 *Tip: Combine packs up to ${ghc(100)} to enjoy **FREE Delivery** across Greater Accra!*\n\n` +
+      `💡 *Tip: Bundle multiple packs together for the best delivery value!*\n\n` +
       `Say **"add [product name] to cart"** or click Add on any card below to order! 🛍️`,
     suggestedProducts: matchingProducts.slice(0, 4),
   };
@@ -205,7 +202,7 @@ export function buildWhyBuyFromUsResponse(): BuiltResponse {
       `1. 💧 **100% Genuine & Factory Sealed:** Direct from verified manufacturer bottling lines (Voltic, Bel-Aqua, Verna, Awake, Slem Fit).\n` +
       `2. ❄️ **Pristine, Sun-Protected Storage:** Our water is stored in clean, temperature-controlled warehouses — never left in the hot sun.\n` +
       `3. 🚀 **Lightning Doorstep Delivery:** Same-day delivery across Greater Accra (order before 2:00 PM) & reliable station parcel dispatch to all 16 regions.\n` +
-      `4. 💰 **Affordable Prices & Free Shipping:** Best wholesale rates with **FREE Delivery** on orders of ${ghc(100)} and above.\n` +
+      `4. 💰 **Affordable Prices & Reliable Service:** Best wholesale rates with seasonal discounts and bulk promotions.\n` +
       `5. 📱 **Instant MoMo & Card Payments:** Pay securely with MTN MoMo, Telecel Cash, AT Money, Visa, or Mastercard via Paystack.`,
   };
 }
@@ -313,10 +310,10 @@ export function buildDiscountPromoPointsResponse(): BuiltResponse {
   return {
     reply:
       `🎁 **Discounts, Promo Codes & Loyalty Rewards:**\n\n` +
-      `- 🎉 **FREE Delivery:** Automatic on all orders of **${ghc(100)} and above** in Greater Accra!\n` +
-      `- 💎 **Hydration Points:** Registered accounts earn reward points on every order redeemable for cash discounts.\n` +
+      `- 💎 **Hydration Points:** Registered accounts earn reward points on every order redeemable for instant checkout discounts.\n` +
       `- 🏷️ **Promo Codes:** Enter your promo/voucher code during **[Checkout](/checkout)** for instant savings.\n` +
-      `- 📦 **Wholesale Savings:** Better per-pack pricing on multi-pack and bulk orders!`,
+      `- 📦 **Wholesale Savings:** Volume discount rates on multi-pack and bulk event orders!\n` +
+      `- 🚚 **Delivery Deals:** Periodic free delivery promotions enabled by store management on qualifying carts.`,
   };
 }
 
@@ -502,8 +499,8 @@ export function buildViewCartResponse(result: any): BuiltResponse {
   );
 
   const deliveryNote = result.isFreeDelivery
-    ? `🎉 **FREE Delivery** (your order is over ${ghc(100)}!)`
-    : `🚚 Delivery: ${ghc(result.estimatedDeliveryFeeInGHS)} *(Free on orders of ${ghc(100)} or more!)*`;
+    ? `🎉 **FREE Delivery Applied!**`
+    : `🚚 Delivery: ${ghc(result.estimatedDeliveryFeeInGHS)} (calculated at checkout based on location)`;
 
   return {
     reply:
@@ -633,8 +630,7 @@ export function buildDeliveryInfoResponse(result: any): BuiltResponse {
           `- **Fee:** **${ghc(25.00)} – ${ghc(30.00)}** per shipment via trusted parcel station couriers (VIP, OA, Imperial, STC).\n` +
           `- **Timeline:** **1 – 3 business days** to Tamale.\n\n`
         : `- 📍 **${city ? `${city} (${region})` : region}:** ${ghc(fee)}\n`) +
-      `- 💰 **Greater Accra Flat Rate:** Flat **${ghc(15.00)}**\n` +
-      `- 🎉 **FREE Delivery:** On all orders of **${ghc(100.00)} and above**!\n` +
+      `- 💰 **Greater Accra Flat Rate:** Flat **${ghc(15.00)}** (bulk delivery promotions may apply)\n` +
       `- ⏰ **Same-Day Cutoff:** Order before **2:00 PM** for same-day delivery in Greater Accra.\n` +
       `- 🌍 **Nationwide Coverage:** Delivered to all 16 regions of Ghana via verified bus & parcel stations.\n` +
       `- 🏭 **Warehouse Pickup:** Free pickup available from our central Accra hub!`,

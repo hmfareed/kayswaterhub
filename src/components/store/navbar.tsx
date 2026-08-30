@@ -48,7 +48,7 @@ export function StoreNavbar() {
   const fetchNotifications = async () => {
     try {
       setNotificationsLoading(true);
-      const res = await fetch("/api/notifications?limit=15");
+      const res = await fetch("/api/customer/notifications?limit=50");
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setNotifications(json.data);
@@ -63,9 +63,15 @@ export function StoreNavbar() {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000);
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [session]);
+
+  useEffect(() => {
+    if (notificationsOpen) {
+      fetchNotifications();
+    }
+  }, [notificationsOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
