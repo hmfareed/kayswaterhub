@@ -1,4 +1,4 @@
-export const GEMINI_MODEL_NAME = "gemini-3.6-flash";
+export const GEMINI_MODEL_NAME = "gemini-2.5-flash";
 
 export interface GeminiContentPart {
   text?: string;
