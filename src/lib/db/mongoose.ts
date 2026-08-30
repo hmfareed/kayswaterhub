@@ -30,6 +30,45 @@ declare global {
 const cached = global._mongooseCache ?? { conn: null, promise: null };
 global._mongooseCache = cached;
 
+/**
+ * Register every Mongoose model so that .populate() references never throw
+ * "Schema hasn't been registered for model X".
+ *
+ * Next.js hot-reloading clears the JS module cache between requests, but
+ * the Mongoose connection (stored on `global`) persists. That means a model
+ * referenced via .populate() may not have been imported by the calling route
+ * yet. Importing all models here — after every connectDB() call — ensures
+ * they are always registered before any query runs.
+ */
+function ensureModelsRegistered() {
+  // Dynamic requires avoid circular-import issues and are safe in Node.js.
+  // Each model file already guards against double-registration with the
+  //   mongoose.models.X ?? mongoose.model("X", schema)
+  // pattern, so importing them multiple times is a no-op.
+  require("@/models/User");
+  require("@/models/Order");
+  require("@/models/Payment");
+  require("@/models/DeliveryOrder");
+  require("@/models/Product");
+  require("@/models/ProductVariant");
+  require("@/models/Brand");
+  require("@/models/Category");
+  require("@/models/Cart");
+  require("@/models/Notification");
+  require("@/models/InventoryTransaction");
+  require("@/models/StockReservation");
+  require("@/models/Address");
+  require("@/models/Promotion");
+  require("@/models/Review");
+  require("@/models/Settings");
+  require("@/models/AuditLog");
+  require("@/models/DeliveryRegion");
+  require("@/models/DeliveryZone");
+  require("@/models/DeliveryException");
+  require("@/models/BulkOrder");
+  require("@/models/PricingRule");
+}
+
 export async function connectDB(): Promise<typeof mongoose> {
   configureDns();
 
@@ -42,6 +81,9 @@ export async function connectDB(): Promise<typeof mongoose> {
   }
 
   if (cached.conn && mongoose.connection.readyState === 1) {
+    // Connection already active — still ensure all models are registered
+    // in case this module was re-imported after a hot-reload.
+    ensureModelsRegistered();
     return cached.conn;
   }
 
@@ -68,6 +110,9 @@ export async function connectDB(): Promise<typeof mongoose> {
     cached.promise = null;
     throw e;
   }
+
+  // Register all models after connection is confirmed
+  ensureModelsRegistered();
 
   return cached.conn;
 }
