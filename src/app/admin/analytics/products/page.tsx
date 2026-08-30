@@ -51,27 +51,27 @@ export default function ProductsAnalyticsPage() {
         }
       />
 
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <h3 className="font-black text-base text-slate-900">Top-Selling Water Packs by Revenue</h3>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[500px]">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase">
-                <th className="pb-3">Rank</th>
-                <th className="pb-3">Product Name</th>
-                <th className="pb-3">Packs Sold</th>
-                <th className="pb-3 text-right">Total Revenue Generated</th>
+                <th className="py-3 px-3 first:pl-0 last:pr-0 whitespace-nowrap">Rank</th>
+                <th className="py-3 px-3 whitespace-nowrap">Product Name</th>
+                <th className="py-3 px-3 whitespace-nowrap">Packs Sold</th>
+                <th className="py-3 px-3 text-right first:pl-0 last:pr-0 whitespace-nowrap">Total Revenue Generated</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {data?.topProducts && data.topProducts.length > 0 ? (
                 data.topProducts.map((p: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-3 font-bold text-slate-400">#{idx + 1}</td>
-                    <td className="py-3 font-bold text-slate-900">{p.name}</td>
-                    <td className="py-3 text-slate-700">{p.quantity} packs</td>
-                    <td className="py-3 font-black text-blue-600 text-right">
+                    <td className="py-3 px-3 first:pl-0 font-bold text-slate-400 whitespace-nowrap">#{idx + 1}</td>
+                    <td className="py-3 px-3 font-bold text-slate-900 whitespace-nowrap">{p.name}</td>
+                    <td className="py-3 px-3 text-slate-700 whitespace-nowrap">{p.quantity} packs</td>
+                    <td className="py-3 px-3 last:pr-0 font-black text-blue-600 text-right whitespace-nowrap">
                       {formatCurrency(p.revenue)}
                     </td>
                   </tr>

@@ -98,29 +98,29 @@ export default function SalesAnalyticsPage() {
       </div>
 
       {/* Daily Turnover Table */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <h3 className="font-black text-base text-slate-900">Period Revenue Breakdown</h3>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[540px]">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase">
-                <th className="pb-3">Date</th>
-                <th className="pb-3">Completed Orders</th>
-                <th className="pb-3">Avg Order Value</th>
-                <th className="pb-3 text-right">Daily Revenue</th>
+                <th className="py-3 px-3 first:pl-0 last:pr-0 whitespace-nowrap">Date</th>
+                <th className="py-3 px-3 whitespace-nowrap">Completed Orders</th>
+                <th className="py-3 px-3 whitespace-nowrap">Avg Order Value</th>
+                <th className="py-3 px-3 text-right first:pl-0 last:pr-0 whitespace-nowrap">Daily Revenue</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {data?.dailySales && data.dailySales.length > 0 ? (
                 data.dailySales.map((d: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-3 font-bold text-slate-900">{d.date}</td>
-                    <td className="py-3 text-slate-700">{d.orders} orders</td>
-                    <td className="py-3 text-slate-500">
+                    <td className="py-3 px-3 first:pl-0 font-bold text-slate-900 whitespace-nowrap">{d.date}</td>
+                    <td className="py-3 px-3 text-slate-700 whitespace-nowrap">{d.orders} orders</td>
+                    <td className="py-3 px-3 text-slate-500 whitespace-nowrap">
                       {formatCurrency(d.orders > 0 ? d.revenue / d.orders : 0)}
                     </td>
-                    <td className="py-3 font-black text-slate-900 text-right">
+                    <td className="py-3 px-3 last:pr-0 font-black text-slate-900 text-right whitespace-nowrap">
                       {formatCurrency(d.revenue)}
                     </td>
                   </tr>

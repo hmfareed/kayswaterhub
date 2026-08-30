@@ -42,12 +42,12 @@ export function AdminHeader({
   }, []);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-200/80 shadow-xs">
+    <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-3 sm:px-6 lg:px-8 bg-white border-b border-slate-200/80 shadow-xs">
       {/* Left: Mobile Toggle & Quick Search Button */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
         <button
           onClick={onToggleSidebar}
-          className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden cursor-pointer"
+          className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden cursor-pointer shrink-0"
           aria-label="Toggle Navigation"
         >
           <Menu className="w-5 h-5" />
@@ -56,10 +56,10 @@ export function AdminHeader({
         {/* Global Search Trigger */}
         <button
           onClick={onOpenSearch}
-          className="flex items-center gap-3 px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 rounded-xl text-xs text-slate-500 font-medium transition-all w-44 sm:w-64 cursor-pointer"
+          className="flex items-center gap-2 sm:gap-3 px-2.5 sm:px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 rounded-xl text-xs text-slate-500 font-medium transition-all w-36 xs:w-44 sm:w-64 cursor-pointer truncate"
         >
           <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-          <span className="truncate text-left">Quick search anything...</span>
+          <span className="truncate text-left">Quick search...</span>
           <kbd className="hidden sm:inline-block ml-auto text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-slate-200 text-slate-400">
             ⌘K
           </kbd>

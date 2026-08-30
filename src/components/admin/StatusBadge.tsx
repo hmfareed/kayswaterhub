@@ -40,9 +40,9 @@ export function StatusBadge({ status, className = "", size = "md" }: StatusBadge
 
   return (
     <span
-      className={`inline-flex items-center font-bold tracking-tight rounded-full border ${sizeClass} ${styles} ${className}`}
+      className={`inline-flex items-center font-bold tracking-tight rounded-full border whitespace-nowrap shrink-0 ${sizeClass} ${styles} ${className}`}
     >
-      <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-75"></span>
+      <span className="w-1.5 h-1.5 rounded-full mr-1.5 bg-current opacity-75 shrink-0"></span>
       {formatText(status)}
     </span>
   );

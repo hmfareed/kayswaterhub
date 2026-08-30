@@ -475,10 +475,10 @@ function OrderConfirmationContent() {
 
           {/* ─── 5-Step Order Stepper ─────────────────────────────────────────── */}
           {!isCancelled && (
-            <div className="pt-8 pb-4">
-              <div className="relative flex items-center justify-between max-w-2xl mx-auto px-4">
+            <div className="pt-6 sm:pt-8 pb-4">
+              <div className="relative flex items-center justify-between max-w-2xl mx-auto px-2 sm:px-4">
                 {/* Connecting line */}
-                <div className="absolute left-8 right-8 top-5 -translate-y-1/2 h-1 bg-slate-200 dark:bg-neutral-800 -z-0">
+                <div className="absolute left-6 right-6 sm:left-8 sm:right-8 top-4 sm:top-5 -translate-y-1/2 h-1 bg-slate-200 dark:bg-neutral-800 -z-0">
                   <div
                     className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-700"
                     style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
@@ -493,18 +493,18 @@ function OrderConfirmationContent() {
                   return (
                     <div key={step.title} className="relative z-10 flex flex-col items-center group">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-bold text-xs transition-all ${
                           isCurrent
-                            ? "bg-blue-600 text-white ring-4 ring-blue-100 dark:ring-blue-900/50 shadow-md shadow-blue-600/30 scale-110"
+                            ? "bg-blue-600 text-white ring-2 sm:ring-4 ring-blue-100 dark:ring-blue-900/50 shadow-md shadow-blue-600/30 scale-110"
                             : isPassed
                             ? "bg-emerald-600 text-white shadow-xs"
                             : "bg-slate-200 dark:bg-neutral-800 text-slate-500 dark:text-neutral-500"
                         }`}
                       >
-                        <Icon className="w-5 h-5" />
+                        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </div>
                       <span
-                        className={`text-[10px] sm:text-xs font-bold mt-2 text-center max-w-[75px] leading-tight ${
+                        className={`text-[9px] sm:text-xs font-bold mt-1.5 sm:mt-2 text-center max-w-[58px] sm:max-w-[75px] leading-tight ${
                           isCurrent
                             ? "text-blue-600 dark:text-blue-400 font-black"
                             : isPassed

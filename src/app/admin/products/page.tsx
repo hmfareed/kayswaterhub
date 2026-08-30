@@ -492,17 +492,17 @@ export default function AdminProductsPage() {
       {/* ─── Main Products Data Table ────────────────────────────────────────── */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[880px]">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200/80 text-slate-500 font-extrabold uppercase tracking-wider">
-                <th className="py-3.5 px-4">Product</th>
-                <th className="py-3.5 px-3">Brand & Category</th>
-                <th className="py-3.5 px-3">Packaging & Variants</th>
-                <th className="py-3.5 px-3">Price</th>
-                <th className="py-3.5 px-3">Stock Level</th>
-                <th className="py-3.5 px-3 text-center">Active</th>
-                <th className="py-3.5 px-3 text-center">Featured</th>
-                <th className="py-3.5 px-4 text-right">Actions</th>
+                <th className="py-3.5 px-4 whitespace-nowrap">Product</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Brand & Category</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Packaging & Variants</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Price</th>
+                <th className="py-3.5 px-3 whitespace-nowrap">Stock Level</th>
+                <th className="py-3.5 px-3 text-center whitespace-nowrap">Active</th>
+                <th className="py-3.5 px-3 text-center whitespace-nowrap">Featured</th>
+                <th className="py-3.5 px-4 text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

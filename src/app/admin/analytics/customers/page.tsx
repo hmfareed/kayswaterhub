@@ -75,27 +75,27 @@ export default function CustomersAnalyticsPage() {
         />
       </div>
 
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <h3 className="font-black text-base text-slate-900">VIP Top Spenders</h3>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[500px]">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase">
-                <th className="pb-3">Customer Name</th>
-                <th className="pb-3">Phone</th>
-                <th className="pb-3">Orders</th>
-                <th className="pb-3 text-right">Lifetime Value</th>
+                <th className="py-3 px-3 first:pl-0 last:pr-0 whitespace-nowrap">Customer Name</th>
+                <th className="py-3 px-3 whitespace-nowrap">Phone</th>
+                <th className="py-3 px-3 whitespace-nowrap">Orders</th>
+                <th className="py-3 px-3 text-right first:pl-0 last:pr-0 whitespace-nowrap">Lifetime Value</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {data?.topCustomers && data.topCustomers.length > 0 ? (
                 data.topCustomers.map((c: any) => (
                   <tr key={c.id} className="hover:bg-slate-50/50">
-                    <td className="py-3 font-bold text-slate-900">{c.name}</td>
-                    <td className="py-3 text-slate-500">{c.phone}</td>
-                    <td className="py-3 text-slate-700 font-bold">{c.ordersCount} orders</td>
-                    <td className="py-3 font-black text-blue-600 text-right">
+                    <td className="py-3 px-3 first:pl-0 font-bold text-slate-900 whitespace-nowrap">{c.name}</td>
+                    <td className="py-3 px-3 text-slate-500 whitespace-nowrap">{c.phone}</td>
+                    <td className="py-3 px-3 text-slate-700 font-bold whitespace-nowrap">{c.ordersCount} orders</td>
+                    <td className="py-3 px-3 last:pr-0 font-black text-blue-600 text-right whitespace-nowrap">
                       {formatCurrency(c.totalSpent)}
                     </td>
                   </tr>

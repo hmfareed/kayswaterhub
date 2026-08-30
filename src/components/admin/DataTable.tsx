@@ -24,6 +24,7 @@ interface DataTableProps<T> {
   emptyTitle?: string;
   emptyDescription?: string;
   actions?: React.ReactNode;
+  minWidth?: string;
 }
 
 export function DataTable<T extends { _id?: string; id?: string }>({
@@ -40,6 +41,7 @@ export function DataTable<T extends { _id?: string; id?: string }>({
   emptyTitle = "No records found",
   emptyDescription = "Try adjusting your search query or filters.",
   actions,
+  minWidth = "min-w-[680px]",
 }: DataTableProps<T>) {
   const totalPages = total ? Math.ceil(total / limit) : 1;
 
@@ -66,13 +68,13 @@ export function DataTable<T extends { _id?: string; id?: string }>({
 
       {/* Table Content */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
+        <table className={`w-full text-left text-xs ${minWidth}`}>
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200/80 text-slate-500 font-extrabold uppercase tracking-wider">
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={`py-3.5 px-4 font-black ${
+                  className={`py-3.5 px-4 font-black whitespace-nowrap ${
                     col.align === "right"
                       ? "text-right"
                       : col.align === "center"
@@ -97,7 +99,7 @@ export function DataTable<T extends { _id?: string; id?: string }>({
               Array.from({ length: 5 }).map((_, rIdx) => (
                 <tr key={rIdx} className="animate-pulse">
                   {columns.map((_, cIdx) => (
-                    <td key={cIdx} className="py-4 px-4">
+                    <td key={cIdx} className="py-4 px-4 whitespace-nowrap">
                       <div className="h-4 bg-slate-200/70 rounded-md w-full max-w-[120px]"></div>
                     </td>
                   ))}
@@ -148,14 +150,14 @@ export function DataTable<T extends { _id?: string; id?: string }>({
 
       {/* Pagination Footer */}
       {total !== undefined && totalPages > 1 && onPageChange && (
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 bg-slate-50/40">
-          <span className="font-semibold">
+        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 bg-slate-50/40">
+          <span className="font-semibold text-center sm:text-left">
             Showing <span className="font-black text-slate-800">{(page - 1) * limit + 1}</span> to{" "}
             <span className="font-black text-slate-800">{Math.min(page * limit, total)}</span> of{" "}
             <span className="font-black text-slate-800">{total}</span> records
           </span>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => onPageChange(Math.max(1, page - 1))}
               disabled={page <= 1}

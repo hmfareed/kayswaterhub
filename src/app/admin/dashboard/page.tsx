@@ -137,7 +137,7 @@ export default function AdminDashboardPage() {
       {/* ─── Center Section: Interactive Revenue Chart & Low Stock Alerts ─────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Sales Overview Chart */}
-        <div className="lg:col-span-8 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-6">
+        <div className="lg:col-span-8 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-100">
             <div>
               <h2 className="font-black text-base text-slate-900">Revenue & Sales Trends</h2>
@@ -145,7 +145,7 @@ export default function AdminDashboardPage() {
                 Aggregated earnings for the selected period
               </p>
             </div>
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
                 <span className="font-bold text-slate-700">
@@ -254,7 +254,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Low Stock Warning Card */}
-        <div className="lg:col-span-4 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="lg:col-span-4 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -303,7 +303,7 @@ export default function AdminDashboardPage() {
       {/* ─── Recent Orders Table & Recent Operations Activity ─────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Recent Orders */}
-        <div className="lg:col-span-8 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="lg:col-span-8 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h2 className="font-black text-base text-slate-900">Recent Customer Orders</h2>
@@ -313,45 +313,50 @@ export default function AdminDashboardPage() {
             </div>
             <Link
               href="/admin/orders"
-              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 shrink-0"
             >
               <span>View All</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[620px]">
               <thead>
                 <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase tracking-wider">
-                  <th className="pb-3">Order #</th>
-                  <th className="pb-3">Customer</th>
-                  <th className="pb-3">Total</th>
-                  <th className="pb-3">Status</th>
-                  <th className="pb-3">Date</th>
-                  <th className="pb-3 text-right">Inspect</th>
+                  <th className="py-3 px-3.5 first:pl-4 last:pr-4 whitespace-nowrap">Order #</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap">Customer</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap">Total</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap">Status</th>
+                  <th className="py-3 px-3.5 whitespace-nowrap">Date</th>
+                  <th className="py-3 px-3.5 text-right first:pl-4 last:pr-4 whitespace-nowrap">Inspect</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {data?.recentOrders && data.recentOrders.length > 0 ? (
                   data.recentOrders.map((ord: any) => (
                     <tr key={ord.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3.5 font-bold text-blue-600">{ord.orderNumber}</td>
-                      <td className="py-3.5">
-                        <span className="font-bold text-slate-900 block">{ord.customer}</span>
-                        <span className="text-[10px] text-slate-400">{ord.phone}</span>
+                      <td className="py-3.5 px-3.5 first:pl-4 font-bold text-blue-600 whitespace-nowrap">
+                        <Link href={`/admin/orders/${ord.id}`} className="hover:underline">
+                          {ord.orderNumber}
+                        </Link>
                       </td>
-                      <td className="py-3.5 font-black text-slate-900">
+                      <td className="py-3.5 px-3.5 min-w-[140px]">
+                        <span className="font-bold text-slate-900 block truncate">{ord.customer}</span>
+                        <span className="text-[10px] text-slate-400 block">{ord.phone}</span>
+                      </td>
+                      <td className="py-3.5 px-3.5 font-black text-slate-900 whitespace-nowrap">
                         {formatCurrency(ord.amount)}
                       </td>
-                      <td className="py-3.5">
+                      <td className="py-3.5 px-3.5 whitespace-nowrap">
                         <StatusBadge status={ord.status} size="sm" />
                       </td>
-                      <td className="py-3.5 text-slate-500 font-medium">{ord.date}</td>
-                      <td className="py-3.5 text-right">
+                      <td className="py-3.5 px-3.5 text-slate-500 font-medium whitespace-nowrap">{ord.date}</td>
+                      <td className="py-3.5 px-3.5 last:pr-4 text-right whitespace-nowrap">
                         <Link
                           href={`/admin/orders/${ord.id}`}
                           className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 inline-flex transition-colors"
+                          title="View Order Details"
                         >
                           <ArrowUpRight className="w-4 h-4" />
                         </Link>
@@ -371,7 +376,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Recent Operations Activity Log */}
-        <div className="lg:col-span-4 bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="lg:col-span-4 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <h2 className="font-black text-sm text-slate-900">Operations Activity</h2>
             <Link

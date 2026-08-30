@@ -73,25 +73,25 @@ export default function DeliveryAnalyticsPage() {
         />
       </div>
 
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
         <h3 className="font-black text-base text-slate-900">High-Demand Delivery Areas</h3>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs min-w-[460px]">
             <thead>
               <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase">
-                <th className="pb-3">Area / Zone</th>
-                <th className="pb-3">Region</th>
-                <th className="pb-3 text-right">Orders Fulfilled</th>
+                <th className="py-3 px-3 first:pl-0 last:pr-0 whitespace-nowrap">Area / Zone</th>
+                <th className="py-3 px-3 whitespace-nowrap">Region</th>
+                <th className="py-3 px-3 text-right first:pl-0 last:pr-0 whitespace-nowrap">Orders Fulfilled</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium">
               {data?.topAreas && data.topAreas.length > 0 ? (
                 data.topAreas.map((a: any, idx: number) => (
                   <tr key={idx} className="hover:bg-slate-50/50">
-                    <td className="py-3 font-bold text-slate-900">{a.area || "East Legon"}</td>
-                    <td className="py-3 text-slate-500">{a.region || "Greater Accra"}</td>
-                    <td className="py-3 font-black text-blue-600 text-right">{a.count} deliveries</td>
+                    <td className="py-3 px-3 first:pl-0 font-bold text-slate-900 whitespace-nowrap">{a.area || "East Legon"}</td>
+                    <td className="py-3 px-3 text-slate-500 whitespace-nowrap">{a.region || "Greater Accra"}</td>
+                    <td className="py-3 px-3 last:pr-0 font-black text-blue-600 text-right whitespace-nowrap">{a.count} deliveries</td>
                   </tr>
                 ))
               ) : (

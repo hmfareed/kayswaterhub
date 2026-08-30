@@ -144,41 +144,41 @@ export default function CustomerProfilePage({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Order History */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs space-y-4">
+          <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
             <h3 className="font-black text-base text-slate-900">Order History ({orders.length})</h3>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[580px]">
                 <thead>
                   <tr className="border-b border-slate-100 text-slate-400 font-extrabold uppercase">
-                    <th className="pb-3">Order ID</th>
-                    <th className="pb-3">Items</th>
-                    <th className="pb-3">Total</th>
-                    <th className="pb-3">Status</th>
-                    <th className="pb-3">Date</th>
-                    <th className="pb-3 text-right">Action</th>
+                    <th className="py-3 px-3 first:pl-0 last:pr-0 whitespace-nowrap">Order ID</th>
+                    <th className="py-3 px-3 whitespace-nowrap">Items</th>
+                    <th className="py-3 px-3 whitespace-nowrap">Total</th>
+                    <th className="py-3 px-3 whitespace-nowrap">Status</th>
+                    <th className="py-3 px-3 whitespace-nowrap">Date</th>
+                    <th className="py-3 px-3 text-right first:pl-0 last:pr-0 whitespace-nowrap">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium">
                   {orders.length > 0 ? (
                     orders.map((ord: any) => (
                       <tr key={ord._id} className="hover:bg-slate-50/50">
-                        <td className="py-3 font-bold text-blue-600">
+                        <td className="py-3 px-3 first:pl-0 font-bold text-blue-600 whitespace-nowrap">
                           <Link href={`/admin/orders/${ord._id}`}>{ord.orderNumber}</Link>
                         </td>
-                        <td className="py-3 text-slate-600">
+                        <td className="py-3 px-3 text-slate-600 whitespace-nowrap">
                           {ord.items?.reduce((s: number, i: any) => s + i.quantity, 0) || 0} packs
                         </td>
-                        <td className="py-3 font-black text-slate-900">
+                        <td className="py-3 px-3 font-black text-slate-900 whitespace-nowrap">
                           {formatCurrency(ord.total)}
                         </td>
-                        <td className="py-3">
+                        <td className="py-3 px-3 whitespace-nowrap">
                           <StatusBadge status={ord.status} size="sm" />
                         </td>
-                        <td className="py-3 text-slate-400">
+                        <td className="py-3 px-3 text-slate-400 whitespace-nowrap">
                           {new Date(ord.createdAt).toLocaleDateString()}
                         </td>
-                        <td className="py-3 text-right">
+                        <td className="py-3 px-3 last:pr-0 text-right whitespace-nowrap">
                           <Link
                             href={`/admin/orders/${ord._id}`}
                             className="p-1 rounded-lg text-slate-400 hover:text-blue-600"
