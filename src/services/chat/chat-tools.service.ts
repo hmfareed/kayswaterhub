@@ -18,7 +18,19 @@ export interface ChatSessionUser {
 }
 
 export interface ClientAction {
-  type: "ADD_TO_CART" | "REMOVE_FROM_CART" | "UPDATE_QUANTITY" | "CLEAR_CART" | "NAVIGATE_TO_CHECKOUT" | "VIEW_PRODUCT";
+  type:
+    | "ADD_TO_CART"
+    | "REMOVE_FROM_CART"
+    | "UPDATE_QUANTITY"
+    | "CLEAR_CART"
+    | "NAVIGATE_TO_CHECKOUT"
+    | "NAVIGATE_TO_REGISTER"
+    | "NAVIGATE_TO_SHOP"
+    | "NAVIGATE"
+    | "TOGGLE_DARK_MODE"
+    | "SET_THEME"
+    | "OPEN_WHATSAPP"
+    | "VIEW_PRODUCT";
   payload?: any;
 }
 
@@ -30,7 +42,7 @@ export interface ToolExecutionResult {
 }
 
 /**
- * Execute a backend tool called by Gemini
+ * Execute a backend tool called by Gemini or Local NLP Engine
  */
 export async function executeChatbotTool(
   name: string,
@@ -53,31 +65,47 @@ export async function executeChatbotTool(
 
   switch (name) {
     case "searchProducts":
-      return handleSearchProducts(args);
+      return handleSearchProducts(args as any);
     case "getProduct":
-      return handleGetProduct(args);
+      return handleGetProduct(args as any);
     case "getProductsByCategory":
-      return handleGetProductsByCategory(args);
+      return handleGetProductsByCategory(args as any);
     case "checkStock":
-      return handleCheckStock(args);
+      return handleCheckStock(args as any);
+    case "calculatePrice":
+      return handleCalculatePrice(args as any);
+    case "getBudgetRecommendations":
+      return handleGetBudgetRecommendations(args as any);
     case "getCart":
       return handleGetCart(context);
     case "addToCart":
-      return handleAddToCart(args, context);
+      return handleAddToCart(args as any, context);
     case "removeFromCart":
-      return handleRemoveFromCart(args);
+      return handleRemoveFromCart(args as any);
     case "updateCartQuantity":
-      return handleUpdateCartQuantity(args);
+      return handleUpdateCartQuantity(args as any);
     case "getCustomerOrders":
-      return handleGetCustomerOrders(args, context.sessionUser);
+      return handleGetCustomerOrders(args as any, context.sessionUser);
     case "getOrderStatus":
-      return handleGetOrderStatus(args, context.sessionUser);
+      return handleGetOrderStatus(args as any, context.sessionUser);
     case "getDeliveryInformation":
-      return handleGetDeliveryInformation(args);
+      return handleGetDeliveryInformation(args as any);
     case "getStoreInfo":
       return handleGetStoreInfo();
     case "guideToCheckout":
       return handleGuideToCheckout(context);
+    case "toggleThemePreference":
+      return handleToggleThemePreference(args as any);
+    case "contactHumanSupport":
+      return handleContactHumanSupport();
+    case "getWaterQualityInfo":
+      return handleGetWaterQualityInfo();
+    case "getWhyBuyFromUsInfo":
+      return handleGetWhyBuyFromUsInfo();
+    case "getAccountCreationGuide":
+      return handleGetAccountCreationGuide();
+    case "getWaterHealthRecommendations":
+      return handleGetWaterHealthRecommendations(args as any);
     default:
       return {
         toolName: name,
@@ -101,7 +129,6 @@ async function handleSearchProducts(args: {
   const maxPrice = typeof args.maxPrice === "number" ? args.maxPrice : undefined;
   const inStockOnly = !!args.inStockOnly;
 
-  // Search in memory / store products with rich metadata
   let results = STORE_PRODUCTS.filter((p) => {
     if (inStockOnly && !p.inStock) return false;
     if (maxPrice !== undefined && p.price > maxPrice) return false;
@@ -293,7 +320,8 @@ async function handleCheckStock(args: {
       p.id.toLowerCase() === ident ||
       p.slug.toLowerCase() === ident ||
       p.name.toLowerCase().includes(ident) ||
-      p.brand.toLowerCase().includes(ident)
+      p.brand.toLowerCase().includes(ident) ||
+      p.brandSlug.toLowerCase() === ident
   );
 
   if (!product) {
@@ -338,6 +366,86 @@ async function handleCheckStock(args: {
   };
 }
 
+// ─── Price Calculator Tool ────────────────────────────────────────────────────
+
+async function handleCalculatePrice(args: {
+  productIdentifier: string;
+  quantity?: number;
+}): Promise<ToolExecutionResult> {
+  const ident = (args.productIdentifier || "").trim().toLowerCase();
+  const qty = Math.max(1, args.quantity || 1);
+
+  let product = STORE_PRODUCTS.find(
+    (p) =>
+      p.id.toLowerCase() === ident ||
+      p.slug.toLowerCase() === ident ||
+      p.name.toLowerCase().includes(ident)
+  );
+
+  if (!product) {
+    const words = ident.split(/\s+/).filter(Boolean);
+    product = STORE_PRODUCTS.find((p) =>
+      words.every((w) => p.name.toLowerCase().includes(w) || p.brand.toLowerCase().includes(w))
+    );
+  }
+
+  if (!product) {
+    return {
+      toolName: "calculatePrice",
+      result: {
+        found: false,
+        message: `Could not identify product '${args.productIdentifier}' for price calculation.`,
+      },
+    };
+  }
+
+  const unitPrice = product.price;
+  const totalPrice = unitPrice * qty;
+  const isFreeDelivery = totalPrice >= 100;
+
+  return {
+    toolName: "calculatePrice",
+    result: {
+      found: true,
+      productName: product.name,
+      packSize: product.packSize,
+      quantity: qty,
+      unitPriceInGHS: unitPrice,
+      totalPriceInGHS: totalPrice,
+      isFreeDelivery,
+      product,
+    },
+    suggestedProducts: [product],
+  };
+}
+
+// ─── Budget Recommendation Tool ───────────────────────────────────────────────
+
+async function handleGetBudgetRecommendations(args: {
+  budget: number;
+}): Promise<ToolExecutionResult> {
+  const budget = Math.max(0, Number(args.budget) || 50);
+
+  const affordable = STORE_PRODUCTS.filter((p) => p.price <= budget && p.inStock);
+  affordable.sort((a, b) => (b.isBestSeller ? 1 : 0) - (a.isBestSeller ? 1 : 0) || b.price - a.price);
+
+  return {
+    toolName: "getBudgetRecommendations",
+    result: {
+      budgetInGHS: budget,
+      optionsFound: affordable.length,
+      products: affordable.map((p) => ({
+        id: p.id,
+        name: p.name,
+        packSize: p.packSize,
+        priceInGHS: p.price,
+        inStock: p.inStock,
+      })),
+    },
+    suggestedProducts: affordable.slice(0, 4),
+  };
+}
+
 async function handleGetCart(context: {
   clientCartItems?: Array<{ productId: string; quantity: number }>;
 }): Promise<ToolExecutionResult> {
@@ -377,13 +485,13 @@ async function handleGetCart(context: {
 }
 
 async function handleAddToCart(
-  args: { productIdentifier: string; quantity?: number },
+  args: { productIdentifier: string; quantity?: number; andCheckout?: boolean },
   context: { clientCartItems?: Array<{ productId: string; quantity: number }> }
 ): Promise<ToolExecutionResult> {
   const ident = (args.productIdentifier || "").trim().toLowerCase();
   const quantity = Math.max(1, Math.round(args.quantity || 1));
+  const andCheckout = !!args.andCheckout;
 
-  // Find product
   let product = STORE_PRODUCTS.find(
     (p) =>
       p.id.toLowerCase() === ident ||
@@ -408,7 +516,6 @@ async function handleAddToCart(
     };
   }
 
-  // Stock check
   let availableStock = product.stock;
   try {
     const prodDoc = await Product.findOne({ slug: product.slug });
@@ -445,6 +552,7 @@ async function handleAddToCart(
         quantityAdded: finalQty,
         totalItemPrice: product.price * finalQty,
       },
+      andCheckout,
       message: `Successfully added ${finalQty} ${finalQty === 1 ? "pack" : "packs"} of ${product.name} (GH₵${product.price * finalQty}) to your cart!`,
     },
     clientAction: {
@@ -452,6 +560,7 @@ async function handleAddToCart(
       payload: {
         product,
         quantity: finalQty,
+        andCheckout,
       },
     },
     suggestedProducts: [product],
@@ -504,9 +613,10 @@ async function handleUpdateCartQuantity(args: {
     toolName: "updateCartQuantity",
     result: {
       success: true,
-      message: qty === 0
-        ? `Removed ${product ? product.name : "item"} from your cart.`
-        : `Updated quantity of ${product ? product.name : "item"} to ${qty}.`,
+      message:
+        qty === 0
+          ? `Removed ${product ? product.name : "item"} from your cart.`
+          : `Updated quantity of ${product ? product.name : "item"} to ${qty}.`,
     },
     clientAction: {
       type: "UPDATE_QUANTITY",
@@ -628,7 +738,6 @@ async function handleGetOrderStatus(
     };
   }
 
-  // Security check: non-admins can view only their own orders
   const isAdmin = sessionUser?.role === "ADMIN" || sessionUser?.role === "SUPER_ADMIN";
   if (!isAdmin) {
     let isOwner = false;
@@ -668,27 +777,28 @@ async function handleGetOrderStatus(
         year: "numeric",
       }),
       orderStatus: order.status,
-      paymentStatus: order.paymentStatus,
-      deliveryStatus: order.deliveryStatus || "PENDING",
+      paymentStatus: (order as any).paymentStatus || order.deliveryPaymentStatus || "PENDING",
+      deliveryStatus: (order as any).deliveryStatus || order.status || "PENDING",
       items: order.items.map((i: any) => ({
         product: i.productName,
         pack: i.variantName,
         quantity: i.quantity,
         priceInGHS: i.totalPrice,
       })),
-      totalInGHS: order.pricing?.total || 0,
-      deliveryFeeInGHS: order.pricing?.deliveryFee || 0,
+      totalInGHS: order.total || 0,
+      deliveryFeeInGHS: order.deliveryFee || order.estimatedDeliveryFee || 0,
       deliveryLocation: order.deliveryAddress
         ? `${order.deliveryAddress.area ? order.deliveryAddress.area + ", " : ""}${order.deliveryAddress.city}, ${order.deliveryAddress.region}`
         : "Standard Delivery",
-      driverInfo: order.assignedDriver
-        ? { name: order.assignedDriver.name, phone: order.assignedDriver.phone }
+      driverInfo: order.courierName
+        ? { name: order.courierName, phone: order.courierPhone || "" }
         : null,
     },
   };
 }
 
-async function handleGetDeliveryInformation(args: { region?: string }): Promise<ToolExecutionResult> {
+async function handleGetDeliveryInformation(args: { region?: string; city?: string }): Promise<ToolExecutionResult> {
+  const targetCity = (args.city || "").trim().toLowerCase();
   const targetRegion = (args.region || "").trim().toLowerCase();
 
   const rates: Record<string, number> = {
@@ -702,22 +812,48 @@ async function handleGetDeliveryInformation(args: { region?: string }): Promise<
     "upper east": 30,
     "upper west": 30,
     "bono east": 22,
+    bono: 22,
+    ahafo: 22,
+    "western north": 25,
+    oti: 22,
+    "north east": 30,
+    savannah: 28,
   };
 
-  const selectedRate = targetRegion ? rates[targetRegion] || 25 : 15;
+  let selectedRate = 15;
+  let resolvedRegion = "Greater Accra";
+  let resolvedCity = args.city || undefined;
+
+  if (targetCity === "tamale" || targetRegion.includes("northern")) {
+    selectedRate = 25;
+    resolvedRegion = "Northern";
+    resolvedCity = "Tamale";
+  } else if (targetCity === "kumasi" || targetRegion.includes("ashanti")) {
+    selectedRate = 20;
+    resolvedRegion = "Ashanti";
+    resolvedCity = "Kumasi";
+  } else if (targetCity === "takoradi" || targetRegion.includes("western")) {
+    selectedRate = 20;
+    resolvedRegion = "Western";
+    resolvedCity = "Takoradi";
+  } else if (targetRegion) {
+    selectedRate = rates[targetRegion] || 25;
+    resolvedRegion = args.region || "Greater Accra";
+  }
 
   return {
     toolName: "getDeliveryInformation",
     result: {
       standardGreaterAccraFeeInGHS: 15,
       regionalRatesInGHS: rates,
-      queriedRegion: args.region || "Greater Accra",
+      queriedRegion: resolvedRegion,
+      queriedCity: resolvedCity,
       deliveryFeeForQueriedRegionInGHS: selectedRate,
       freeDeliveryThresholdInGHS: 100,
       sameDayDeliveryCutoff: "2:00 PM (for Greater Accra)",
       deliveryTimeframe: {
         greaterAccra: "Same-day if ordered before 2:00 PM; next-morning if ordered after.",
-        regionalParcel: "1 - 3 business days via verified station couriers.",
+        regionalParcel: "1 - 3 business days via verified station couriers (VIP, OA, Imperial, STC).",
       },
       warehousePickup: "Available at our central Accra hub (free).",
     },
@@ -734,10 +870,9 @@ function handleGetStoreInfo(): ToolExecutionResult {
       whatsappLink: STORE_WHATSAPP_LINK,
       acceptedPaymentMethods: [
         "MTN Mobile Money (MoMo)",
-        "Telecel Cash",
+        "Telecel Cash (Vodafone Cash)",
         "AT Money",
         "Visa & Mastercard (via Paystack)",
-        "Bank Transfer",
       ],
       workingHours: "Monday to Saturday: 8:00 AM – 6:00 PM (Sunday: Closed / Emergency delivery only)",
       coverage: "Greater Accra & Nationwide across all 16 regions of Ghana",
@@ -756,9 +891,10 @@ function handleGuideToCheckout(context: {
       cartItemCount: itemCount,
       checkoutUrl: "/checkout",
       cartUrl: "/cart",
-      message: itemCount > 0
-        ? `You have ${itemCount} ${itemCount === 1 ? "pack" : "packs"} in your cart. You can proceed directly to checkout to enter delivery address and pay securely with MoMo or Card.`
-        : "Your cart is currently empty. Add your favourite water brands first before checkout!",
+      message:
+        itemCount > 0
+          ? `You have ${itemCount} ${itemCount === 1 ? "pack" : "packs"} in your cart. Proceed to checkout to complete your order.`
+          : "Your cart is currently empty. Add your favourite water brands first before checkout!",
     },
     clientAction: {
       type: "NAVIGATE_TO_CHECKOUT",
@@ -766,5 +902,111 @@ function handleGuideToCheckout(context: {
         url: itemCount > 0 ? "/checkout" : "/shop",
       },
     },
+  };
+}
+
+function handleToggleThemePreference(args: { mode?: "dark" | "light" | "toggle" }): ToolExecutionResult {
+  const targetTheme = args.mode || "toggle";
+  return {
+    toolName: "toggleThemePreference",
+    result: {
+      success: true,
+      targetTheme,
+      message: `Theme switched to ${targetTheme} mode.`,
+    },
+    clientAction: {
+      type: "SET_THEME",
+      payload: { theme: targetTheme },
+    },
+  };
+}
+
+function handleContactHumanSupport(): ToolExecutionResult {
+  return {
+    toolName: "contactHumanSupport",
+    result: {
+      phone: STORE_PHONE_DISPLAY,
+      whatsappLink: STORE_WHATSAPP_LINK,
+      hours: "Monday - Saturday: 8:00 AM - 6:00 PM",
+      message: `Our manager and support agents are ready to assist you on WhatsApp or via direct phone call.`,
+    },
+    clientAction: {
+      type: "OPEN_WHATSAPP",
+      payload: { url: STORE_WHATSAPP_LINK },
+    },
+  };
+}
+
+function handleGetWaterQualityInfo(): ToolExecutionResult {
+  return {
+    toolName: "getWaterQualityInfo",
+    result: {
+      fdaCertified: true,
+      gsaCertified: true,
+      storageConditions: "Clean, temperature-controlled warehouse away from sunlight.",
+      seals: "100% factory sealed directly from spring sources.",
+      fifoRotation: "Fresh production batches with daily inventory rotation.",
+    },
+  };
+}
+
+function handleGetWhyBuyFromUsInfo(): ToolExecutionResult {
+  return {
+    toolName: "getWhyBuyFromUsInfo",
+    result: {
+      points: [
+        "100% Genuine & Factory Sealed directly from top bottlers",
+        "Cool & pristine storage protecting water from sunlight",
+        "Same-day doorstep delivery across Greater Accra before 2 PM",
+        "Nationwide delivery to all 16 regions via station parcel couriers",
+        "Free delivery on orders of GH₵100 or more",
+        "Secure payments via MTN MoMo, Telecel Cash, AT Money, and Cards",
+      ],
+    },
+  };
+}
+
+function handleGetAccountCreationGuide(): ToolExecutionResult {
+  return {
+    toolName: "getAccountCreationGuide",
+    result: {
+      registerUrl: "/register",
+      loginUrl: "/login",
+      benefits: [
+        "Save multiple delivery addresses for instant checkout",
+        "Track orders in real-time from packing to doorstep",
+        "Earn hydration loyalty reward points",
+        "View complete order receipts and history",
+      ],
+    },
+    clientAction: {
+      type: "NAVIGATE_TO_REGISTER",
+      payload: { url: "/register" },
+    },
+  };
+}
+
+function handleGetWaterHealthRecommendations(args: { need?: string }): ToolExecutionResult {
+  const need = (args.need || "").toLowerCase();
+  let recommended = STORE_PRODUCTS;
+
+  if (need.includes("baby") || need.includes("infant")) {
+    recommended = STORE_PRODUCTS.filter((p) => p.brand.toLowerCase() === "verna");
+  } else if (need.includes("gym") || need.includes("workout") || need.includes("alkaline") || need.includes("fitness")) {
+    recommended = STORE_PRODUCTS.filter((p) => p.brand.toLowerCase() === "slem fit");
+  }
+
+  return {
+    toolName: "getWaterHealthRecommendations",
+    result: {
+      need: args.need || "general",
+      recommendations: [
+        { brand: "Verna", idealFor: "Babies, infant formula, and low-sodium diets" },
+        { brand: "Slem Fit", idealFor: "Gym, sports, fitness, workout recovery (alkaline pH with electrolytes)" },
+        { brand: "Voltic & Bel-Aqua", idealFor: "Daily premium natural mineral hydration" },
+        { brand: "Awake", idealFor: "Purified water supporting national heart healthcare charity" },
+      ],
+    },
+    suggestedProducts: recommended.slice(0, 3),
   };
 }

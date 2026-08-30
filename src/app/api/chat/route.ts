@@ -38,7 +38,7 @@ async function runLocalEngine(
 ): Promise<ChatAPIResponse> {
   const lastUserMsg = messages[messages.length - 1];
   const text = (lastUserMsg?.content || "").trim();
-  const messageHistory = messages.slice(0, -1); // everything before last message
+  const messageHistory = messages.slice(0, -1);
 
   // ── 1. Detect intent + extract entities ──────────────────────────────────
   const { intent, entities } = detectIntent(text, messageHistory);
@@ -46,17 +46,38 @@ async function runLocalEngine(
   const context = { sessionUser, clientCartItems };
   const collectedClientActions: ClientAction[] = [];
 
-  // ── 2. Intents with no tool call ─────────────────────────────────────────
-  const directResponse = RB.buildDirectResponse(
-    intent,
-    sessionUser.name ?? undefined
-  );
+  // Determine time of day if user said greeting
+  let timeOfDay: string | undefined;
+  if (/good\s+morning/i.test(text)) timeOfDay = "morning";
+  else if (/good\s+afternoon/i.test(text)) timeOfDay = "afternoon";
+  else if (/good\s+evening/i.test(text)) timeOfDay = "evening";
+
+  // ── 2. Handle direct intents with no tool calls ──────────────────────────
+  const directResponse = RB.buildDirectResponse(intent, sessionUser.name ?? undefined, {
+    targetTheme: entities.targetTheme,
+    timeOfDay,
+  });
 
   if (directResponse) {
-    // CLEAR_CART needs a client action even though there's no "clearCart" tool
     if (intent === "CLEAR_CART") {
       collectedClientActions.push({ type: "CLEAR_CART" });
+    } else if (intent === "TOGGLE_DARK_MODE") {
+      collectedClientActions.push({
+        type: "SET_THEME",
+        payload: { theme: entities.targetTheme || "toggle" },
+      });
+    } else if (intent === "CONTACT_HUMAN") {
+      collectedClientActions.push({
+        type: "OPEN_WHATSAPP",
+        payload: { url: STORE_WHATSAPP_LINK },
+      });
+    } else if (intent === "CREATE_ACCOUNT") {
+      collectedClientActions.push({
+        type: "NAVIGATE_TO_REGISTER",
+        payload: { url: "/register" },
+      });
     }
+
     return {
       reply: directResponse.reply,
       clientActions: collectedClientActions,
@@ -64,7 +85,57 @@ async function runLocalEngine(
     };
   }
 
-  // ── 3. Map intent → tool call ─────────────────────────────────────────────
+  // ── 3. Handle specific in-memory intent responses ────────────────────────
+  if (intent === "THIRSTY") {
+    const thirstyResp = RB.buildThirstyResponse(STORE_PRODUCTS.filter((p) => p.inStock));
+    return {
+      reply: thirstyResp.reply,
+      clientActions: [],
+      suggestedProducts: thirstyResp.suggestedProducts ?? [],
+    };
+  }
+
+  if (intent === "STORE_CATALOG_OVERVIEW") {
+    const catalogResp = RB.buildStoreCatalogOverviewResponse(STORE_PRODUCTS.filter((p) => p.inStock));
+    return {
+      reply: catalogResp.reply,
+      clientActions: [],
+      suggestedProducts: catalogResp.suggestedProducts ?? [],
+    };
+  }
+
+  if (intent === "PRICE_CALCULATION") {
+    const matched = entities.matchedProduct || STORE_PRODUCTS[0];
+    const qty = entities.quantity || 1;
+    const priceResp = RB.buildPriceCalculationResponse(matched, qty);
+    return {
+      reply: priceResp.reply,
+      clientActions: [],
+      suggestedProducts: priceResp.suggestedProducts ?? [matched],
+    };
+  }
+
+  if (intent === "BUDGET_RECOMMENDATION") {
+    const budget = entities.budget || 50;
+    const affordable = STORE_PRODUCTS.filter((p) => p.price <= budget && p.inStock);
+    const budgetResp = RB.buildBudgetRecommendationResponse(budget, affordable);
+    return {
+      reply: budgetResp.reply,
+      clientActions: [],
+      suggestedProducts: budgetResp.suggestedProducts ?? affordable.slice(0, 4),
+    };
+  }
+
+  if (intent === "WATER_RECOMMENDATION_BABY_GYM") {
+    const healthResp = RB.buildWaterHealthResponse(STORE_PRODUCTS.filter((p) => p.inStock));
+    return {
+      reply: healthResp.reply,
+      clientActions: [],
+      suggestedProducts: healthResp.suggestedProducts ?? [],
+    };
+  }
+
+  // ── 4. Map intent → tool call ─────────────────────────────────────────────
   type ToolCall = { name: string; args: Record<string, any> };
   const toolCalls = resolveToolCalls(intent, entities, clientCartItems);
 
@@ -76,7 +147,7 @@ async function runLocalEngine(
     };
   }
 
-  // ── 4. Execute tool(s) ────────────────────────────────────────────────────
+  // ── 5. Execute tool(s) ────────────────────────────────────────────────────
   const suggestedProducts: StoreProduct[] = [];
   let lastResult: any = null;
   let lastToolName = "";
@@ -110,8 +181,8 @@ async function runLocalEngine(
     };
   }
 
-  // ── 5. Build response ─────────────────────────────────────────────────────
-  const builtResponse = buildToolResponse(intent, lastToolName, lastResult, suggestedProducts);
+  // ── 6. Build response ─────────────────────────────────────────────────────
+  const builtResponse = buildToolResponse(intent, lastToolName, lastResult, suggestedProducts, entities);
 
   return {
     reply: builtResponse.reply,
@@ -174,7 +245,14 @@ function resolveToolCalls(
         entities.productIdentifier ||
         entities.brand ||
         "";
-      if (!identifier) return [];
+      if (!identifier) {
+        return [
+          {
+            name: "searchProducts",
+            args: { inStockOnly: true },
+          },
+        ];
+      }
       return [
         {
           name: "addToCart",
@@ -182,6 +260,31 @@ function resolveToolCalls(
             productIdentifier: identifier,
             quantity: entities.quantity || 1,
           },
+        },
+      ];
+    }
+
+    case "ADD_AND_CHECKOUT": {
+      const identifier =
+        entities.matchedProduct?.name ||
+        entities.productIdentifier ||
+        entities.brand ||
+        "";
+      if (!identifier) {
+        return [{ name: "guideToCheckout", args: {} }];
+      }
+      return [
+        {
+          name: "addToCart",
+          args: {
+            productIdentifier: identifier,
+            quantity: entities.quantity || 1,
+            andCheckout: true,
+          },
+        },
+        {
+          name: "guideToCheckout",
+          args: {},
         },
       ];
     }
@@ -241,7 +344,10 @@ function resolveToolCalls(
       return [
         {
           name: "getDeliveryInformation",
-          args: { region: entities.region || "Greater Accra" },
+          args: {
+            region: entities.region || "Greater Accra",
+            city: entities.city || undefined,
+          },
         },
       ];
 
@@ -259,7 +365,8 @@ function buildToolResponse(
   intent: ChatIntent,
   toolName: string,
   result: any,
-  suggestedProducts: StoreProduct[]
+  suggestedProducts: StoreProduct[],
+  entities?: ExtractedEntities
 ): { reply: string; suggestedProducts?: StoreProduct[] } {
   switch (toolName) {
     case "searchProducts":
@@ -275,6 +382,9 @@ function buildToolResponse(
       return RB.buildCheckStockResponse(result, suggestedProducts);
 
     case "addToCart":
+      if (intent === "ADD_AND_CHECKOUT" || entities?.andCheckout) {
+        return RB.buildAddAndCheckoutResponse(result, suggestedProducts);
+      }
       return RB.buildAddToCartResponse(result, suggestedProducts);
 
     case "removeFromCart":
@@ -329,7 +439,7 @@ async function runGeminiEngine(
 
 CRITICAL DOMAIN RULES:
 - Kay's Packs is strictly a BOTTLED MINERAL WATER & DISPENSER DELIVERY STORE in Ghana.
-- We sell multi-bottle packs (shrink-wrapped packs of 12, 15, 20, or 24 bottles), sachet water bags, and 15L/19L dispenser bottles.
+- We sell multi-bottle packs (shrink-wrapped packs of 12, 15, 16, 20, or 24 bottles), sachet water bags, and 15L/19L dispenser bottles.
 - WE DO NOT SELL HIKING BACKPACKS, RUCKSACKS, HYDRATION BAGS, OR CAMPING GEAR. The name "Kay's Packs" refers to packs of water bottles. If a user asks about backpacks, kindly clarify that we are Ghana's mineral water delivery hub.
 - Top Ghanaian mineral water brands we stock: Voltic Natural Mineral Water, Bel-Aqua, Verna Natural Mineral Water, Awake Purified Water, Perla, Slem Fit, and Special Ice.
 
@@ -342,18 +452,26 @@ CUSTOMER PROFILE:
 STORE FACTS & POLICIES:
 - Currency: Ghanaian Cedis (GH₵ / GHS).
 - Greater Accra Delivery: Flat rate GH₵15. FREE delivery on all orders of GH₵100 and above.
-- Same-Day Delivery Cutoff: 2:00 PM for Greater Accra orders.
-- Nationwide Delivery: Available to all 16 regions of Ghana via regional bus/parcel stations.
-- Payment Methods: MTN Mobile Money (MoMo), Telecel Cash (Vodafone Cash), AT Money, Visa, and Mastercard (Paystack).
+- Same-Day Delivery Cutoff: 2:00 PM for Greater Accra orders (delivered within 2-4 hours).
+- Nationwide Delivery (Tamale, Kumasi, Takoradi, Sunyani, Ho, Bolgatanga, Wa, etc.): Available to all 16 regions of Ghana via verified station parcel couriers (VIP, OA, Imperial, STC). Rates range from GH₵18 to GH₵30 (Tamale is GH₵25-30, arriving in 1-3 business days).
+- Payment Methods: MTN Mobile Money (MoMo), Telecel Cash (Vodafone Cash), AT Money, Visa, and Mastercard (Paystack). MoMo prompt appears directly on phone to authorize with PIN.
 - Official Support Phone: ${STORE_PHONE_DISPLAY}
 - Official WhatsApp Support: ${STORE_WHATSAPP_LINK}
+- Operating Hours: Monday to Saturday: 8:00 AM – 6:00 PM. (Online orders 24/7).
+- Water Quality Guarantee: 100% genuine mineral water, FDA Ghana and Ghana Standards Authority (GSA) certified, factory-sealed tamper-evident caps, fresh batches.
+- Health Recommendations: Verna (best for babies/infant formula due to balanced low sodium), Slem Fit (best for gym/fitness with alkaline pH & electrolytes).
+- Dispenser Jars: 15L/19L refill exchange available with sanitized bottle swap.
+- Theme Preference: Can switch dark/light mode via 'toggleThemePreference'.
 
 OPERATIONAL & TOOL EXECUTION RULES:
-1. TRUTHFUL DATA & TOOLS: NEVER invent prices, stock counts, discounts, or order status. ALWAYS call tools like 'searchProducts', 'getProduct', 'checkStock', 'getCustomerOrders', 'getOrderStatus' to fetch live store data.
-2. ADDING ITEMS TO CART: When a customer asks to buy or add water (e.g. "Add 2 packs of Voltic 500ml", "I want 3 Bel-Aqua"), ALWAYS execute 'addToCart' with the product name and quantity.
-3. CART & CHECKOUT: If the customer asks "What is in my cart?", call 'getCart'. When they want to pay or checkout, call 'guideToCheckout'.
-4. ORDER LOOKUPS: If logged in and asking "Where is my order?", call 'getCustomerOrders'. If given an order reference like "KP-2026-0001", call 'getOrderStatus'.
-5. TONE: Warm Ghanaian hospitality, professional, concise, helpful. Use Markdown with clean bullet points and bolding for readability.`;
+1. TRUTHFUL DATA & TOOLS: NEVER invent prices or stock counts. ALWAYS call tools like 'searchProducts', 'getProduct', 'checkStock', 'calculatePrice', 'getBudgetRecommendations', 'getCustomerOrders', 'getOrderStatus' to fetch live store data.
+2. PRICE CALCULATIONS: When a customer asks for the price of multiple packs (e.g. "what is the price of two packs of 500ml voltic?"), use 'calculatePrice' or calculate based on the exact pack price (e.g. 2 x GH₵45 = GH₵90).
+3. BUDGET RECOMMENDATIONS: When a customer mentions a budget (e.g. "I have 50 cedis what can I buy?"), call 'getBudgetRecommendations' to suggest great options within their budget.
+4. ADDING ITEMS TO CART: When a customer asks to buy or add water (e.g. "Add 2 packs of Voltic 500ml", "I want 3 Bel-Aqua"), ALWAYS execute 'addToCart'. If they say "add and checkout", pass 'andCheckout: true'.
+5. CART & CHECKOUT: If the customer asks "What is in my cart?", call 'getCart'. When they want to pay or checkout, call 'guideToCheckout'.
+6. DARK MODE: If the user asks to turn on dark mode or switch themes, call 'toggleThemePreference'.
+7. HUMAN ESCALATION: If the customer wants to speak with the manager, owner, or human agent, call 'contactHumanSupport' and provide the official WhatsApp link and phone number.
+8. TONE: Warm Ghanaian hospitality, professional, concise, helpful. Use Markdown with clean bullet points and bolding for readability.`;
 
   const contents: GeminiContent[] = [];
 

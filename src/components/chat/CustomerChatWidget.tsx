@@ -20,9 +20,17 @@ import {
   ChevronRight,
   RefreshCw,
   PhoneCall,
+  Moon,
+  Sun,
+  ShieldCheck,
+  Award,
+  CreditCard,
+  Truck,
+  ArrowRight,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { useChat } from "@/context/chat-context";
+import { useTheme } from "@/context/theme-context";
 import { STORE_PRODUCTS, StoreProduct, STORE_PHONE_DISPLAY, STORE_WHATSAPP_LINK } from "@/lib/constants";
 
 interface Message {
@@ -33,18 +41,36 @@ interface Message {
   suggestedProducts?: StoreProduct[];
 }
 
+const QUICK_SUGGESTION_CHIPS = [
+  { label: "💧 Voltic 500ml price", query: "What is the price of two packs of 500ml Voltic?" },
+  { label: "🚚 Delivery to Tamale / Accra", query: "What is the delivery fee and do you deliver to Tamale?" },
+  { label: "⭐ Best sellers", query: "Can you give me the best selling products?" },
+  { label: "💳 Pay with MoMo", query: "Can I pay with MoMo and what payment methods do you accept?" },
+  { label: "💰 Budget GH₵50", query: "I have a budget of 50 cedis what can I purchase?" },
+  { label: "🌙 Turn on Dark Mode", query: "Can you help me turn on dark mode?" },
+  { label: "📞 Speak to Manager", query: "I need to speak to the manager/agent/owner" },
+  { label: "🛡️ Clean & fresh water?", query: "Is your water clean, pure, and fresh?" },
+  { label: "✨ Why Kay's Packs?", query: "Why should I buy from you?" },
+  { label: "👶 Best water for babies", query: "Which water is best for babies and infant formula?" },
+  { label: "🏢 15L Dispenser refill", query: "How does dispenser water refill and bottle exchange work?" },
+  { label: "📦 Bulk & Event orders", query: "Do you offer wholesale and bulk discounts for events?" },
+  { label: "📝 Create account", query: "How do I create an account?" },
+  { label: "📦 Track order", query: "Where is my order?" },
+];
+
 export function CustomerChatWidget() {
   const router = useRouter();
   const { data: session } = useSession();
   const { items, addItem, updateQuantity, removeItem, clearCart, itemCount, total } = useCart();
   const { isOpen, openChat, closeChat, toggleChat, initialQuery, setInitialQuery } = useChat();
+  const { theme, isDarkMode, toggleDarkMode, setTheme } = useTheme();
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome-1",
       role: "assistant",
       content:
-        "Hello! 👋 Welcome to **Kay's Packs**. I'm your AI Hydration Assistant. Ask me about water packs, prices, live stock, delivery fees, or tracking your order!",
+        "Hello! 👋 Welcome to **Kay's Packs**. I'm your AI Hydration Assistant. Ask me about water packs, prices, live stock, delivery fees (including Tamale & Accra), or order tracking!",
       timestamp: "Just now",
     },
   ]);
@@ -123,14 +149,40 @@ export function CustomerChatWidget() {
             setTimeout(() => {
               setAddedItemMap((prev) => ({ ...prev, [action.payload.product.id]: false }));
             }, 3000);
+
+            if (action.payload.andCheckout) {
+              setTimeout(() => {
+                router.push("/checkout");
+              }, 1200);
+            }
           } else if (action.type === "REMOVE_FROM_CART" && action.payload?.productId) {
             removeItem(action.payload.productId);
           } else if (action.type === "UPDATE_QUANTITY" && action.payload?.productId) {
             updateQuantity(action.payload.productId, action.payload.quantity);
           } else if (action.type === "CLEAR_CART") {
             clearCart();
-          } else if (action.type === "NAVIGATE_TO_CHECKOUT" && action.payload?.url) {
+          } else if (action.type === "NAVIGATE_TO_CHECKOUT") {
+            setTimeout(() => router.push("/checkout"), 800);
+          } else if (action.type === "NAVIGATE_TO_REGISTER") {
+            router.push("/register");
+          } else if (action.type === "NAVIGATE_TO_SHOP") {
+            router.push("/shop");
+          } else if (action.type === "NAVIGATE" && action.payload?.url) {
             router.push(action.payload.url);
+          } else if (action.type === "SET_THEME") {
+            if (action.payload?.theme === "dark") {
+              setTheme("dark");
+            } else if (action.payload?.theme === "light") {
+              setTheme("light");
+            } else {
+              toggleDarkMode();
+            }
+          } else if (action.type === "TOGGLE_DARK_MODE") {
+            toggleDarkMode();
+          } else if (action.type === "OPEN_WHATSAPP") {
+            if (typeof window !== "undefined") {
+              window.open(action.payload?.url || STORE_WHATSAPP_LINK, "_blank");
+            }
           }
         }
       }
@@ -163,8 +215,8 @@ export function CustomerChatWidget() {
     }
   };
 
-  const handleProductAdd = (product: StoreProduct) => {
-    addItem(product, 1);
+  const handleProductAdd = (product: StoreProduct, qty: number = 1) => {
+    addItem(product, qty);
     setAddedItemMap((prev) => ({ ...prev, [product.id]: true }));
     setTimeout(() => {
       setAddedItemMap((prev) => ({ ...prev, [product.id]: false }));
@@ -185,6 +237,22 @@ export function CustomerChatWidget() {
 
   return (
     <>
+      {/* ─── Floating Launcher Bubble (When Chat is closed) ────────────────── */}
+      {!isOpen && (
+        <button
+          onClick={() => openChat()}
+          className="fixed bottom-20 md:bottom-6 right-4 sm:right-6 z-40 group flex items-center gap-2.5 p-3 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 text-white shadow-xl shadow-blue-600/30 hover:shadow-2xl hover:shadow-blue-600/50 hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer border border-blue-400/30 backdrop-blur-md"
+          aria-label="Open AI Assistant"
+        >
+          <div className="relative flex items-center justify-center">
+            <Bot className="w-5 h-5 text-white animate-pulse" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-blue-600 animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-blue-600" />
+          </div>
+          <span className="hidden sm:inline font-bold text-xs tracking-tight">Ask Kay&apos;s AI</span>
+        </button>
+      )}
+
       {/* ─── Expandable Chat Modal Window ─────────────────────────────────── */}
       {isOpen && (
         <div className="fixed bottom-20 md:bottom-6 right-3 sm:right-6 z-50 w-[calc(100vw-24px)] sm:w-[410px] max-w-[430px] h-[580px] max-h-[calc(100vh-100px)] flex flex-col bg-white dark:bg-neutral-950 rounded-3xl shadow-2xl shadow-slate-950/25 dark:shadow-black border border-slate-200/80 dark:border-neutral-800 overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-300">
@@ -199,16 +267,24 @@ export function CustomerChatWidget() {
                 <div className="flex items-center gap-1.5">
                   <h3 className="font-bold text-sm text-white tracking-tight">Kay&apos;s Packs AI</h3>
                   <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-blue-500/30 text-blue-200 border border-blue-400/20">
-                    Hydration Bot
+                    Smart Assistant
                   </span>
                 </div>
                 <p className="text-[11px] text-blue-200/80 flex items-center gap-1 mt-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Online • Real database connected
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Online • Live Store Connected
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
+              <button
+                onClick={toggleDarkMode}
+                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                className="p-2 rounded-xl text-blue-200 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Toggle theme"
+              >
+                {isDarkMode ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-blue-200" />}
+              </button>
               <button
                 onClick={handleResetChat}
                 title="Restart conversation"
@@ -252,7 +328,7 @@ export function CustomerChatWidget() {
               const isBot = m.role === "assistant";
               return (
                 <div key={m.id} className={`flex flex-col ${isBot ? "items-start" : "items-end"} animate-fade-in`}>
-                  <div className={`flex items-start gap-2 max-w-[86%] ${isBot ? "" : "flex-row-reverse"}`}>
+                  <div className={`flex items-start gap-2 max-w-[88%] ${isBot ? "" : "flex-row-reverse"}`}>
                     {isBot ? (
                       <div className="w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 text-[11px] font-bold shadow-xs">
                         K
@@ -373,38 +449,17 @@ export function CustomerChatWidget() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Suggestion Chips */}
+          {/* Quick Suggestion Chips (Rich & Scrollable) */}
           <div className="shrink-0 p-2 border-t border-slate-100 dark:border-neutral-850 bg-white dark:bg-neutral-950 flex gap-1.5 overflow-x-auto text-[11px] scrollbar-none">
-            <button
-              onClick={() => handleSend("Do you have Voltic 500ml in stock and how much is it?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/80 text-blue-700 dark:text-blue-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-blue-800/40"
-            >
-              💧 Voltic 500ml price
-            </button>
-            <button
-              onClick={() => handleSend("How much is delivery to Greater Accra and when does it arrive?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
-            >
-              🚚 Delivery fee
-            </button>
-            <button
-              onClick={() => handleSend("What are the best selling water packs?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
-            >
-              ⭐ Best sellers
-            </button>
-            <button
-              onClick={() => handleSend("What payment methods do you accept?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
-            >
-              💳 MoMo payment
-            </button>
-            <button
-              onClick={() => handleSend("Where is my order?")}
-              className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-slate-200 dark:hover:bg-neutral-800 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent dark:border-neutral-800"
-            >
-              📦 Track order
-            </button>
+            {QUICK_SUGGESTION_CHIPS.map((chip, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSend(chip.query)}
+                className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-100 dark:bg-neutral-900 hover:bg-blue-50 dark:hover:bg-blue-950 hover:text-blue-600 dark:hover:text-blue-300 text-slate-700 dark:text-neutral-300 font-medium transition-colors cursor-pointer border border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+              >
+                {chip.label}
+              </button>
+            ))}
           </div>
 
           {/* Chat Input Bar */}
@@ -420,7 +475,7 @@ export function CustomerChatWidget() {
                   handleSend();
                 }
               }}
-              placeholder="Ask about water, prices, orders..."
+              placeholder="Ask about water, prices, orders, delivery..."
               className="flex-1 p-2.5 rounded-xl text-xs bg-slate-50 dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 text-slate-900 dark:text-neutral-100 placeholder:text-slate-400 dark:placeholder:text-neutral-500 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-neutral-900 outline-none transition-colors"
               disabled={isLoading}
             />
@@ -437,14 +492,14 @@ export function CustomerChatWidget() {
 
           {/* Footer Human Escalation Link */}
           <div className="shrink-0 bg-slate-50 dark:bg-neutral-950 px-3 py-1.5 border-t border-slate-100 dark:border-neutral-850 flex items-center justify-between text-[10px] text-slate-500 dark:text-neutral-400">
-            <span>Powered by Google Gemini</span>
+            <span>Kay&apos;s Packs AI • Ghana</span>
             <a
               href={STORE_WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
               className="text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1"
             >
-              <PhoneCall className="w-3 h-3" /> Speak with human agent
+              <PhoneCall className="w-3 h-3" /> Speak with manager
             </a>
           </div>
         </div>
@@ -457,7 +512,6 @@ export function CustomerChatWidget() {
  * Rich markdown helper to format bullet lists, numbered lists, bolding, italics, links, and currency
  */
 function parseInlineFormatting(text: string, isBot: boolean): React.ReactNode[] {
-  // Matches markdown links [text](url), bold **text**, italic *text* or _text_, and Ghanaian currency GH₵ 45
   const regex = /(\[.*?\]\(.*?\)|\*\*.*?\*\*|\*[^*]+?\*|_.*?_|GH₵\s*\d+(?:\.\d{2})?)/g;
   const parts = text.split(regex);
 
