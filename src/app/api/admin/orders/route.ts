@@ -20,16 +20,25 @@ export async function GET(req: NextRequest) {
       limit,
     });
 
-    return NextResponse.json({
-      success: true,
-      data: result.orders,
-      pagination: result.pagination,
-    });
+    return NextResponse.json(
+      {
+        success: true,
+        data: result.orders,
+        pagination: result.pagination,
+      },
+      {
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      }
+    );
   } catch (error: any) {
     console.error("[api/admin/orders GET]", error);
     return NextResponse.json(
       { success: false, error: error.message || "Failed to fetch orders" },
-      { status: 500 }
+      {
+        status: 500,
+        headers: { "Cache-Control": "no-cache, no-store, must-revalidate" },
+      }
     );
   }
 }
+

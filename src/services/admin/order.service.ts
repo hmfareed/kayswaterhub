@@ -1,11 +1,14 @@
 import { connectDB } from "@/lib/db/mongoose";
 import Order, { IOrder } from "@/models/Order";
+import Payment from "@/models/Payment";         // must be imported so schema is registered for populate()
+import DeliveryOrder from "@/models/DeliveryOrder"; // must be imported so schema is registered for populate()
 import ProductVariant from "@/models/ProductVariant";
 import InventoryTransaction from "@/models/InventoryTransaction";
 import { logAdminAction } from "./audit.service";
 import { notificationService } from "@/services/notification/NotificationService";
 import type { NotificationEvent } from "@/types";
 import mongoose from "mongoose";
+
 
 export interface GetOrdersParams {
   status?: string;

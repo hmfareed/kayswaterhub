@@ -50,7 +50,7 @@ export default function AdminOrdersPage() {
         status: statusFilter,
         search,
       });
-      const res = await fetch(`/api/admin/orders?${query}`);
+      const res = await fetch(`/api/admin/orders?${query}`, { cache: "no-store" });
       const json = await res.json();
       if (json.success) {
         setOrders(json.data);

@@ -18,62 +18,48 @@ export async function GET(req: NextRequest) {
 
     const query: Record<string, unknown> = {};
 
-    // Customer gets only their own orders (matching customerId OR unassigned guest orders matching verified email/phone); admin gets all
+    // Customer gets only their own orders; admin gets all
     if (session?.user?.id && session.user.role !== "ADMIN" && session.user.role !== "SUPER_ADMIN") {
       const userConditions: any[] = [];
 
-      // 1. Primary: Owned orders directly tied to this customer's user ID
+      // 1. Primary: Orders directly assigned to this customer's user ID
       if (mongoose.Types.ObjectId.isValid(session.user.id)) {
         userConditions.push({ customerId: new mongoose.Types.ObjectId(session.user.id) });
       }
       userConditions.push({ customerId: session.user.id });
 
-      // 2. Secondary: Unassigned guest orders (customerId is null/undefined) strictly matching user's exact credentials
-      const unlinkedConditions: any[] = [];
+      // 2. Secondary: Unassigned guest orders (customerId strictly null/absent)
+      //    Require BOTH email AND phone to match to prevent false-positive collisions.
       const userEmail = session.user.email?.trim();
-      if (userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com")) {
-        const escapedEmail = userEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        unlinkedConditions.push({
+      const hasValidEmail =
+        userEmail && !userEmail.toLowerCase().endsWith("@khadyswater.com");
+
+      const rawPhone = session.user.phone?.trim();
+      const cleanPhone = rawPhone ? rawPhone.replace(/[\s\-().]/g, "") : "";
+      const hasValidPhone = cleanPhone.length >= 9;
+
+      if (hasValidEmail && hasValidPhone) {
+        // Only include unlinked guest orders when BOTH credentials match
+        const escapedEmail = userEmail!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const last9 = cleanPhone.slice(-9);
+
+        userConditions.push({
+          $or: [{ customerId: null }, { customerId: { $exists: false } }],
+          "guestInformation.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") },
+          "guestInformation.phone": { $regex: new RegExp(`${last9}$`) },
+        });
+      } else if (hasValidEmail) {
+        // Email-only registered customer: only match by exact email
+        const escapedEmail = userEmail!.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        userConditions.push({
+          $or: [{ customerId: null }, { customerId: { $exists: false } }],
           "guestInformation.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") },
         });
       }
 
-      const rawPhone = session.user.phone?.trim();
-      const cleanPhone = rawPhone ? rawPhone.replace(/[\s-]/g, "") : "";
-      if (cleanPhone && cleanPhone.length >= 9) {
-        unlinkedConditions.push({ "guestInformation.phone": rawPhone });
-        unlinkedConditions.push({ "guestInformation.phone": cleanPhone });
-        const last9 = cleanPhone.slice(-9);
-        unlinkedConditions.push({ "guestInformation.phone": `0${last9}` });
-        unlinkedConditions.push({ "guestInformation.phone": `+233${last9}` });
-        unlinkedConditions.push({ "guestInformation.phone": `233${last9}` });
-      }
-
-      if (unlinkedConditions.length > 0) {
-        userConditions.push({
-          customerId: { $in: [null, undefined] },
-          $or: unlinkedConditions,
-        });
-      }
-
       query.$or = userConditions;
-
-      // Auto-link matching UNASSIGNED guest orders to this customerId asynchronously
-      if (mongoose.Types.ObjectId.isValid(session.user.id) && unlinkedConditions.length > 0) {
-        const userId = session.user.id;
-        (async () => {
-          try {
-            await Order.updateMany(
-              { customerId: { $in: [null, undefined] }, $or: unlinkedConditions },
-              { $set: { customerId: new mongoose.Types.ObjectId(userId) } }
-            );
-          } catch (err) {
-            console.warn("[api/orders] Background guest link warning:", err);
-          }
-        })();
-      }
     } else if (!session?.user?.id) {
-      // Unauthenticated visitor fetching /api/orders without session
+      // Unauthenticated visitor
       return NextResponse.json(
         {
           success: true,
@@ -87,6 +73,7 @@ export async function GET(req: NextRequest) {
         }
       );
     }
+
 
     if (status && status !== "all") {
       const s = status.toUpperCase();

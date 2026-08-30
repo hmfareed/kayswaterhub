@@ -1212,7 +1212,11 @@ function AccountContent() {
             </h2>
             <p className="text-xs text-slate-400 dark:text-neutral-400 font-medium truncate mt-0.5">{displayEmail}</p>
             <div className="mt-1.5 inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800/50 font-bold text-[10px] tracking-widest uppercase px-3 py-0.5 rounded-full">
-              CUSTOMER
+              {session?.user?.role === "ADMIN" || session?.user?.role === "SUPER_ADMIN"
+                ? "Business Owner & Admin"
+                : session?.user?.role === "DELIVERY"
+                ? "Delivery"
+                : "Customer"}
             </div>
           </div>
         </div>

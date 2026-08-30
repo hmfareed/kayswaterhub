@@ -49,8 +49,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           normalizedIdentifier === "khadijahabass273@gmail.com";
 
         const isPhone = isPhoneIdentifier(identifier);
+        // Normalise phone: strip spaces, dashes and parentheses (consistent with registration)
+        const normalizedPhone = identifier.replace(/[\s\-().]/g, "");
+        const last9Digits = normalizedPhone.slice(-9);
         const query = isPhone
-          ? { phone: identifier.replace(/[\s-]/g, "") }
+          ? {
+              // Match any stored format sharing the same last 9 digits
+              phone: last9Digits.length >= 9
+                ? { $regex: new RegExp(`${last9Digits}$`) }
+                : normalizedPhone,
+            }
           : { email: { $regex: new RegExp(`^${normalizedIdentifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") } };
 
         let user = await User.findOne(query).select(

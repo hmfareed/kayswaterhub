@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
@@ -18,6 +18,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldCheck,
+  XCircle,
 } from "lucide-react";
 
 type IdentifierMode = "email" | "phone";
@@ -52,6 +53,35 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
+  // ── Real-time availability state ──────────────────────────────────────────
+  type AvailState = "idle" | "checking" | "available" | "taken";
+  const [emailAvail, setEmailAvail] = useState<AvailState>("idle");
+  const [phoneAvail, setPhoneAvail] = useState<AvailState>("idle");
+  const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkAvailability = useCallback(async (type: "email" | "phone", value: string) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    const setter = type === "email" ? setEmailAvail : setPhoneAvail;
+    setter("checking");
+    try {
+      const res = await fetch(`/api/auth/check-availability?${type}=${encodeURIComponent(trimmed)}`);
+      if (!res.ok) { setter("idle"); return; }
+      const json = await res.json();
+      setter(json.available ? "available" : "taken");
+      if (!json.available) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          [type]: type === "email"
+            ? "This email is already registered."
+            : "This phone number is already registered.",
+        }));
+      }
+    } catch {
+      setter("idle");
+    }
+  }, []);
+
   const passwordStrength = getPasswordStrength(password);
 
   const handleModeSwitch = useCallback((newMode: IdentifierMode) => {
@@ -60,6 +90,8 @@ export default function RegisterPage() {
     setPhone("");
     setError("");
     setFieldErrors({});
+    setEmailAvail("idle");
+    setPhoneAvail("idle");
   }, []);
 
   const clearFieldError = (field: string) => {
@@ -299,12 +331,31 @@ export default function RegisterPage() {
                     required
                     autoComplete="email"
                     value={email}
-                    onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); }}
+                    onChange={(e) => { setEmail(e.target.value); clearFieldError("email"); setEmailAvail("idle"); }}
+                    onBlur={(e) => { if (e.target.value.includes("@")) checkAvailability("email", e.target.value); }}
                     placeholder="name@example.com"
-                    className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-3 focus:ring-blue-500/10 outline-none transition-all ${fieldErrors.email ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-blue-500"}`}
+                    className={`w-full pl-10 pr-10 py-2.5 bg-white border rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-3 focus:ring-blue-500/10 outline-none transition-all ${
+                      fieldErrors.email || emailAvail === "taken" ? "border-red-400 focus:border-red-400" : emailAvail === "available" ? "border-green-400" : "border-slate-200 focus:border-blue-500"
+                    }`}
                   />
+                  {/* Availability indicator inside the input */}
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {emailAvail === "checking" && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+                    {emailAvail === "available" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    {emailAvail === "taken" && <XCircle className="w-4 h-4 text-red-500" />}
+                  </div>
                 </div>
-                {fieldErrors.email && <p className="text-red-500 text-[11px] mt-1 font-medium">{fieldErrors.email}</p>}
+                {(fieldErrors.email || emailAvail === "taken") && (
+                  <p className="text-red-500 text-[11px] mt-1 font-medium flex items-center gap-1">
+                    {fieldErrors.email || "This email is already registered."}
+                    {emailAvail === "taken" && (
+                      <Link href="/login" className="underline font-bold ml-1">Sign in instead →</Link>
+                    )}
+                  </p>
+                )}
+                {emailAvail === "available" && !fieldErrors.email && (
+                  <p className="text-green-600 text-[11px] mt-1 font-medium">✓ Email is available</p>
+                )}
               </div>
             ) : (
               <div>
@@ -319,12 +370,31 @@ export default function RegisterPage() {
                     required
                     autoComplete="tel"
                     value={phone}
-                    onChange={(e) => { setPhone(e.target.value); clearFieldError("phone"); }}
+                    onChange={(e) => { setPhone(e.target.value); clearFieldError("phone"); setPhoneAvail("idle"); }}
+                    onBlur={(e) => { if (e.target.value.trim().length >= 9) checkAvailability("phone", e.target.value); }}
                     placeholder="024 123 4567"
-                    className={`w-full pl-10 pr-4 py-2.5 bg-white border rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-3 focus:ring-blue-500/10 outline-none transition-all ${fieldErrors.phone ? "border-red-400 focus:border-red-400" : "border-slate-200 focus:border-blue-500"}`}
+                    className={`w-full pl-10 pr-10 py-2.5 bg-white border rounded-xl text-sm text-slate-800 placeholder:text-slate-400 focus:ring-3 focus:ring-blue-500/10 outline-none transition-all ${
+                      fieldErrors.phone || phoneAvail === "taken" ? "border-red-400 focus:border-red-400" : phoneAvail === "available" ? "border-green-400" : "border-slate-200 focus:border-blue-500"
+                    }`}
                   />
+                  {/* Availability indicator inside the input */}
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none">
+                    {phoneAvail === "checking" && <Loader2 className="w-4 h-4 animate-spin text-slate-400" />}
+                    {phoneAvail === "available" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    {phoneAvail === "taken" && <XCircle className="w-4 h-4 text-red-500" />}
+                  </div>
                 </div>
-                {fieldErrors.phone && <p className="text-red-500 text-[11px] mt-1 font-medium">{fieldErrors.phone}</p>}
+                {(fieldErrors.phone || phoneAvail === "taken") && (
+                  <p className="text-red-500 text-[11px] mt-1 font-medium flex items-center gap-1">
+                    {fieldErrors.phone || "This phone number is already registered."}
+                    {phoneAvail === "taken" && (
+                      <Link href="/login" className="underline font-bold ml-1">Sign in instead →</Link>
+                    )}
+                  </p>
+                )}
+                {phoneAvail === "available" && !fieldErrors.phone && (
+                  <p className="text-green-600 text-[11px] mt-1 font-medium">✓ Phone number is available</p>
+                )}
               </div>
             )}
 
