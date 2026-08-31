@@ -1,8 +1,7 @@
 const sharp = require('sharp');
-const fs = require('fs');
 const path = require('path');
 
-async function createAlignedDarkSplash() {
+async function createPerfectDarkSplash() {
   const inputDark = path.join(__dirname, '../public/images/voltic-splash-dark.png');
   const lightRef = path.join(__dirname, '../public/images/voltic-splash-trimmed.png');
   const outputClean = path.join(__dirname, '../public/images/voltic-splash-dark-trimmed.png');
@@ -11,15 +10,9 @@ async function createAlignedDarkSplash() {
   const { data, info } = await sharp(inputDark).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height, channels } = info;
 
-  console.log(`Processing dark image: ${width}x${height}`);
+  console.log(`Original dark dimensions: ${width}x${height}`);
 
-  // 1. Identify stray bokeh blobs outside the main splash area
-  // The main splash & bottle are within roughly x in [40, width - 40] and attached to bottle structure.
-  // Let's create an alpha buffer
-  const alphaMap = new Float32Array(width * height);
-  const solidMap = new Uint8Array(width * height);
-
-  // Background color sampling
+  // Sample exact corner background
   let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
   for (let x = 0; x < width; x++) {
     for (let y of [0, 1, 2, height - 3, height - 2, height - 1]) {
@@ -31,91 +24,120 @@ async function createAlignedDarkSplash() {
     }
   }
   bgR /= bgCount; bgG /= bgCount; bgB /= bgCount;
+  console.log(`Measured background color: R=${bgR.toFixed(2)}, G=${bgG.toFixed(2)}, B=${bgB.toFixed(2)}`);
 
-  // Compute bottle center line
-  const centerX = 336.5;
+  const outBuf = Buffer.alloc(width * height * channels);
+  const centerX = 337.5;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * channels;
-      const pIdx = y * width + x;
-      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
 
       const brightness = 0.299 * r + 0.587 * g + 0.114 * b;
       const distFromCenter = Math.abs(x - centerX);
 
-      // Check if this pixel is inside the main bottle cylinder
-      // The bottle is roughly within 65px of center between y = 105 and y = 680
-      const isInsideBottle = (y >= 105 && y <= 660 && distFromCenter <= 62);
+      // 1. Remove the 4 corner static bokeh circles (replaced by glowing CSS orbs)
+      // Top-left bokeh orb
+      const isTopLeftBokeh = (x < 105 && y < 115);
+      // Bottom-left bokeh orb
+      const isBottomLeftBokeh = (x < 120 && y > 620);
+      // Bottom-right bokeh orb
+      const isBottomRightBokeh = (x > 585 && y > 600);
+      // Mid-right bokeh orb
+      const isMidRightBokeh = (x > 615 && y >= 150 && y <= 290);
 
-      // Distance from dark background
-      const colorDist = Math.sqrt(
-        Math.pow(r - bgR, 2) + Math.pow(g - bgG, 2) + Math.pow(b - bgB, 2)
-      );
-
-      // Remove the 4 corner bokeh dots:
-      // Top-left bokeh orb: x < 80, y < 80
-      // Bottom-left bokeh orb: x < 90, y > 700
-      // Bottom-right bokeh orb: x > 620, y > 680
-      // Mid-right bokeh orb: x > 650, y in [180, 260]
-      const isCornerBokeh =
-        (x < 80 && y < 80) ||
-        (x < 90 && y > 680) ||
-        (x > 620 && y > 660) ||
-        (x > 640 && y >= 170 && y <= 270);
-
-      if (isCornerBokeh) {
-        alphaMap[pIdx] = 0;
+      if (isTopLeftBokeh || isBottomLeftBokeh || isBottomRightBokeh || isMidRightBokeh) {
+        outBuf[idx] = 0;
+        outBuf[idx + 1] = 0;
+        outBuf[idx + 2] = 0;
+        outBuf[idx + 3] = 0;
         continue;
       }
 
+      // 2. Precise Bottle Silhouette (solid bottle interior)
+      let bottleRadius = 0;
+      if (y >= 105 && y <= 159) {
+        // Cap
+        bottleRadius = 42.5;
+      } else if (y > 159 && y <= 245) {
+        // Neck & shoulders
+        const t = (y - 159) / 86;
+        bottleRadius = 42.5 + 45.5 * Math.sin(t * (Math.PI / 2));
+      } else if (y > 245 && y <= 665) {
+        // Cylinder Body & Label
+        bottleRadius = 88;
+      } else if (y > 665 && y <= 695) {
+        // Base
+        const t = (y - 665) / 30;
+        bottleRadius = 88 - 10 * t;
+      }
+
+      const isInsideBottle = (bottleRadius > 0 && distFromCenter <= bottleRadius);
+
       if (isInsideBottle) {
-        // Bottle interior is solid
-        alphaMap[pIdx] = 1.0;
-        solidMap[pIdx] = 1;
+        // Inside bottle: keep fully opaque
+        outBuf[idx] = r;
+        outBuf[idx + 1] = g;
+        outBuf[idx + 2] = b;
+        outBuf[idx + 3] = 255;
       } else {
-        // Water splash / droplets
-        if (brightness < 10 && colorDist < 14) {
-          alphaMap[pIdx] = 0;
-        } else if (brightness < 32 && colorDist < 35) {
-          // Smooth transition
-          const t = Math.max(0, (colorDist - 12) / 23);
-          alphaMap[pIdx] = Math.pow(t, 1.3);
+        // Outside bottle: Water splash, droplets, and background
+        const colorDist = Math.sqrt(
+          Math.pow(r - bgR, 2) + Math.pow(g - bgG, 2) + Math.pow(b - bgB, 2)
+        );
+
+        let alpha = 0;
+        if (colorDist < 10 && brightness < 15) {
+          alpha = 0;
+        } else if (colorDist < 28 && brightness < 32) {
+          const t = Math.max(0, (colorDist - 8) / 20);
+          alpha = Math.pow(t, 1.3);
         } else {
-          alphaMap[pIdx] = Math.min(1.0, (brightness / 45) + (colorDist / 50));
+          alpha = Math.min(1.0, 0.35 + (colorDist / 45));
         }
 
-        // Feather bottom reflection smoothly so there is no rectangular cut
-        if (y > 700) {
-          const fade = Math.max(0, 1.0 - ((y - 700) / 95));
-          alphaMap[pIdx] *= fade;
+        // Smoothly fade bottom reflection
+        if (y > 695) {
+          const fade = Math.max(0, 1.0 - ((y - 695) / 95));
+          alpha *= fade;
+        }
+
+        if (alpha <= 0.02) {
+          outBuf[idx] = 0;
+          outBuf[idx + 1] = 0;
+          outBuf[idx + 2] = 0;
+          outBuf[idx + 3] = 0;
+        } else {
+          // Decontaminate background dark tint from water edges
+          let outR = r;
+          let outG = g;
+          let outB = b;
+
+          if (alpha < 0.95) {
+            outR = Math.min(255, Math.max(0, Math.round((r - bgR * (1 - alpha)) / alpha)));
+            outG = Math.min(255, Math.max(0, Math.round((g - bgG * (1 - alpha)) / alpha)));
+            outB = Math.min(255, Math.max(0, Math.round((b - bgB * (1 - alpha)) / alpha)));
+          }
+
+          outBuf[idx] = outR;
+          outBuf[idx + 1] = outG;
+          outBuf[idx + 2] = outB;
+          outBuf[idx + 3] = Math.floor(Math.max(0, Math.min(255, alpha * 255)));
         }
       }
     }
   }
 
-  // Build the processed RGBA buffer
-  const outBuf = Buffer.alloc(width * height * channels);
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const idx = (y * width + x) * channels;
-      const pIdx = y * width + x;
-      const a = alphaMap[pIdx];
+  // Scaling & Positioning to match voltic-splash-trimmed.png (778 x 864)
+  const scale = 1.15;
+  const scaledW = Math.round(width * scale); // 808
+  const scaledH = Math.round(height * scale); // 922
 
-      outBuf[idx] = data[idx];
-      outBuf[idx + 1] = data[idx + 1];
-      outBuf[idx + 2] = data[idx + 2];
-      outBuf[idx + 3] = Math.floor(Math.max(0, Math.min(255, a * 255)));
-    }
-  }
-
-  // Scaling to match light image
-  // Scale factor = 104 / 85 = 1.2235
-  const scale = 104 / 85;
-  const scaledW = Math.round(width * scale);
-  const scaledH = Math.round(height * scale);
-
-  console.log(`Rescaling dark splash to: ${scaledW}x${scaledH}`);
+  console.log(`Rescaling to: ${scaledW}x${scaledH}`);
 
   const scaledBuffer = await sharp(outBuf, {
     raw: { width, height, channels: 4 }
@@ -126,34 +148,43 @@ async function createAlignedDarkSplash() {
   .png()
   .toBuffer();
 
-  // Composite onto the light canvas (778 x 864)
-  // Target capTop is 65, target center is 398
-  const scaledCapTop = Math.round(105 * scale); // ~128
-  const scaledCapCenter = Math.round(336.5 * scale); // ~412
+  const targetW = lightMeta.width;  // 778
+  const targetH = lightMeta.height; // 864
 
-  const leftOffset = Math.round(398 - scaledCapCenter);
-  const topOffset = Math.round(65 - scaledCapTop);
+  const darkScaledCapCenterX = Math.round(centerX * scale); // ~388
+  const darkScaledCapTop = Math.round(105 * scale); // ~121
 
-  console.log(`Offsets for perfect alignment: Left=${leftOffset}, Top=${topOffset}`);
+  // Target cap center is 398, target cap top is 67
+  const padLeft = Math.max(0, 398 - darkScaledCapCenterX); // ~10
+  const cropTop = Math.max(0, Math.round(darkScaledCapTop - 67)); // ~54
 
-  // Since scaledBuffer (860x981) has leftOffset = -14 and topOffset = -63,
-  // we can extract the exact 778x864 window from scaledBuffer:
-  const cropLeft = Math.max(0, -leftOffset);
-  const cropTop = Math.max(0, -topOffset);
+  console.log(`Alignment params: padLeft=${padLeft}, cropTop=${cropTop}, targetW=${targetW}, targetH=${targetH}`);
 
-  console.log(`Cropping window: left=${cropLeft}, top=${cropTop}, width=${lightMeta.width}, height=${lightMeta.height}`);
+  // Step 1: Extend left padding
+  const extendedBuffer = await sharp(scaledBuffer)
+    .extend({
+      top: 0,
+      bottom: 0,
+      left: padLeft,
+      right: 0,
+      background: { r: 0, g: 0, b: 0, alpha: 0 }
+    })
+    .png()
+    .toBuffer();
 
-  await sharp(scaledBuffer)
+  // Step 2: Extract exact targetW x targetH
+  await sharp(extendedBuffer)
     .extract({
-      left: cropLeft,
+      left: 0,
       top: cropTop,
-      width: lightMeta.width,
-      height: lightMeta.height
+      width: targetW,
+      height: targetH
     })
     .png({ quality: 100 })
     .toFile(outputClean);
 
-  console.log('Successfully saved aligned dark splash to:', outputClean);
+  const finalMeta = await sharp(outputClean).metadata();
+  console.log(`Final output generated: ${finalMeta.width}x${finalMeta.height} at: ${outputClean}`);
 }
 
-createAlignedDarkSplash().catch(console.error);
+createPerfectDarkSplash().catch(console.error);

@@ -65,9 +65,9 @@ export function HeroVolticSplash() {
         <div className="absolute inset-0 flex items-center justify-center p-2 z-10 transition-opacity duration-700 ease-in-out opacity-0 pointer-events-none dark:opacity-100 dark:pointer-events-auto">
           <div className="relative w-full h-full flex items-center justify-center">
             <img
-              src="/images/voltic-splash-dark.png"
+              src="/images/voltic-splash-dark-trimmed.png"
               alt="Voltic Natural Mineral Water Bottle with Dark Mode Water Splashes"
-              className="w-auto h-full max-h-[320px] sm:max-h-[420px] md:max-h-[480px] lg:max-h-[540px] xl:max-h-[600px] object-contain object-center filter drop-shadow-[0_20px_40px_rgba(0,102,255,0.35)] rounded-2xl select-none"
+              className="w-auto h-full max-h-[320px] sm:max-h-[420px] md:max-h-[480px] lg:max-h-[540px] xl:max-h-[600px] object-contain object-center filter drop-shadow-[0_20px_45px_rgba(0,102,255,0.38)] select-none"
               draggable={false}
             />
           </div>
