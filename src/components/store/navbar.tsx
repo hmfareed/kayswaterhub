@@ -383,8 +383,8 @@ export function StoreNavbar() {
             onClick={() => setMobileMenuOpen(false)}
           />
 
-          {/* Drawer content */}
-          <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white dark:bg-neutral-950 shadow-2xl z-50 flex flex-col justify-between p-6 animate-fade-in overflow-y-auto border-l border-slate-200/80 dark:border-neutral-850">
+          {/* Drawer content (Left-aligned to match the Hamburger icon) */}
+          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white dark:bg-neutral-950 shadow-2xl z-50 flex flex-col justify-between p-6 animate-slide-in-left overflow-y-auto border-r border-slate-200/80 dark:border-neutral-850">
             <div className="space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-neutral-850">
                 <Link
