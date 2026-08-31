@@ -17,8 +17,11 @@ import {
   Truck,
   Package,
   Bell,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useCart } from "@/context/cart-context";
+import { useTheme } from "@/context/theme-context";
 import { STORE_PHONE_DISPLAY } from "@/lib/constants";
 import {
   CustomerNotificationsDrawer,
@@ -29,6 +32,7 @@ export function StoreNavbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const { itemCount } = useCart();
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -167,9 +171,23 @@ export function StoreNavbar() {
             })}
           </nav>
 
-          {/* Right Desktop: Notifications Bell + User Account + Cart */}
+          {/* Right Desktop: Notifications Bell + Theme Toggle + User Account + Cart */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* Desktop Notification Bell Button (Replaces top nav AI button) */}
+            {/* Desktop Theme Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="relative w-10 h-10 rounded-full border border-slate-200/90 dark:border-neutral-800 hover:border-blue-600 dark:hover:border-blue-500 bg-white/80 dark:bg-neutral-900/80 hover:bg-blue-50/60 dark:hover:bg-neutral-800 text-slate-700 dark:text-amber-400 hover:text-blue-600 dark:hover:text-amber-300 shadow-2xs flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? (
+                <Sun className="w-4.5 h-4.5 stroke-[2]" />
+              ) : (
+                <Moon className="w-4.5 h-4.5 stroke-[2] text-slate-700" />
+              )}
+            </button>
+
+            {/* Desktop Notification Bell Button */}
             <button
               id="top-nav-desktop-notifications-btn"
               onClick={() => setNotificationsOpen(true)}
@@ -242,6 +260,18 @@ export function StoreNavbar() {
                         <span>My Orders</span>
                       </Link>
 
+                      <button
+                        type="button"
+                        onClick={toggleDarkMode}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-neutral-300 hover:bg-blue-50 dark:hover:bg-neutral-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors text-left cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-400" />}
+                          <span>{isDarkMode ? "Light Theme" : "Dark Theme"}</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase">{isDarkMode ? "Dark" : "Light"}</span>
+                      </button>
+
                       {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
                         <Link
                           href="/admin/dashboard"
@@ -300,8 +330,21 @@ export function StoreNavbar() {
             </Link>
           </div>
 
-          {/* Right Mobile: Notifications Bell in Top Right Corner */}
+          {/* Right Mobile: Theme Toggle + Notifications Bell */}
           <div className="lg:hidden flex items-center gap-2">
+            <button
+              onClick={toggleDarkMode}
+              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-slate-200/90 dark:border-neutral-800 hover:border-blue-600 dark:hover:border-blue-500 bg-white/90 dark:bg-neutral-900/90 hover:bg-blue-50 dark:hover:bg-neutral-800 text-slate-700 dark:text-amber-400 hover:text-blue-600 dark:hover:text-amber-300 shadow-2xs flex items-center justify-center transition-all active:scale-95 cursor-pointer"
+              aria-label={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? (
+                <Sun className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2]" />
+              ) : (
+                <Moon className="w-4 h-4 sm:w-4.5 sm:h-4.5 stroke-[2] text-slate-700" />
+              )}
+            </button>
+
             <button
               id="top-nav-mobile-notifications-btn"
               onClick={() => setNotificationsOpen(true)}
@@ -409,6 +452,20 @@ export function StoreNavbar() {
                   </div>
                   <ChevronRight className="w-4 h-4 text-slate-400 dark:text-neutral-600" />
                 </Link>
+
+                <button
+                  type="button"
+                  onClick={toggleDarkMode}
+                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-medium text-slate-700 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-neutral-900 transition-colors text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-400" />}
+                    <span>Theme: {isDarkMode ? "Dark Mode" : "Light Mode"}</span>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-neutral-800 text-slate-600 dark:text-neutral-300 uppercase">
+                    {isDarkMode ? "Dark" : "Light"}
+                  </span>
+                </button>
 
                 {isAuthenticated && (
                   <>
