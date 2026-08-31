@@ -44,13 +44,13 @@ interface AdminSidebarProps {
 }
 
 export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "";
   const [businessName, setBusinessName] = useState("Khady's Water");
   const [deliveryExpanded, setDeliveryExpanded] = useState(
-    pathname.startsWith("/admin/delivery")
+    pathname?.startsWith("/admin/delivery") ?? false
   );
   const [analyticsExpanded, setAnalyticsExpanded] = useState(
-    pathname.startsWith("/admin/analytics")
+    pathname?.startsWith("/admin/analytics") ?? false
   );
 
   useEffect(() => {

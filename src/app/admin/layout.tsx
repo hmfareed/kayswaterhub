@@ -5,6 +5,7 @@ import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { NotificationsDrawer } from "@/components/admin/NotificationsDrawer";
 import { GlobalSearchModal } from "@/components/admin/GlobalSearchModal";
+import { AdminCopilotWidget } from "@/components/admin/AdminCopilotWidget";
 
 export default function AdminLayout({
   children,
@@ -46,6 +47,10 @@ export default function AdminLayout({
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
       />
+
+      {/* ─── Dedicated Admin Operations Copilot ─────────────────────────────── */}
+      <AdminCopilotWidget />
     </div>
   );
 }
+

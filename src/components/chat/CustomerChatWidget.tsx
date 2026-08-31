@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import {
   MessageSquare,
@@ -60,6 +60,7 @@ const QUICK_SUGGESTION_CHIPS = [
 
 export function CustomerChatWidget() {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: session } = useSession();
   const { items, addItem, updateQuantity, removeItem, clearCart, itemCount, total } = useCart();
   const { isOpen, openChat, closeChat, toggleChat, initialQuery, setInitialQuery } = useChat();
@@ -234,6 +235,11 @@ export function CustomerChatWidget() {
       },
     ]);
   };
+
+  // If user is inside the admin panel, do NOT display the customer shopping chatbot
+  if (pathname?.startsWith("/admin")) {
+    return null;
+  }
 
   return (
     <>

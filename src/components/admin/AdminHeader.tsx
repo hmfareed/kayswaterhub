@@ -8,6 +8,7 @@ import {
   Bell,
   ExternalLink,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 
 interface AdminHeaderProps {
@@ -22,6 +23,12 @@ export function AdminHeader({
   onOpenNotifications,
 }: AdminHeaderProps) {
   const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  const handleOpenCopilot = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("open-admin-copilot"));
+    }
+  };
 
   const fetchUnreadCount = async () => {
     try {
@@ -64,10 +71,33 @@ export function AdminHeader({
             ⌘K
           </kbd>
         </button>
+
+        {/* AI Ops Copilot Pill Button (Desktop) */}
+        <button
+          onClick={handleOpenCopilot}
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200/80 transition-all cursor-pointer shadow-xs group"
+          title="Open Admin AI Copilot (⌘J)"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-pulse group-hover:scale-110 transition-transform" />
+          <span>Ops Copilot</span>
+          <kbd className="text-[9px] font-mono bg-blue-200/60 px-1.5 py-0.5 rounded-full text-blue-800">
+            ⌘J
+          </kbd>
+        </button>
       </div>
 
-      {/* Right: Storefront Link, Notifications, Admin Profile */}
-      <div className="flex items-center gap-2.5 sm:gap-4">
+      {/* Right: Mobile Copilot, Storefront Link, Notifications, Admin Profile */}
+      <div className="flex items-center gap-2 sm:gap-4">
+        {/* AI Ops Copilot Circular Button (Mobile) */}
+        <button
+          onClick={handleOpenCopilot}
+          className="flex md:hidden w-9 h-9 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200/80 items-center justify-center transition-all cursor-pointer shadow-xs shrink-0"
+          title="Open Admin AI Copilot"
+          aria-label="Open Admin AI Copilot"
+        >
+          <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
+        </button>
+
         {/* Storefront Link */}
         <Link
           href="/"
