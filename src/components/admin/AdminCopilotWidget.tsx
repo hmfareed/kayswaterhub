@@ -82,6 +82,7 @@ export function AdminCopilotWidget() {
   const [isExpanded, setIsExpanded] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -115,6 +116,32 @@ export function AdminCopilotWidget() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Listen to visualViewport for mobile virtual keyboards
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const updateViewport = () => {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+        window.scrollTo(0, 0);
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+
+    if (isOpen) {
+      if (window.visualViewport) {
+        setViewportHeight(window.visualViewport.height);
+      }
+      window.visualViewport?.addEventListener("resize", updateViewport);
+      window.visualViewport?.addEventListener("scroll", updateViewport);
+    }
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", updateViewport);
+      window.visualViewport?.removeEventListener("scroll", updateViewport);
+    };
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen) {
@@ -377,95 +404,89 @@ export function AdminCopilotWidget() {
 
   return (
     <>
-      {/* ─── Admin Copilot Window (Opened via Header or ⌘J) ─────────────────── */}
+      {/* ─── Full-Screen Admin Copilot View with Dynamic Viewport Height ─────── */}
       <div
-        className={`fixed z-50 flex flex-col bg-slate-900/95 text-slate-100 border border-slate-800 rounded-2xl shadow-2xl shadow-black/80 backdrop-blur-xl transition-all duration-300 ease-out overflow-hidden ${
-          isExpanded
-            ? "inset-4 sm:inset-8"
-            : "bottom-4 right-4 sm:bottom-6 sm:right-6 w-[calc(100vw-32px)] sm:w-[460px] h-[600px] max-h-[calc(100vh-48px)]"
-        }`}
+        style={viewportHeight ? { height: `${viewportHeight}px`, maxHeight: `${viewportHeight}px` } : undefined}
+        className="fixed inset-0 h-dvh max-h-dvh z-50 flex flex-col bg-slate-950 text-slate-100 overflow-hidden animate-in fade-in duration-200"
       >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3.5 bg-slate-950/80 border-b border-slate-800 shrink-0">
-            <div className="flex items-center gap-3">
-              <div className="relative w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-600/40">
-                <Sparkles className="w-4 h-4" />
-                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-950" />
+        {/* Top Header */}
+        <div className="shrink-0 bg-slate-950/95 border-b border-slate-800/90 shadow-md backdrop-blur-md">
+          <div className="max-w-5xl mx-auto w-full px-3.5 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-blue-600/40 shrink-0">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-slate-950 animate-pulse" />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-sm text-white leading-tight">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h3 className="font-extrabold text-xs sm:text-base text-white leading-tight truncate">
                     Admin AI Copilot
                   </h3>
-                  <span className="px-1.5 py-0.5 rounded-md bg-blue-900/60 border border-blue-700/50 text-[10px] font-bold text-blue-300 uppercase tracking-wide">
+                  <span className="px-1.5 py-0.5 rounded-md bg-blue-900/60 border border-blue-700/50 text-[9px] sm:text-[10px] font-bold text-blue-300 uppercase tracking-wide shrink-0">
                     Ops Mode
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-tight">
-                  Kay's Packs Operations & Management Assistant
+                <p className="text-[10px] sm:text-xs text-slate-400 leading-tight mt-0.5 truncate">
+                  Kay&apos;s Packs Operations & Management Assistant
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={handleResetChat}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
                 title="Restart conversation"
                 aria-label="Restart conversation"
               >
-                <RefreshCw className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors hidden sm:block"
-                title={isExpanded ? "Minimize window" : "Expand window"}
-                aria-label="Toggle window size"
-              >
-                {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                title="Close Copilot"
+                className="p-1.5 sm:p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+                title="Close Copilot (ESC)"
                 aria-label="Close Copilot"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Quick Suggestion Chips (Horizontal Scroll) */}
-          <div className="px-3 py-2 bg-slate-950/40 border-b border-slate-800/80 overflow-x-auto flex items-center gap-1.5 shrink-0 custom-scrollbar">
+        {/* Quick Suggestion Chips (Bar Under Header) */}
+        <div className="shrink-0 bg-slate-950/90 border-b border-slate-800/80 backdrop-blur-md">
+          <div className="max-w-5xl mx-auto w-full px-3 sm:px-6 py-1.5 sm:py-2 overflow-x-auto flex items-center gap-1.5 custom-scrollbar">
             {ADMIN_PROMPT_SUGGESTIONS.map((chip, idx) => (
               <button
                 key={idx}
                 onClick={() => handleSend(chip.query)}
-                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-blue-600 hover:text-white text-slate-300 text-[11px] font-semibold transition-colors shrink-0 border border-slate-700/60 shadow-xs cursor-pointer"
+                className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-full bg-slate-800/90 hover:bg-blue-600 hover:text-white text-slate-300 text-[10px] sm:text-[11px] font-semibold transition-colors shrink-0 border border-slate-700/60 shadow-xs cursor-pointer whitespace-nowrap"
               >
                 {chip.label}
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Message Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950">
+        {/* Scrollable Messages Area */}
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-4 custom-scrollbar bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 overscroll-contain">
+          <div className="max-w-5xl mx-auto w-full space-y-4">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex gap-2.5 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex gap-2.5 sm:gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-lg bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0 mt-0.5">
-                    <Bot className="w-4 h-4" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0 mt-0.5">
+                    <Bot className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                 )}
 
-                <div className={`max-w-[88%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                <div className={`max-w-[92%] sm:max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"}`}>
                   <div
-                    className={`p-3.5 rounded-2xl text-xs leading-relaxed ${
+                    className={`p-3 sm:p-4 rounded-2xl text-xs sm:text-sm leading-relaxed ${
                       msg.role === "user"
-                        ? "bg-blue-600 text-white font-medium rounded-tr-xs shadow-md shadow-blue-600/30"
+                        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-tr-xs shadow-md shadow-blue-600/30"
                         : "bg-slate-800/90 text-slate-100 border border-slate-700/80 rounded-tl-xs shadow-md shadow-black/20"
                     }`}
                   >
@@ -474,15 +495,15 @@ export function AdminCopilotWidget() {
                     {/* Optional Stats Card */}
                     {msg.statsCard && (
                       <div className="mt-3 p-2.5 rounded-xl bg-slate-950/60 border border-slate-700/60">
-                        <span className="text-[11px] font-extrabold text-blue-400 uppercase tracking-wider block mb-2">
+                        <span className="text-[10px] sm:text-[11px] font-extrabold text-blue-400 uppercase tracking-wider block mb-2">
                           📊 {msg.statsCard.title}
                         </span>
                         <div className="grid grid-cols-2 gap-2">
                           {msg.statsCard.metrics.map((m, mIdx) => (
                             <div key={mIdx} className="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-                              <span className="text-[10px] text-slate-400 block">{m.label}</span>
+                              <span className="text-[9px] sm:text-[10px] text-slate-400 block">{m.label}</span>
                               <span
-                                className={`text-xs font-black block mt-0.5 ${
+                                className={`text-[11px] sm:text-xs font-black block mt-0.5 ${
                                   m.alert ? "text-rose-400" : "text-white"
                                 }`}
                               >
@@ -501,7 +522,7 @@ export function AdminCopilotWidget() {
                           <button
                             key={aIdx}
                             onClick={() => handleNavigate(act.href)}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-xs ${
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer shadow-xs ${
                               act.primary
                                 ? "bg-blue-600 hover:bg-blue-500 text-white"
                                 : "bg-slate-700/80 hover:bg-slate-600 text-slate-200 border border-slate-600/60"
@@ -516,14 +537,14 @@ export function AdminCopilotWidget() {
                     )}
                   </div>
 
-                  <span className="text-[10px] text-slate-500 mt-1 block px-1">
+                  <span className="text-[9px] sm:text-[10px] text-slate-500 mt-1 block px-1">
                     {msg.timestamp}
                   </span>
                 </div>
 
                 {msg.role === "user" && (
-                  <div className="w-7 h-7 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
-                    <User className="w-4 h-4" />
+                  <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shrink-0 mt-0.5">
+                    <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </div>
                 )}
               </div>
@@ -547,33 +568,39 @@ export function AdminCopilotWidget() {
 
             <div ref={messagesEndRef} />
           </div>
+        </div>
 
-          {/* Input Bar */}
+        {/* Bottom Input Bar with Safe Area Inset Support */}
+        <div className="shrink-0 bg-slate-950/95 border-t border-slate-800/90 backdrop-blur-md pb-[max(0.6rem,env(safe-area-inset-bottom))]">
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2 shrink-0"
+            className="max-w-5xl mx-auto w-full p-2.5 sm:p-4 flex items-center gap-2"
           >
             <input
               ref={inputRef}
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
+              onFocus={() => {
+                setTimeout(scrollToBottom, 250);
+              }}
               placeholder="Ask anything about orders, settings, inventory, guides..."
-              className="flex-1 px-3.5 py-2.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+              className="flex-1 px-3.5 py-2.5 sm:px-4 sm:py-3 bg-slate-900 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
             />
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white font-bold transition-all shadow-md shadow-blue-600/30 cursor-pointer"
+              className="p-2.5 sm:p-3 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white font-bold transition-all shadow-md shadow-blue-600/30 cursor-pointer shrink-0 flex items-center justify-center"
               aria-label="Send message"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </form>
         </div>
+      </div>
     </>
   );
 }

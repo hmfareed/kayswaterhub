@@ -1,7 +1,7 @@
 {name} returns!
 Back at it, {name}
 Back at it!
-Coffee and Claude time?
+Coffee and Kay's time?
 Evening
 Evening, {name}
 Good afternoon

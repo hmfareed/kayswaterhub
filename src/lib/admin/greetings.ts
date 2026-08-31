@@ -7,7 +7,7 @@ export const ALL_ADMIN_GREETINGS = [
   "{name} returns!",
   "Back at it, {name}",
   "Back at it!",
-  "Coffee and Claude time?",
+  "Coffee and Kay's time?",
   "Evening",
   "Evening, {name}",
   "Good afternoon",
@@ -115,7 +115,7 @@ export function getRandomAdminGreeting(name: string = "Khadijah"): string {
     candidatePool.push(
       "Good morning",
       "Good morning, {name}",
-      "Coffee and Claude time?",
+      "Coffee and Kay's time?",
       "Back at it, {name}",
       "Back at it!"
     );
