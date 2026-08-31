@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 const path = require('path');
 
-async function createFlawlessDarkSplash() {
+async function createPerfectShadowFreeSplash() {
   const inputDark = path.join(__dirname, '../public/images/voltic-splash-dark.png');
   const lightRef = path.join(__dirname, '../public/images/voltic-splash-trimmed.png');
   const outTransparent = path.join(__dirname, '../public/images/voltic-splash-dark-transparent.png');
@@ -11,7 +11,7 @@ async function createFlawlessDarkSplash() {
   const { data, info } = await sharp(inputDark).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height, channels } = info;
 
-  // Exact background color sampling
+  // Background baseline color
   let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
   for (let x = 0; x < width; x++) {
     for (let y of [0, 1, 2, 3, 4, height - 5, height - 4, height - 3, height - 2, height - 1]) {
@@ -23,6 +23,7 @@ async function createFlawlessDarkSplash() {
     }
   }
   bgR /= bgCount; bgG /= bgCount; bgB /= bgCount;
+  console.log(`Background baseline: R=${bgR.toFixed(2)}, G=${bgG.toFixed(2)}, B=${bgB.toFixed(2)}`);
 
   const outBuf = Buffer.alloc(width * height * channels);
   const centerX = 338.0;
@@ -54,7 +55,7 @@ async function createFlawlessDarkSplash() {
         continue;
       }
 
-      // 2. Above cap: strictly transparent
+      // 2. Above cap: strictly transparent for background
       if (y < 105) {
         if (colorDist < 12 && brightness < 15) {
           outBuf[idx] = 0;
@@ -65,60 +66,10 @@ async function createFlawlessDarkSplash() {
         }
       }
 
-      const distFromCenter = Math.abs(x - centerX);
-
-      // 3. CAP LID (y in [105..150]):
-      if (y >= 105 && y <= 150) {
-        // Cap lid is blue
-        if (distFromCenter <= 41.0 && b > 55 && (b - r) > 30) {
-          outBuf[idx] = r;
-          outBuf[idx + 1] = g;
-          outBuf[idx + 2] = b;
-          outBuf[idx + 3] = 255;
-          continue;
-        } else if (distFromCenter > 41.0 && (colorDist >= 16.0 || brightness >= 20.0)) {
-          // Splash droplets next to cap
-          const alpha = Math.min(1.0, 0.4 + (colorDist / 35.0));
-          outBuf[idx] = r;
-          outBuf[idx + 1] = g;
-          outBuf[idx + 2] = b;
-          outBuf[idx + 3] = Math.floor(Math.max(0, Math.min(255, alpha * 255)));
-          continue;
-        } else {
-          // Outside cap is 100% transparent (no shadow around lid!)
-          outBuf[idx] = 0;
-          outBuf[idx + 1] = 0;
-          outBuf[idx + 2] = 0;
-          outBuf[idx + 3] = 0;
-          continue;
-        }
-      }
-
-      // 4. NECK & SHOULDERS (y in [151..230]):
-      // Neck interior radius: smoothly grows from 36 at y=151 to 95 at y=230
-      let neckInteriorRadius = 36.0 + 59.0 * Math.sin(((y - 151) / 79) * (Math.PI / 2));
-      const isInsideNeck = (distFromCenter <= neckInteriorRadius);
-
-      if (isInsideNeck) {
-        // Inside bottle neck: solid
-        outBuf[idx] = r;
-        outBuf[idx + 1] = g;
-        outBuf[idx + 2] = b;
-        outBuf[idx + 3] = 255;
-        continue;
-      } else {
-        // Outside neck: if background -> strictly transparent (NO shadow!)
-        if (colorDist < 9.0 && brightness < 15.0) {
-          outBuf[idx] = 0;
-          outBuf[idx + 1] = 0;
-          outBuf[idx + 2] = 0;
-          outBuf[idx + 3] = 0;
-          continue;
-        }
-      }
-
-      // 5. BODY CYLINDER & FULL LABEL (y in [231..660]):
-      if (y > 230 && y <= 660 && distFromCenter <= 104.0) {
+      // 3. Exact Label Region (y in [355..475], x in [250..425]):
+      // Within this exact rectangle, keep solid so the VOLTIC dark navy label and emblem are 100% opaque
+      const isInsideLabel = (y >= 355 && y <= 475 && x >= 250 && x <= 425);
+      if (isInsideLabel) {
         outBuf[idx] = r;
         outBuf[idx + 1] = g;
         outBuf[idx + 2] = b;
@@ -126,9 +77,10 @@ async function createFlawlessDarkSplash() {
         continue;
       }
 
-      // 6. BASE (y in [661..730]):
-      const baseRadius = 104.0 - 20.0 * ((y - 660) / 70);
-      if (y > 660 && y <= 730 && distFromCenter <= baseRadius && (colorDist > 8.0 || brightness > 12.0)) {
+      // 4. Blue Cap (y in [105..145], x in [295..380]):
+      // Only keep actual blue cap pixels (b > 50 && b - r > 25)
+      const isCapArea = (y >= 105 && y <= 145 && x >= 295 && x <= 380);
+      if (isCapArea && b > 50 && (b - r) > 25) {
         outBuf[idx] = r;
         outBuf[idx + 1] = g;
         outBuf[idx + 2] = b;
@@ -136,7 +88,8 @@ async function createFlawlessDarkSplash() {
         continue;
       }
 
-      // 7. ALL SPLASHES & DROPLETS OUTSIDE BOTTLE:
+      // 5. All Other Pixels (Neck, shoulders, bottle sides, water splashes):
+      // Pure background: colorDist < 8.0 and brightness < 14.0 -> 100% transparent!
       if (colorDist < 8.0 && brightness < 14.0) {
         outBuf[idx] = 0;
         outBuf[idx + 1] = 0;
@@ -145,12 +98,13 @@ async function createFlawlessDarkSplash() {
         continue;
       }
 
+      // Smooth feathering for translucent highlights & splashes
       let alpha = 0;
-      if (colorDist < 26.0 && brightness < 30.0) {
-        const t = Math.max(0, (colorDist - 7.5) / 18.5);
+      if (colorDist < 24.0 && brightness < 28.0) {
+        const t = Math.max(0, (colorDist - 7.5) / 16.5);
         alpha = Math.pow(t, 1.25);
       } else {
-        alpha = Math.min(1.0, 0.4 + (colorDist / 35.0));
+        alpha = Math.min(1.0, 0.45 + (colorDist / 30.0));
       }
 
       // Smooth bottom ripple fade
@@ -209,4 +163,4 @@ async function createFlawlessDarkSplash() {
   console.log('Saved 100% clean, shadow-free dark splash to both assets!');
 }
 
-createFlawlessDarkSplash().catch(console.error);
+createPerfectShadowFreeSplash().catch(console.error);

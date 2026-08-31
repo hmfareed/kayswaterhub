@@ -1,7 +1,7 @@
 const sharp = require('sharp');
 const path = require('path');
 
-async function createFlawlessDarkSplash() {
+async function testCleanNeckRemoval() {
   const inputDark = path.join(__dirname, '../public/images/voltic-splash-dark.png');
   const lightRef = path.join(__dirname, '../public/images/voltic-splash-trimmed.png');
   const outTransparent = path.join(__dirname, '../public/images/voltic-splash-dark-transparent.png');
@@ -11,7 +11,7 @@ async function createFlawlessDarkSplash() {
   const { data, info } = await sharp(inputDark).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height, channels } = info;
 
-  // Exact background color sampling
+  // Background baseline color
   let bgR = 0, bgG = 0, bgB = 0, bgCount = 0;
   for (let x = 0; x < width; x++) {
     for (let y of [0, 1, 2, 3, 4, height - 5, height - 4, height - 3, height - 2, height - 1]) {
@@ -23,6 +23,7 @@ async function createFlawlessDarkSplash() {
     }
   }
   bgR /= bgCount; bgG /= bgCount; bgB /= bgCount;
+  console.log(`Measured background color: R=${bgR.toFixed(2)}, G=${bgG.toFixed(2)}, B=${bgB.toFixed(2)}`);
 
   const outBuf = Buffer.alloc(width * height * channels);
   const centerX = 338.0;
@@ -40,7 +41,7 @@ async function createFlawlessDarkSplash() {
         Math.pow(r - bgR, 2) + Math.pow(g - bgG, 2) + Math.pow(b - bgB, 2)
       );
 
-      // 1. Remove 4 corner static bokeh blobs
+      // 1. Remove 4 corner static bokeh circles
       const isTopLeftBokeh = (x < 110 && y < 120);
       const isBottomLeftBokeh = (x < 130 && y > 600);
       const isBottomRightBokeh = (x > 570 && y > 580);
@@ -54,7 +55,7 @@ async function createFlawlessDarkSplash() {
         continue;
       }
 
-      // 2. Above cap: strictly transparent
+      // 2. Strict check above bottle cap: above y = 105, only splash droplets exist
       if (y < 105) {
         if (colorDist < 12 && brightness < 15) {
           outBuf[idx] = 0;
@@ -67,17 +68,22 @@ async function createFlawlessDarkSplash() {
 
       const distFromCenter = Math.abs(x - centerX);
 
-      // 3. CAP LID (y in [105..150]):
-      if (y >= 105 && y <= 150) {
-        // Cap lid is blue
-        if (distFromCenter <= 41.0 && b > 55 && (b - r) > 30) {
+      // 3. CAP & NECK & SHOULDERS (y from 105 to 260):
+      // NO geometric radius polygon! ONLY real cap blue or glass highlights!
+      if (y >= 105 && y < 260) {
+        // Is cap blue:
+        const isCapBlue = (y <= 150 && distFromCenter <= 41 && b > 60 && (b - r) > 35);
+        // Is glass highlight or refraction:
+        const isGlassHighlight = (distFromCenter <= 90 && (colorDist >= 16.0 || brightness >= 20.0));
+
+        if (isCapBlue) {
           outBuf[idx] = r;
           outBuf[idx + 1] = g;
           outBuf[idx + 2] = b;
           outBuf[idx + 3] = 255;
           continue;
-        } else if (distFromCenter > 41.0 && (colorDist >= 16.0 || brightness >= 20.0)) {
-          // Splash droplets next to cap
+        } else if (isGlassHighlight) {
+          // Glass reflection: clean alpha
           const alpha = Math.min(1.0, 0.4 + (colorDist / 35.0));
           outBuf[idx] = r;
           outBuf[idx + 1] = g;
@@ -85,40 +91,21 @@ async function createFlawlessDarkSplash() {
           outBuf[idx + 3] = Math.floor(Math.max(0, Math.min(255, alpha * 255)));
           continue;
         } else {
-          // Outside cap is 100% transparent (no shadow around lid!)
-          outBuf[idx] = 0;
-          outBuf[idx + 1] = 0;
-          outBuf[idx + 2] = 0;
-          outBuf[idx + 3] = 0;
-          continue;
+          // If neither cap blue nor glass highlight, outside/inside background is 100% transparent!
+          // NO shadow around neck/cap!
+          if (colorDist < 12.0 && brightness < 16.0) {
+            outBuf[idx] = 0;
+            outBuf[idx + 1] = 0;
+            outBuf[idx + 2] = 0;
+            outBuf[idx + 3] = 0;
+            continue;
+          }
         }
       }
 
-      // 4. NECK & SHOULDERS (y in [151..230]):
-      // Neck interior radius: smoothly grows from 36 at y=151 to 95 at y=230
-      let neckInteriorRadius = 36.0 + 59.0 * Math.sin(((y - 151) / 79) * (Math.PI / 2));
-      const isInsideNeck = (distFromCenter <= neckInteriorRadius);
-
-      if (isInsideNeck) {
-        // Inside bottle neck: solid
-        outBuf[idx] = r;
-        outBuf[idx + 1] = g;
-        outBuf[idx + 2] = b;
-        outBuf[idx + 3] = 255;
-        continue;
-      } else {
-        // Outside neck: if background -> strictly transparent (NO shadow!)
-        if (colorDist < 9.0 && brightness < 15.0) {
-          outBuf[idx] = 0;
-          outBuf[idx + 1] = 0;
-          outBuf[idx + 2] = 0;
-          outBuf[idx + 3] = 0;
-          continue;
-        }
-      }
-
-      // 5. BODY CYLINDER & FULL LABEL (y in [231..660]):
-      if (y > 230 && y <= 660 && distFromCenter <= 104.0) {
+      // 4. LOWER BOTTLE BODY & LABEL (y from 260 to 660):
+      // Inside cylinder (distFromCenter <= 87.5), keep solid 255 so the VOLTIC label & dark body are solid
+      if (y >= 260 && y <= 660 && distFromCenter <= 87.5) {
         outBuf[idx] = r;
         outBuf[idx + 1] = g;
         outBuf[idx + 2] = b;
@@ -126,8 +113,8 @@ async function createFlawlessDarkSplash() {
         continue;
       }
 
-      // 6. BASE (y in [661..730]):
-      const baseRadius = 104.0 - 20.0 * ((y - 660) / 70);
+      // 5. BASE (y from 660 to 730):
+      const baseRadius = 87.5 - 12.0 * ((y - 660) / 70);
       if (y > 660 && y <= 730 && distFromCenter <= baseRadius && (colorDist > 8.0 || brightness > 12.0)) {
         outBuf[idx] = r;
         outBuf[idx + 1] = g;
@@ -136,7 +123,7 @@ async function createFlawlessDarkSplash() {
         continue;
       }
 
-      // 7. ALL SPLASHES & DROPLETS OUTSIDE BOTTLE:
+      // 6. ALL WATER SPLASHES & DROPLETS (Everywhere outside the bottle):
       if (colorDist < 8.0 && brightness < 14.0) {
         outBuf[idx] = 0;
         outBuf[idx + 1] = 0;
@@ -206,7 +193,7 @@ async function createFlawlessDarkSplash() {
   await sharp(finalBuffer).toFile(outTransparent);
   await sharp(finalBuffer).toFile(outTrimmed);
 
-  console.log('Saved 100% clean, shadow-free dark splash to both assets!');
+  console.log('Saved 100% clean dark splash without ANY shadows to both assets!');
 }
 
-createFlawlessDarkSplash().catch(console.error);
+testCleanNeckRemoval().catch(console.error);
