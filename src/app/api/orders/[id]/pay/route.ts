@@ -181,9 +181,11 @@ export async function POST(
     await order.save();
 
     // 6. Initialize Paystack Transaction
+    const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
     const protocol = req.headers.get("x-forwarded-proto") || "http";
     const host = req.headers.get("host") || "localhost:3000";
-    const callbackUrl = `${protocol}://${host}/orders/${order._id}?ref=${reference}`;
+    const baseUrl = appUrl ? appUrl.replace(/\/$/, "") : `${protocol}://${host}`;
+    const callbackUrl = `${baseUrl}/orders/${order._id}?ref=${reference}`;
 
     const customerEmail =
       order.guestInformation?.email ||

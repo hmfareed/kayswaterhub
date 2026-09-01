@@ -425,6 +425,14 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (formData.email && formData.email.trim()) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        setCheckoutError("Please provide a valid email address (e.g. yourname@example.com) or leave it empty.");
+        return;
+      }
+    }
+
     if (fulfillmentType === "DELIVERY") {
       if (isGreaterAccra) {
         if (!formData.houseAddress.trim() && !formData.digitalAddress.trim() && !formData.city.trim()) {
@@ -525,7 +533,7 @@ export default function CheckoutPage() {
 
       // Redirect to Paystack or Order Confirmation
       if (authorizationUrl) {
-        window.location.href = authorizationUrl;
+        window.location.assign(authorizationUrl);
       } else {
         router.push(`/orders/${orderId}?ref=${reference}`);
       }
@@ -1354,6 +1362,13 @@ export default function CheckoutPage() {
                       : "Paystack processes product payment online. Transport/parcel fee is payable at the parcel station."}
                   </p>
                 </div>
+
+                {checkoutError && (
+                  <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-start gap-2 animate-in fade-in">
+                    <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                    <span className="leading-snug">{checkoutError}</span>
+                  </div>
+                )}
 
                 {/* CTA Button */}
                 <button

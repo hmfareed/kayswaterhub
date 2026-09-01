@@ -148,9 +148,13 @@ export async function POST(req: NextRequest) {
 
     // 4. Create Pending Order - strictly bind to active session if authenticated
     const customerId = session?.user?.id || undefined;
+    const rawEmail = (customerInfo?.email || session?.user?.email || "").trim();
+    const cleanPhone = (customerInfo?.phone || session?.user?.phone || deliveryAddress?.phone || "").replace(/\D/g, "");
+    const guestEmail = rawEmail || (cleanPhone ? `customer.${cleanPhone}@kayswaterhub.com` : `guest.${Date.now()}@kayswaterhub.com`);
+
     const guestInformation = {
       name: customerInfo?.name || session?.user?.name || "Customer",
-      email: customerInfo?.email || session?.user?.email || "",
+      email: guestEmail,
       phone: customerInfo?.phone || session?.user?.phone || deliveryAddress?.phone || "",
     };
 
@@ -223,9 +227,11 @@ export async function POST(req: NextRequest) {
     await Order.findByIdAndUpdate(orderId, { paymentId: payment._id });
 
     // 6. Initialize Paystack Transaction for Product Amount Only
+    const appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL;
     const protocol = req.headers.get("x-forwarded-proto") || "http";
     const host = req.headers.get("host") || "localhost:3000";
-    const callbackUrl = `${protocol}://${host}/orders/${orderId}?ref=${reference}`;
+    const baseUrl = appUrl ? appUrl.replace(/\/$/, "") : `${protocol}://${host}`;
+    const callbackUrl = `${baseUrl}/orders/${orderId}?ref=${reference}`;
 
     const paymentInitResult = await paymentService.initiatePayment({
       reference,

@@ -1,4 +1,6 @@
 import crypto from "crypto";
+import { connectDB } from "@/lib/db/mongoose";
+import Settings from "@/models/Settings";
 
 /**
  * PaymentService — provider-agnostic payment abstraction.
@@ -52,22 +54,53 @@ export interface IPaymentAdapter {
 // ─── Paystack Adapter ──────────────────────────────────────────────────────────
 
 export class PaystackAdapter implements IPaymentAdapter {
-  private secretKey: string;
   private baseUrl = "https://api.paystack.co";
 
-  constructor() {
-    this.secretKey = process.env.PAYMENT_SECRET_KEY || process.env.PAYSTACK_SECRET_KEY || "";
+  /**
+   * Resolves Paystack Secret Key dynamically from environment variables
+   * or from MongoDB System Settings if configured in the admin panel.
+   */
+  private async resolveSecretKey(): Promise<string> {
+    let key =
+      process.env.PAYSTACK_SECRET_KEY ||
+      process.env.PAYMENT_SECRET_KEY ||
+      "";
+
+    if (!key || key.startsWith("sk_test_sample_")) {
+      try {
+        await connectDB();
+        const settings = await Settings.findOne();
+        if (settings?.paystack?.secretKey) {
+          key = settings.paystack.secretKey;
+        }
+      } catch (err) {
+        console.warn("[PaystackAdapter] Could not load database settings for Paystack key:", err);
+      }
+    }
+
+    return key ? key.replace(/["']/g, "").trim() : "";
   }
 
   async initiatePayment(
     payload: InitiatePaymentPayload
   ): Promise<InitiatePaymentResult> {
-    const amountInPesewas = Math.round(payload.amount * 100);
+    const secretKey = await this.resolveSecretKey();
+    const amountInPesewas = Math.max(100, Math.round(payload.amount * 100));
 
-    // If secret key is not provided (e.g. sandbox mock testing)
-    if (!this.secretKey || this.secretKey.startsWith("mock_")) {
+    // Ensure email is valid for Paystack requirements (Ghana customers often checkout with phone only)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    let customerEmail = (payload.email || "").trim();
+    if (!customerEmail || !emailRegex.test(customerEmail)) {
+      const digits = (payload.phone || "").replace(/\D/g, "");
+      customerEmail = digits
+        ? `customer.${digits}@kayswaterhub.com`
+        : `order.${payload.reference.replace(/[^a-zA-Z0-9]/g, "")}@kayswaterhub.com`;
+    }
+
+    // If secret key is not provided or is a sample/placeholder key (sandbox simulator)
+    if (!secretKey || secretKey.startsWith("mock_") || secretKey.startsWith("sk_test_sample_")) {
       console.warn(
-        "[PaystackAdapter] PAYMENT_SECRET_KEY is not set. Using test sandbox simulator."
+        "[PaystackAdapter] PAYSTACK_SECRET_KEY is not configured or using sample key. Using test sandbox simulator."
       );
       return {
         authorizationUrl: `${payload.callbackUrl}${
@@ -82,11 +115,11 @@ export class PaystackAdapter implements IPaymentAdapter {
       const response = await fetch(`${this.baseUrl}/transaction/initialize`, {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${this.secretKey}`,
+          Authorization: `Bearer ${secretKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: payload.email,
+          email: customerEmail,
           amount: amountInPesewas,
           reference: payload.reference,
           callback_url: payload.callbackUrl,
@@ -108,15 +141,24 @@ export class PaystackAdapter implements IPaymentAdapter {
       const data = await response.json();
 
       if (!response.ok || !data.status) {
+        if (response.status === 401) {
+          throw new Error(
+            "Paystack API Authentication failed. Please check your Secret Key in Admin Settings or .env file."
+          );
+        }
         throw new Error(
-          data.message || "Failed to initialize Paystack transaction."
+          data.message || `Paystack initialization failed (HTTP ${response.status})`
         );
+      }
+
+      if (!data.data?.authorization_url) {
+        throw new Error("Paystack did not return a valid checkout URL.");
       }
 
       return {
         authorizationUrl: data.data.authorization_url,
         accessCode: data.data.access_code,
-        reference: data.data.reference,
+        reference: data.data.reference || payload.reference,
       };
     } catch (error) {
       console.error("[PaystackAdapter.initiatePayment] Error:", error);
@@ -125,7 +167,9 @@ export class PaystackAdapter implements IPaymentAdapter {
   }
 
   async verifyPayment(reference: string): Promise<VerifyPaymentResult> {
-    if (!this.secretKey || this.secretKey.startsWith("mock_")) {
+    const secretKey = await this.resolveSecretKey();
+
+    if (!secretKey || secretKey.startsWith("mock_") || secretKey.startsWith("sk_test_sample_")) {
       return {
         success: true,
         amount: 0,
@@ -142,7 +186,7 @@ export class PaystackAdapter implements IPaymentAdapter {
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${this.secretKey}`,
+            Authorization: `Bearer ${secretKey}`,
           },
         }
       );
@@ -192,7 +236,9 @@ export class PaystackAdapter implements IPaymentAdapter {
 
   verifyWebhookSignature(rawBody: string, signature: string): boolean {
     const secret =
-      process.env.PAYMENT_WEBHOOK_SECRET || process.env.PAYMENT_SECRET_KEY;
+      process.env.PAYMENT_WEBHOOK_SECRET ||
+      process.env.PAYSTACK_SECRET_KEY ||
+      process.env.PAYMENT_SECRET_KEY;
 
     if (!secret) {
       // In dev sandbox mode
@@ -239,3 +285,4 @@ export class PaymentService {
 
 // Singleton instance
 export const paymentService = new PaymentService();
+
