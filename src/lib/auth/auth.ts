@@ -74,7 +74,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               $set: {
                 name: "Khadijah Abass",
                 email: "khadijahabass273@gmail.com",
-                phone: "+233 20 987 8744",
+                phone: "+233 50 490 3022",
                 passwordHash: defaultPasswordHash,
                 role: "ADMIN",
                 isActive: true,

@@ -61,13 +61,13 @@ const FAQ_DATA: FAQItem[] = [
     category: "orders",
     question: "Can I place bulk orders for events or offices?",
     answer:
-      "Absolutely! Visit our Bulk Orders page or contact our dedicated corporate desk at +233 20 987 8744 for wholesale case pricing, scheduled weekly replenishment, and custom delivery pallets.",
+      "Absolutely! Visit our Bulk Orders page or contact our dedicated corporate desk at +233 50 490 3022 for wholesale case pricing, scheduled weekly replenishment, and custom delivery pallets.",
   },
   {
     category: "orders",
     question: "Can I change or cancel my order after placing it?",
     answer:
-      "If your order has not yet been dispatched, you can contact our support team immediately at +233 20 987 8744 to update items or delivery address.",
+      "If your order has not yet been dispatched, you can contact our support team immediately at +233 50 490 3022 to update items or delivery address.",
   },
   // Payment
   {
@@ -237,11 +237,11 @@ export default function FAQPage() {
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <a
-                href="tel:+233209878744"
+                href="tel:+233504903022"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-blue-700 font-bold text-xs shadow-md hover:bg-slate-100 active:scale-95 transition-all"
               >
                 <Phone className="w-4 h-4" />
-                <span>+233 20 987 8744</span>
+                <span>+233 50 490 3022</span>
               </a>
               <Link
                 href="/shop"

@@ -157,7 +157,7 @@ export async function getAdminSettingsLookup(queryTopic?: string) {
 
   return {
     businessName: s.businessName || "Khady's Water",
-    phone: s.phone || "+233 20 987 8744",
+    phone: s.phone || "+233 50 490 3022",
     email: s.email || "orders@khadyswater.com",
     address: s.address || "Boundary Road, East Legon, Accra",
     orderingEnabled: s.orderingEnabled !== false,

@@ -137,8 +137,8 @@ export function StoreFooter() {
               </li>
               <li className="flex items-center gap-2.5 pt-2 border-t border-slate-800">
                 <Phone className="w-4 h-4 text-blue-400 shrink-0" />
-                <a href="tel:+233209878744" className="hover:text-white transition-colors">
-                  +233 20 987 8744
+                <a href="tel:+233504903022" className="hover:text-white transition-colors">
+                  +233 50 490 3022
                 </a>
               </li>
               <li className="flex items-center gap-2.5">

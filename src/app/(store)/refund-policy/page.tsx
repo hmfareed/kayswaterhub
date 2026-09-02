@@ -62,7 +62,7 @@ export default function RefundPolicyPage() {
             </p>
             <ol className="list-decimal pl-5 space-y-1.5 text-slate-600">
               <li><strong>Upon Delivery:</strong> Inspect the packs while the delivery rider is present. You may reject damaged packs directly with the rider.</li>
-              <li><strong>After Delivery:</strong> Contact our support desk within <strong>24 hours</strong> of receipt via phone or WhatsApp at <a href="tel:+233209878744" className="text-blue-600 font-bold underline">+233 20 987 8744</a> with your Order ID.</li>
+              <li><strong>After Delivery:</strong> Contact our support desk within <strong>24 hours</strong> of receipt via phone or WhatsApp at <a href="tel:+233504903022" className="text-blue-600 font-bold underline">+233 50 490 3022</a> with your Order ID.</li>
             </ol>
           </section>
 

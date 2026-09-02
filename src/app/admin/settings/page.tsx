@@ -33,7 +33,7 @@ export default function AdminSettingsPage() {
 
   // Settings State
   const [storeName, setStoreName] = useState("Khady's Water");
-  const [phone, setPhone] = useState("+233 20 987 8744");
+  const [phone, setPhone] = useState("+233 50 490 3022");
   const [email, setEmail] = useState("orders@khadyswater.com");
   const [address, setAddress] = useState("Boundary Road, East Legon, Accra");
   const [currency, setCurrency] = useState("GHS");
@@ -69,7 +69,7 @@ export default function AdminSettingsPage() {
         if (d.success && d.data) {
           const s = d.data;
           setStoreName(s.businessName || s.storeName || "Khady's Water");
-          setPhone(s.phone || s.contactPhone || "+233 20 987 8744");
+          setPhone(s.phone || s.contactPhone || "+233 50 490 3022");
           setEmail(s.email || s.contactEmail || "orders@khadyswater.com");
           setAddress(s.address || "Boundary Road, East Legon, Accra");
           setCurrency(s.currency || "GHS");

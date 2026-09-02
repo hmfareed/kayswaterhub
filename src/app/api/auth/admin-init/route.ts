@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
         $set: {
           name: "Khadijah Abass",
           email: adminEmail,
-          phone: "+233 20 987 8744",
+          phone: "+233 50 490 3022",
           passwordHash: defaultPasswordHash,
           role: "ADMIN",
           isActive: true,

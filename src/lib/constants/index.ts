@@ -224,10 +224,10 @@ export interface StoreProduct {
 }
 
 // ─── Store Contact & WhatsApp ───────────────────────────────────────────────
-export const STORE_PHONE_RAW = "0209878744";
-export const STORE_PHONE_INTL = "233209878744";
-export const STORE_PHONE_DISPLAY = "+233 20 987 8744";
-export const STORE_WHATSAPP_LINK = "https://wa.me/233209878744?text=Hello%2C%20I%20would%20like%20to%20order%20water%20from%20Kay%27s%20Packs";
+export const STORE_PHONE_RAW = "0504903022";
+export const STORE_PHONE_INTL = "233504903022";
+export const STORE_PHONE_DISPLAY = "+233 50 490 3022";
+export const STORE_WHATSAPP_LINK = "https://wa.me/233504903022?text=Hello%2C%20I%20would%20like%20to%20order%20water%20from%20Kay%27s%20Packs";
 
 export const STORE_PRODUCTS: StoreProduct[] = [
   {

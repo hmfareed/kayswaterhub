@@ -23,9 +23,9 @@ export async function seedAdminDatabase() {
     await Settings.create({
       businessName: "Khady's Water Hub & Warehouse",
       logo: "/images/logo.png",
-      phone: "+233 20 987 8744",
+      phone: "+233 50 490 3022",
       email: "orders@khadyswater.com",
-      whatsapp: "https://wa.me/233209878744",
+      whatsapp: "https://wa.me/233504903022",
       address: "Boundary Road, East Legon, Accra",
       storeLocation: {
         businessName: "Khady's Water Hub & Warehouse",
@@ -514,7 +514,7 @@ export async function seedAdminDatabase() {
     await User.create({
       name: "Khadijah Abass",
       email: adminEmail,
-      phone: "+233 20 987 8744",
+      phone: "+233 50 490 3022",
       passwordHash,
       role: "ADMIN",
       isActive: true,

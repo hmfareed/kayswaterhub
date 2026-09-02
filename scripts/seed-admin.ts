@@ -42,7 +42,7 @@ async function main() {
     user = await User.create({
       name: "Khadijah Abass",
       email,
-      phone: "+233209878744",
+      phone: "+233504903022",
       passwordHash,
       role: "ADMIN",
       isActive: true,

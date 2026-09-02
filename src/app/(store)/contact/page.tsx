@@ -48,8 +48,8 @@ export default function ContactPage() {
                   <h3 className="font-bold text-slate-900 dark:text-neutral-100 text-base">Phone & WhatsApp</h3>
                   <p className="text-xs text-slate-500 dark:text-neutral-400 mt-0.5">Direct hotline for fast orders & queries</p>
                   <div className="mt-2 space-y-1">
-                    <a href="tel:+233209878744" className="block text-sm font-extrabold text-blue-600 dark:text-blue-400 hover:underline">
-                      {STORE_PHONE_DISPLAY} (020 987 8744)
+                    <a href="tel:+233504903022" className="block text-sm font-extrabold text-blue-600 dark:text-blue-400 hover:underline">
+                      {STORE_PHONE_DISPLAY} (050 490 3022)
                     </a>
                     <a
                       href={STORE_WHATSAPP_LINK}

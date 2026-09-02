@@ -58,7 +58,7 @@ export default function TermsPage() {
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-slate-900">5. Cancellations &amp; Modifications</h2>
             <p>
-              Orders may be cancelled or modified prior to dispatch by contacting support at <a href="tel:+233209878744" className="text-blue-600 font-bold underline">+233 20 987 8744</a>. Once an order is with the rider for delivery, cancellation may be subject to a nominal dispatch fee.
+              Orders may be cancelled or modified prior to dispatch by contacting support at <a href="tel:+233504903022" className="text-blue-600 font-bold underline">+233 50 490 3022</a>. Once an order is with the rider for delivery, cancellation may be subject to a nominal dispatch fee.
             </p>
           </section>
 
