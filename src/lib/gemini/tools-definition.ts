@@ -312,4 +312,43 @@ export const CHATBOT_FUNCTION_DECLARATIONS: ToolDefinition[] = [
       },
     },
   },
+  {
+    name: "compareProducts",
+    description: "Compare two water products side-by-side, showing price difference, pack sizes, stock status, ratings, and key differences. Use when customer asks 'what's the difference between X and Y', 'X vs Y', or 'which is better'.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        productA: {
+          type: "STRING",
+          description: "First product name or brand to compare, e.g. 'Voltic 500ml', 'Verna'",
+        },
+        productB: {
+          type: "STRING",
+          description: "Second product name or brand to compare, e.g. 'Bel-Aqua 750ml', 'Slem Fit'",
+        },
+      },
+      required: ["productA", "productB"],
+    },
+  },
+  {
+    name: "cancelOrder",
+    description: "Check if a specific order is cancellable and guide the customer to the orders page to confirm cancellation. Does not directly cancel the order — directs the customer to their account page.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        orderNumber: {
+          type: "STRING",
+          description: "The order reference number e.g. 'KP-2026-0001'. Optional — if not provided, guides customer to orders page.",
+        },
+      },
+    },
+  },
+  {
+    name: "getRepeatOrderItems",
+    description: "Fetch the items from the customer's most recent completed order so they can quickly reorder. Use when customer says 'reorder my last order', 'order the same thing again', or 'buy again'.",
+    parameters: {
+      type: "OBJECT",
+      properties: {},
+    },
+  },
 ];

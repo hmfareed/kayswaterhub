@@ -106,6 +106,12 @@ export async function executeChatbotTool(
       return handleGetAccountCreationGuide();
     case "getWaterHealthRecommendations":
       return handleGetWaterHealthRecommendations(args as any);
+    case "compareProducts":
+      return handleCompareProducts(args as any);
+    case "cancelOrder":
+      return handleCancelOrder(args as any, context.sessionUser);
+    case "getRepeatOrderItems":
+      return handleGetRepeatOrderItems(context.sessionUser);
     default:
       return {
         toolName: name,
@@ -1042,4 +1048,236 @@ function handleGetWaterHealthRecommendations(args: { need?: string }): ToolExecu
     },
     suggestedProducts: recommended.slice(0, 3),
   };
+}
+
+// ─── Compare Products ────────────────────────────────────────────────────────
+
+async function handleCompareProducts(args: {
+  productA: string;
+  productB: string;
+}): Promise<ToolExecutionResult> {
+  const findProduct = (identifier: string): StoreProduct | undefined => {
+    const id = identifier.toLowerCase();
+    return STORE_PRODUCTS.find(
+      (p) =>
+        p.name.toLowerCase().includes(id) ||
+        p.brand.toLowerCase().includes(id) ||
+        p.brandSlug.toLowerCase().includes(id) ||
+        p.slug?.toLowerCase().includes(id)
+    );
+  };
+
+  const productA = findProduct(args.productA || "");
+  const productB = findProduct(args.productB || "");
+
+  if (!productA && !productB) {
+    return {
+      toolName: "compareProducts",
+      result: { found: false, message: "Neither product was found in our catalog." },
+    };
+  }
+
+  return {
+    toolName: "compareProducts",
+    result: {
+      found: true,
+      productA: productA
+        ? {
+            name: productA.name,
+            brand: productA.brand,
+            packSize: productA.packSize,
+            bottleSize: productA.bottleSize,
+            priceInGHS: productA.price,
+            inStock: productA.inStock,
+            stockAvailable: productA.stock,
+            rating: productA.rating,
+            reviewCount: productA.reviewCount,
+            category: productA.category,
+            description: productA.description,
+          }
+        : null,
+      productB: productB
+        ? {
+            name: productB.name,
+            brand: productB.brand,
+            packSize: productB.packSize,
+            bottleSize: productB.bottleSize,
+            priceInGHS: productB.price,
+            inStock: productB.inStock,
+            stockAvailable: productB.stock,
+            rating: productB.rating,
+            reviewCount: productB.reviewCount,
+            category: productB.category,
+            description: productB.description,
+          }
+        : null,
+    },
+    suggestedProducts: [productA, productB].filter(Boolean) as StoreProduct[],
+  };
+}
+
+// ─── Cancel Order (Guide to cancellation page) ───────────────────────────────
+
+async function handleCancelOrder(
+  args: { orderNumber?: string },
+  sessionUser?: ChatSessionUser
+): Promise<ToolExecutionResult> {
+  if (!sessionUser?.id) {
+    return {
+      toolName: "cancelOrder",
+      result: {
+        authenticated: false,
+        message: "You need to be logged in to cancel an order.",
+      },
+      clientAction: { type: "NAVIGATE", payload: { url: "/login" } },
+    };
+  }
+
+  if (!args.orderNumber) {
+    // No specific order given — guide them to the orders page
+    return {
+      toolName: "cancelOrder",
+      result: {
+        found: false,
+        canCancel: false,
+        guidedToPage: true,
+        message: "Please share your order number so I can help you cancel it. You can also cancel directly from your orders page.",
+      },
+      clientAction: { type: "NAVIGATE", payload: { url: "/account?tab=orders" } },
+    };
+  }
+
+  try {
+    await connectDB();
+    const order = await Order.findOne({
+      orderNumber: { $regex: new RegExp(args.orderNumber, "i") },
+      customer: new mongoose.Types.ObjectId(sessionUser.id),
+    }).lean();
+
+    if (!order) {
+      return {
+        toolName: "cancelOrder",
+        result: {
+          found: false,
+          canCancel: false,
+          message: `Order ${args.orderNumber} was not found or does not belong to your account.`,
+        },
+      };
+    }
+
+    const CANCELLABLE_STATUSES = ["PENDING_PAYMENT", "PAID", "CONFIRMED", "PROCESSING"];
+    const canCancel = CANCELLABLE_STATUSES.includes((order as any).status);
+
+    return {
+      toolName: "cancelOrder",
+      result: {
+        found: true,
+        canCancel,
+        orderNumber: (order as any).orderNumber,
+        status: (order as any).status,
+        message: canCancel
+          ? `Your order ${(order as any).orderNumber} can be cancelled. Please go to your orders page to confirm the cancellation.`
+          : `Order ${(order as any).orderNumber} is currently "${(order as any).status?.replace(/_/g, " ")}" and cannot be cancelled at this stage.`,
+      },
+      clientAction: canCancel
+        ? { type: "NAVIGATE", payload: { url: "/account?tab=orders" } }
+        : undefined,
+    };
+  } catch (err) {
+    console.error("[handleCancelOrder] error:", err);
+    return {
+      toolName: "cancelOrder",
+      result: {
+        found: false,
+        canCancel: false,
+        message: "I couldn't check your order right now. Please visit your orders page directly.",
+      },
+      clientAction: { type: "NAVIGATE", payload: { url: "/account?tab=orders" } },
+    };
+  }
+}
+
+// ─── Get Repeat Order Items ───────────────────────────────────────────────────
+
+async function handleGetRepeatOrderItems(
+  sessionUser?: ChatSessionUser
+): Promise<ToolExecutionResult> {
+  if (!sessionUser?.id) {
+    return {
+      toolName: "getRepeatOrderItems",
+      result: {
+        authenticated: false,
+        message: "You need to be logged in to reorder your last purchase.",
+      },
+      clientAction: { type: "NAVIGATE", payload: { url: "/login" } },
+    };
+  }
+
+  try {
+    await connectDB();
+    const lastOrder = await Order.findOne({
+      customer: new mongoose.Types.ObjectId(sessionUser.id),
+      status: { $in: ["DELIVERED", "CONFIRMED", "PROCESSING"] },
+    })
+      .sort({ createdAt: -1 })
+      .populate("items.product", "name brandSlug slug price inStock stockCount")
+      .lean();
+
+    if (!lastOrder) {
+      return {
+        toolName: "getRepeatOrderItems",
+        result: {
+          found: false,
+          message: "No completed orders found. Place your first order today!",
+        },
+      };
+    }
+
+    const orderItems = ((lastOrder as any).items || []).map((item: any) => ({
+      productId: item.product?._id?.toString(),
+      name: item.product?.name || item.productName || "Product",
+      quantity: item.quantity,
+      priceInGHS: item.priceInGHS,
+      brandSlug: item.product?.brandSlug,
+    }));
+
+    // Match back to STORE_PRODUCTS for suggestedProducts
+    const matchedProducts = orderItems
+      .map((item: any) =>
+        STORE_PRODUCTS.find(
+          (p) =>
+            p.id === item.productId ||
+            p.brandSlug === item.brandSlug ||
+            p.name.toLowerCase().includes((item.name || "").toLowerCase().split(" ")[0])
+        )
+      )
+      .filter(Boolean) as StoreProduct[];
+
+    return {
+      toolName: "getRepeatOrderItems",
+      result: {
+        found: true,
+        orderNumber: (lastOrder as any).orderNumber,
+        orderDate: (lastOrder as any).createdAt
+          ? new Date((lastOrder as any).createdAt).toLocaleDateString("en-GH", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })
+          : "Unknown date",
+        items: orderItems,
+        totalInGHS: (lastOrder as any).totalInGHS,
+      },
+      suggestedProducts: matchedProducts.slice(0, 4),
+    };
+  } catch (err) {
+    console.error("[handleGetRepeatOrderItems] error:", err);
+    return {
+      toolName: "getRepeatOrderItems",
+      result: {
+        found: false,
+        message: "Couldn't fetch your last order right now. Please try again.",
+      },
+    };
+  }
 }

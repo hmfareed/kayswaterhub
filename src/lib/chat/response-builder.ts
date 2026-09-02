@@ -794,9 +794,592 @@ export function buildDirectResponse(
       return buildWorkingHoursResponse();
     case "CLEAR_CART":
       return buildClearCartResponse();
+    // ── New static intents ────────────────────────────────────────────────────
+    case "PAYMENT_FAILURE":
+      return buildPaymentFailureResponse();
+    case "PROMO_CODE_APPLY":
+      return buildPromoCodeResponse();
+    case "LOYALTY_POINTS_CHECK":
+      return buildLoyaltyPointsResponse();
+    case "ACCOUNT_LOGIN_HELP":
+      return buildAccountLoginHelpResponse();
+    case "EMERGENCY_DELIVERY":
+      return buildEmergencyDeliveryResponse();
+    case "DRIVER_CONTACT":
+      return buildDriverContactResponse();
+    case "ORDER_ETA":
+      return buildOrderEtaResponse();
+    case "MINIMUM_ORDER_INQUIRY":
+      return buildMinimumOrderResponse();
+    case "CORPORATE_ACCOUNT":
+      return buildCorporateAccountResponse();
+    case "GIFT_ORDER":
+      return buildGiftOrderResponse();
+    case "REFUND_REQUEST":
+      return buildRefundRequestResponse();
+    case "PRODUCT_COMPLAINT":
+      return buildProductComplaintResponse();
+    case "SOCIAL_MEDIA_INQUIRY":
+      return buildSocialMediaResponse();
+    case "SAVED_ADDRESSES":
+      return buildSavedAddressesResponse();
+    case "NEARBY_PICKUP":
+      return buildNearbyPickupResponse();
+    case "CHANGE_DELIVERY_ADDRESS":
+      return buildChangeDeliveryAddressResponse();
+    case "INVOICE_RECEIPT":
+      return buildInvoiceReceiptResponse();
+    case "ORDER_MODIFICATION":
+      return buildOrderModificationResponse();
+    case "CHANGE_PAYMENT_METHOD":
+      return buildChangePaymentMethodResponse();
+    case "DIETARY_WATER_INQUIRY":
+      return buildDietaryWaterResponse();
+    case "PACKAGING_INQUIRY":
+      return buildPackagingInquiryResponse();
+    case "STOCK_ALERT_REQUEST":
+      return buildStockAlertResponse();
+    case "UPSELL_COMBO":
+      return buildUpsellComboResponse();
+    case "MULTIPLE_DELIVERY_ADDRESSES":
+      return buildMultipleAddressesResponse();
     case "UNKNOWN":
       return buildUnknownResponse();
     default:
       return null;
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── NEW RESPONSE BUILDERS ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ─── Compare Products ─────────────────────────────────────────────────────────
+
+export function buildCompareProductsResponse(result: any): BuiltResponse {
+  if (!result.found || (!result.productA && !result.productB)) {
+    return {
+      reply:
+        `❌ I couldn't find those products to compare.\n\n` +
+        `We carry **Voltic**, **Bel-Aqua**, **Verna**, **Awake**, **Slem Fit**, and **Perla**.\n` +
+        `Try: *"Compare Voltic and Verna"* or *"Bel-Aqua vs Slem Fit"*.`,
+    };
+  }
+
+  const a = result.productA;
+  const b = result.productB;
+
+  if (!a || !b) {
+    const single = a || b;
+    return {
+      reply:
+        `💧 **${single.name}**\n\n` +
+        `💰 **Price:** ${ghc(single.priceInGHS)}\n` +
+        `📦 **Pack Size:** ${single.packSize}\n` +
+        `📊 **Stock:** ${single.inStock ? "✅ In Stock" : "❌ Out of stock"}\n` +
+        `⭐ **Rating:** ${single.rating}/5\n\n` +
+        `Tell me the second product to compare! 🔍`,
+    };
+  }
+
+  const cheaperLabel = a.priceInGHS < b.priceInGHS ? `💡 **${a.brand}** is ${ghc(b.priceInGHS - a.priceInGHS)} cheaper per pack.` : a.priceInGHS > b.priceInGHS ? `💡 **${b.brand}** is ${ghc(a.priceInGHS - b.priceInGHS)} cheaper per pack.` : `💡 Both are the same price!`;
+
+  return {
+    reply:
+      `⚖️ **Product Comparison: ${a.brand} vs ${b.brand}**\n\n` +
+      `| Feature | ${a.brand} | ${b.brand} |\n` +
+      `|---------|-----------|----------|\n` +
+      `| 📦 Pack Size | ${a.packSize} | ${b.packSize} |\n` +
+      `| 💰 Price | **${ghc(a.priceInGHS)}** | **${ghc(b.priceInGHS)}** |\n` +
+      `| 📊 Stock | ${a.inStock ? "✅ In Stock" : "❌ Out"} | ${b.inStock ? "✅ In Stock" : "❌ Out"} |\n` +
+      `| ⭐ Rating | ${a.rating}/5 (${a.reviewCount} reviews) | ${b.rating}/5 (${b.reviewCount} reviews) |\n\n` +
+      `${cheaperLabel}\n\n` +
+      `Say **"add [brand] to cart"** to order your preferred one! 🛒`,
+  };
+}
+
+// ─── Cancel Order ─────────────────────────────────────────────────────────────
+
+export function buildCancelOrderResponse(result: any): BuiltResponse {
+  if (!result.authenticated) {
+    return {
+      reply:
+        `🔐 **Please log in** to cancel an order.\n\n` +
+        `[Sign in here](/login) to view and manage your orders.`,
+    };
+  }
+
+  if (result.guidedToPage) {
+    return {
+      reply:
+        `🛑 **Order Cancellation:**\n\n` +
+        `To cancel an order, please:\n` +
+        `1. Share your **order number** (e.g. *KP-2026-0001*) here, or\n` +
+        `2. Go directly to **[My Orders](/account?tab=orders)** to cancel from there.\n\n` +
+        `Note: Orders can only be cancelled before they are dispatched for delivery. 📦`,
+    };
+  }
+
+  if (!result.found) {
+    return { reply: `❌ ${result.message}\n\nCheck your order number and try again, or view **[all your orders here](/account?tab=orders)**.` };
+  }
+
+  if (!result.canCancel) {
+    return {
+      reply:
+        `⚠️ **Cannot Cancel Order ${result.orderNumber}**\n\n` +
+        `Your order is currently **${result.status?.replace(/_/g, " ")}** — it's already too far in the delivery process to cancel via chat.\n\n` +
+        `📞 **Need urgent help?** Contact our manager directly:\n` +
+        `- [WhatsApp us immediately](${STORE_WHATSAPP_LINK})\n` +
+        `- 📱 Call: **${STORE_PHONE_DISPLAY}**`,
+    };
+  }
+
+  return {
+    reply:
+      `✅ **Order ${result.orderNumber} is eligible for cancellation!**\n\n` +
+      `Your order is currently **${result.status?.replace(/_/g, " ")}**. ` +
+      `To finalize the cancellation, please visit your **[Orders Page](/account?tab=orders)** and click the cancel button.\n\n` +
+      `💰 **Refunds** are processed within **24 hours** to your original payment method.`,
+  };
+}
+
+// ─── Repeat / Reorder ────────────────────────────────────────────────────────
+
+export function buildRepeatOrderResponse(result: any): BuiltResponse {
+  if (!result.authenticated) {
+    return {
+      reply:
+        `🔐 **Please log in** to reorder your previous purchase.\n\n` +
+        `[Sign in here](/login) to access your order history.`,
+    };
+  }
+
+  if (!result.found) {
+    return {
+      reply:
+        `No previous completed orders found! 🛍️\n\n` +
+        `Let me help you place your **first order**. Browse our top water brands:\n` +
+        `- 💧 **Voltic 500ml x 15** — ${ghc(45.00)}\n` +
+        `- 💧 **Bel-Aqua 750ml x 15** — ${ghc(42.00)}\n` +
+        `- 💧 **Verna 500ml x 15** — ${ghc(40.00)}\n\n` +
+        `Say **"add [product] to cart"** to order! 🛒`,
+    };
+  }
+
+  const itemLines = (result.items || [])
+    .slice(0, 5)
+    .map((i: any) => `- **${i.quantity}x** ${i.name} — ${ghc(i.priceInGHS)}`);
+
+  return {
+    reply:
+      `🔄 **Your Last Order — ${result.orderNumber}** *(${result.orderDate})*\n\n` +
+      `${itemLines.join("\n")}\n\n` +
+      `**Order Total:** ${ghc(result.totalInGHS)}\n\n` +
+      `Would you like me to **add these items to your cart** again? Just say *"yes, add them all"* or specify which ones! 🛒`,
+  };
+}
+
+// ─── Payment Failure ──────────────────────────────────────────────────────────
+
+export function buildPaymentFailureResponse(): BuiltResponse {
+  return {
+    reply:
+      `⚠️ **Payment Issue? Here's What To Do:**\n\n` +
+      `**If MoMo was deducted but your order wasn't confirmed:**\n` +
+      `1. ✅ Check your **[Order History](/account?tab=orders)** first — it may have been processed.\n` +
+      `2. 🔄 Wait up to **5 minutes** for the MoMo payment to reflect.\n` +
+      `3. 📸 Take a screenshot of your MoMo deduction SMS.\n` +
+      `4. 💬 **[WhatsApp our manager immediately](${STORE_WHATSAPP_LINK})** with the screenshot.\n\n` +
+      `**Payment Failed at Checkout?**\n` +
+      `- Try a different payment method (Card, Telecel Cash, AT Money).\n` +
+      `- Ensure your MoMo account has sufficient funds.\n` +
+      `- Try again or contact us for manual payment: **${STORE_PHONE_DISPLAY}**\n\n` +
+      `We resolve all payment issues within **1 business hour!** ⚡`,
+  };
+}
+
+// ─── Promo Code ───────────────────────────────────────────────────────────────
+
+export function buildPromoCodeResponse(): BuiltResponse {
+  return {
+    reply:
+      `🏷️ **Using a Promo or Discount Code:**\n\n` +
+      `1. Add your water packs to cart\n` +
+      `2. Proceed to **[Checkout](/checkout)**\n` +
+      `3. Look for the **"Promo Code"** field and enter your code\n` +
+      `4. Click **Apply** — your discount will be reflected instantly!\n\n` +
+      `🎁 **Don't have a promo code?**\n` +
+      `- Registered accounts earn **Hydration Points** on every order\n` +
+      `- Bulk orders of 50+ packs qualify for **automatic volume discounts**\n` +
+      `- Follow us on social media for exclusive promo announcements!\n\n` +
+      `Need a custom bulk quote? [WhatsApp us](${STORE_WHATSAPP_LINK})`,
+  };
+}
+
+// ─── Loyalty Points ───────────────────────────────────────────────────────────
+
+export function buildLoyaltyPointsResponse(): BuiltResponse {
+  return {
+    reply:
+      `💎 **Your Hydration Loyalty Points:**\n\n` +
+      `Check your current points balance in your **[Account Dashboard](/account)**.\n\n` +
+      `**How points work:**\n` +
+      `- 🛍️ Earn points on every completed order\n` +
+      `- 💰 Redeem points for **instant checkout discounts**\n` +
+      `- 🎁 Special bonus points on bulk orders and referrals\n\n` +
+      `**[View My Points Balance → /account](/account)**\n\n` +
+      `Not registered yet? **[Create an account](/register)** to start earning! 🚀`,
+  };
+}
+
+// ─── Account Login Help ───────────────────────────────────────────────────────
+
+export function buildAccountLoginHelpResponse(): BuiltResponse {
+  return {
+    reply:
+      `🔐 **Account Login Help:**\n\n` +
+      `**Forgot your password?**\n` +
+      `1. Go to the **[Login page](/login)**\n` +
+      `2. Click **"Forgot Password?"**\n` +
+      `3. Enter your registered email address\n` +
+      `4. Check your inbox for the password reset link\n\n` +
+      `**Still can't log in?**\n` +
+      `- Make sure you're using the email address you registered with\n` +
+      `- Check your spam/junk folder for the reset email\n` +
+      `- 💬 **[WhatsApp our team](${STORE_WHATSAPP_LINK})** for account recovery assistance\n\n` +
+      `Don't have an account yet? **[Register here](/register)** — it only takes 30 seconds!`,
+  };
+}
+
+// ─── Emergency / Urgent Delivery ─────────────────────────────────────────────
+
+export function buildEmergencyDeliveryResponse(): BuiltResponse {
+  return {
+    reply:
+      `🚨 **Urgent / Emergency Water Delivery:**\n\n` +
+      `Need water delivered **right now?** Here's the fastest route:\n\n` +
+      `1. 💬 **WhatsApp our manager directly** → [Click to WhatsApp](${STORE_WHATSAPP_LINK})\n` +
+      `2. 📱 **Call us** → **${STORE_PHONE_DISPLAY}**\n` +
+      `3. Mention **"URGENT DELIVERY"** so we can prioritize your order\n\n` +
+      `⏰ **Same-Day Delivery:** Orders placed before **2:00 PM** in Greater Accra are delivered the same day (usually within **2–4 hours**).\n\n` +
+      `Outside Accra? Our team will confirm the fastest available option for your region. 🚀`,
+  };
+}
+
+// ─── Driver Contact ───────────────────────────────────────────────────────────
+
+export function buildDriverContactResponse(): BuiltResponse {
+  return {
+    reply:
+      `🏍️ **Contact Your Delivery Driver:**\n\n` +
+      `Driver contact details are shared via **SMS/WhatsApp** when your order is dispatched.\n\n` +
+      `**Can't reach your driver?**\n` +
+      `- 💬 **[WhatsApp our dispatch team](${STORE_WHATSAPP_LINK})** — we'll connect you immediately\n` +
+      `- 📱 **Call us:** ${STORE_PHONE_DISPLAY}\n` +
+      `- 📦 Check your order status in **[My Orders](/account?tab=orders)**\n\n` +
+      `Our team monitors all deliveries in real-time. We'll resolve any delivery issue fast! ⚡`,
+  };
+}
+
+// ─── Order ETA ────────────────────────────────────────────────────────────────
+
+export function buildOrderEtaResponse(): BuiltResponse {
+  return {
+    reply:
+      `⏰ **Estimated Delivery Times:**\n\n` +
+      `- 🚀 **Greater Accra (Same-Day):** Orders before **2:00 PM** arrive within **2–4 hours**\n` +
+      `- 🌅 **Greater Accra (Next-Day):** Orders after 2:00 PM are dispatched from **8:00 AM the next morning**\n` +
+      `- 🌍 **Ashanti (Kumasi):** 1–2 business days via parcel station\n` +
+      `- 🌍 **Northern (Tamale), Western (Takoradi):** 1–3 business days\n` +
+      `- 🌍 **All Other Regions:** 2–4 business days via verified bus stations\n\n` +
+      `📦 **Track your specific order** in **[My Orders](/account?tab=orders)** or share your order number here for a live status update!`,
+  };
+}
+
+// ─── Minimum Order ────────────────────────────────────────────────────────────
+
+export function buildMinimumOrderResponse(): BuiltResponse {
+  return {
+    reply:
+      `📦 **Minimum Order Information:**\n\n` +
+      `- ✅ **No minimum order** — you can order as little as **1 pack**!\n` +
+      `- Our packs are pre-bundled (e.g. 15 bottles per pack, 16 bottles per pack) — you cannot split a pack.\n` +
+      `- 🚚 **Delivery:** Flat **${ghc(15.00)}** in Greater Accra regardless of order size.\n\n` +
+      `💡 **Tip:** Bundle 2+ different packs in one order to maximize delivery value!\n\n` +
+      `Say **"show me your cheapest products"** to see our most affordable options. 💧`,
+  };
+}
+
+// ─── Corporate Account ────────────────────────────────────────────────────────
+
+export function buildCorporateAccountResponse(): BuiltResponse {
+  return {
+    reply:
+      `🏢 **Corporate & Business Water Supply:**\n\n` +
+      `We supply offices, hotels, schools, hospitals, and institutions across Ghana!\n\n` +
+      `**Corporate Benefits:**\n` +
+      `- 💰 **Volume pricing** — significant discounts on large recurring orders\n` +
+      `- 📅 **Scheduled deliveries** — weekly or monthly dispatch on your schedule\n` +
+      `- 🧾 **Corporate invoicing** — official receipts for accounting purposes\n` +
+      `- 🏢 **Dedicated account manager** for all your water supply needs\n` +
+      `- 🔄 **Dispenser bottle exchange service** for office coolers\n\n` +
+      `📞 **Get a custom corporate quote today:**\n` +
+      `- 💬 [WhatsApp our Business Team](${STORE_WHATSAPP_LINK})\n` +
+      `- 📱 Call: **${STORE_PHONE_DISPLAY}**\n\n` +
+      `_We currently supply 50+ businesses across Greater Accra!_ 🌟`,
+  };
+}
+
+// ─── Gift Order ───────────────────────────────────────────────────────────────
+
+export function buildGiftOrderResponse(): BuiltResponse {
+  return {
+    reply:
+      `🎁 **Send Water as a Gift:**\n\n` +
+      `A thoughtful and practical gift! Here's how to send water to someone:\n\n` +
+      `1. 🛒 **Add the water pack(s)** to your cart as normal\n` +
+      `2. 💳 **Proceed to checkout**\n` +
+      `3. 📍 Enter the **recipient's delivery address** (not yours)\n` +
+      `4. 📝 Add a **gift note** in the order notes section\n` +
+      `5. ✅ Complete payment — we'll deliver it to them!\n\n` +
+      `💬 **For a personal touch**, WhatsApp us at **${STORE_PHONE_DISPLAY}** and we can coordinate special delivery instructions for your recipient.`,
+  };
+}
+
+// ─── Refund Request ───────────────────────────────────────────────────────────
+
+export function buildRefundRequestResponse(): BuiltResponse {
+  return {
+    reply:
+      `💰 **Refund Request:**\n\n` +
+      `We're sorry to hear you need a refund! Here's our process:\n\n` +
+      `**Eligible for refunds:**\n` +
+      `- ❌ Order cancelled before dispatch\n` +
+      `- 🔄 Wrong product delivered\n` +
+      `- 📦 Damaged or leaking bottles on delivery\n\n` +
+      `**How to request a refund:**\n` +
+      `1. 💬 **[WhatsApp our manager](${STORE_WHATSAPP_LINK})** with your order number and issue\n` +
+      `2. 📱 Or **call us** at **${STORE_PHONE_DISPLAY}**\n` +
+      `3. Provide your **payment screenshot / MoMo number** for faster processing\n\n` +
+      `⚡ **Refunds are processed within 24 hours** to your original MoMo or card.`,
+  };
+}
+
+// ─── Product Complaint ────────────────────────────────────────────────────────
+
+export function buildProductComplaintResponse(): BuiltResponse {
+  return {
+    reply:
+      `😟 **We're Sorry to Hear That! Let Us Fix This:**\n\n` +
+      `Your satisfaction is our top priority. Here's how we resolve complaints:\n\n` +
+      `**For damaged or wrong products:**\n` +
+      `- 🔄 Our driver will **immediately exchange** any damaged/leaking bottles on delivery at zero cost\n` +
+      `- If the driver has left, contact us and we'll arrange a replacement\n\n` +
+      `**To make a complaint right now:**\n` +
+      `1. 💬 **[WhatsApp us immediately](${STORE_WHATSAPP_LINK})** — fastest resolution\n` +
+      `2. 📱 **Call us:** **${STORE_PHONE_DISPLAY}**\n` +
+      `3. Share your **order number** and a **photo** of the issue\n\n` +
+      `⚡ We resolve all complaints within **2 hours** during business hours. *Medaase* (Thank you) for your patience! 🙏`,
+  };
+}
+
+// ─── Social Media ─────────────────────────────────────────────────────────────
+
+export function buildSocialMediaResponse(): BuiltResponse {
+  return {
+    reply:
+      `📱 **Kay's Packs on Social Media:**\n\n` +
+      `Follow us for exclusive promos, water facts, and delivery updates!\n\n` +
+      `- 📘 **Facebook:** [Kay's Packs Ghana](https://facebook.com/kayspacks)\n` +
+      `- 📸 **Instagram:** [@kayspacks](https://instagram.com/kayspacks)\n` +
+      `- 🎵 **TikTok:** [@kayspacks](https://tiktok.com/@kayspacks)\n` +
+      `- 💬 **WhatsApp:** [Chat with us directly](${STORE_WHATSAPP_LINK})\n\n` +
+      `👍 **Like & Follow** to stay updated on flash sales, bundle deals, and new product launches! 🎉`,
+  };
+}
+
+// ─── Saved Addresses ─────────────────────────────────────────────────────────
+
+export function buildSavedAddressesResponse(): BuiltResponse {
+  return {
+    reply:
+      `📍 **Manage Your Saved Delivery Addresses:**\n\n` +
+      `View, add, or edit your saved delivery addresses in your **[Account Settings](/account?tab=addresses)**.\n\n` +
+      `**Benefits of saving addresses:**\n` +
+      `- ⚡ **1-click reordering** — no need to re-type your address every time\n` +
+      `- 📦 **Multiple locations** — save home, office, or gift delivery addresses\n` +
+      `- 🚀 **Faster checkout** — skip the address form entirely\n\n` +
+      `**[Manage Addresses → /account?tab=addresses](/account?tab=addresses)**`,
+  };
+}
+
+// ─── Nearby Pickup / Warehouse Collection ────────────────────────────────────
+
+export function buildNearbyPickupResponse(): BuiltResponse {
+  return {
+    reply:
+      `🏭 **Warehouse Pickup — Self-Collection:**\n\n` +
+      `Yes! You can pick up your order for **FREE** directly from our central Accra distribution hub.\n\n` +
+      `**How it works:**\n` +
+      `1. 🛒 Place your order normally on the website\n` +
+      `2. 📦 At checkout, select **"Warehouse Pickup"** as your delivery method\n` +
+      `3. 💬 You'll receive a **WhatsApp notification** when your order is ready for collection\n` +
+      `4. 🏭 Come collect during **working hours: Mon–Sat, 8:00 AM – 6:00 PM**\n\n` +
+      `📍 **Location:** Central Accra Distribution Hub, Ghana\n` +
+      `📱 **For directions:** [WhatsApp us](${STORE_WHATSAPP_LINK}) — we'll send you the exact location pin!`,
+  };
+}
+
+// ─── Change Delivery Address ─────────────────────────────────────────────────
+
+export function buildChangeDeliveryAddressResponse(): BuiltResponse {
+  return {
+    reply:
+      `📍 **Change Delivery Address:**\n\n` +
+      `**Before placing your order:**\n` +
+      `- Simply enter your correct address at checkout — no action needed!\n\n` +
+      `**After placing your order:**\n` +
+      `- 🚨 Contact us **immediately** before dispatch:\n` +
+      `  - 💬 [WhatsApp: ${STORE_PHONE_DISPLAY}](${STORE_WHATSAPP_LINK})\n` +
+      `  - 📱 Call: **${STORE_PHONE_DISPLAY}**\n` +
+      `- Share your **order number** and the **new address**\n` +
+      `- Address changes can only be made before the rider is dispatched\n\n` +
+      `**For future orders**, save your addresses in **[Account Settings](/account?tab=addresses)** for 1-click reordering!`,
+  };
+}
+
+// ─── Invoice / Receipt ────────────────────────────────────────────────────────
+
+export function buildInvoiceReceiptResponse(): BuiltResponse {
+  return {
+    reply:
+      `🧾 **Order Receipts & Invoices:**\n\n` +
+      `**Digital receipts** are automatically sent to your registered email after every completed order.\n\n` +
+      `**To get your receipt:**\n` +
+      `1. 📋 Visit **[My Orders](/account?tab=orders)**\n` +
+      `2. Click on the order you need a receipt for\n` +
+      `3. Click **"Download Receipt / Invoice"**\n\n` +
+      `**Don't see it?**\n` +
+      `- Check your spam/junk folder\n` +
+      `- 💬 WhatsApp us your **order number** and we'll send the receipt directly: [${STORE_PHONE_DISPLAY}](${STORE_WHATSAPP_LINK})`,
+  };
+}
+
+// ─── Order Modification ───────────────────────────────────────────────────────
+
+export function buildOrderModificationResponse(): BuiltResponse {
+  return {
+    reply:
+      `✏️ **Modify an Existing Order:**\n\n` +
+      `**Orders can be modified before dispatch** (usually within 30 minutes of placing).\n\n` +
+      `**To modify your order:**\n` +
+      `1. 💬 **[WhatsApp us immediately](${STORE_WHATSAPP_LINK})** with:\n` +
+      `   - Your **order number**\n` +
+      `   - What you'd like to **add, remove, or change**\n` +
+      `2. 📱 Or **call us:** **${STORE_PHONE_DISPLAY}**\n\n` +
+      `⚠️ Once an order is **"Out for Delivery"**, modifications are no longer possible.\n\n` +
+      `**Adding more items?** You can always place a **new order** and we can combine delivery where possible!`,
+  };
+}
+
+// ─── Change Payment Method ───────────────────────────────────────────────────
+
+export function buildChangePaymentMethodResponse(): BuiltResponse {
+  return {
+    reply:
+      `💳 **Changing Your Payment Method:**\n\n` +
+      `**At checkout**, you can freely choose between:\n` +
+      `- 📱 **MTN Mobile Money (MoMo)**\n` +
+      `- 📱 **Telecel Cash** (Vodafone Cash)\n` +
+      `- 📱 **AT Money** (AirtelTigo)\n` +
+      `- 💳 **Visa / Mastercard** (secured by Paystack)\n\n` +
+      `**For an existing unpaid order:**\n` +
+      `- Simply go to **[My Orders](/account?tab=orders)** and click **"Pay Now"** — you can choose a different payment method.\n\n` +
+      `💬 Need help? **[WhatsApp us](${STORE_WHATSAPP_LINK})** and we'll send you a manual payment link!`,
+  };
+}
+
+// ─── Dietary / Mineral Water Inquiry ─────────────────────────────────────────
+
+export function buildDietaryWaterResponse(): BuiltResponse {
+  return {
+    reply:
+      `🔬 **Water Types & Mineral Content Guide:**\n\n` +
+      `| Brand | Type | Best For | pH Level |\n` +
+      `|-------|------|----------|----------|\n` +
+      `| **Verna** | Natural Mineral | Babies, low-sodium diets | ~7.0 (neutral) |\n` +
+      `| **Slem Fit** | Alkaline Mineral | Gym & fitness recovery | ~8.0+ (alkaline) |\n` +
+      `| **Voltic** | Natural Mineral | Daily hydration | ~7.0 (neutral) |\n` +
+      `| **Bel-Aqua** | Natural Mineral | Daily hydration | ~7.0 (neutral) |\n` +
+      `| **Awake** | Purified | General use, supports heart charity | ~7.0 (neutral) |\n\n` +
+      `💡 **All brands are FDA Ghana & GSA certified** with full factory seals.\n` +
+      `For specific mineral content sheets, WhatsApp us: [${STORE_PHONE_DISPLAY}](${STORE_WHATSAPP_LINK})`,
+  };
+}
+
+// ─── Packaging / Single Bottle Inquiry ───────────────────────────────────────
+
+export function buildPackagingInquiryResponse(): BuiltResponse {
+  return {
+    reply:
+      `📦 **Packaging & Bottle Options:**\n\n` +
+      `We sell water in **pre-packed bundles** — here are our smallest options:\n\n` +
+      `| Size | Pack Content | Price |\n` +
+      `|------|-------------|-------|\n` +
+      `| 🥤 **Voltic Pocket 350ml** | 15 bottles per pack | ${ghc(32.00)} |\n` +
+      `| 💧 **Verna 500ml** | 15 bottles per pack | ${ghc(40.00)} |\n` +
+      `| 💧 **Bel-Aqua 500ml** | 15 bottles per pack | ${ghc(38.00)} |\n` +
+      `| 🏺 **Verna Jar 15L** | 1 dispenser jar | ${ghc(30.00)} |\n\n` +
+      `⚠️ **We don't sell individual bottles** — minimum is 1 pack (15–16 bottles).\n\n` +
+      `For large quantities or custom packaging, contact us: [WhatsApp](${STORE_WHATSAPP_LINK})`,
+  };
+}
+
+// ─── Stock Alert Request ──────────────────────────────────────────────────────
+
+export function buildStockAlertResponse(): BuiltResponse {
+  return {
+    reply:
+      `🔔 **Stock Availability Alerts:**\n\n` +
+      `To be notified when a product is back in stock:\n\n` +
+      `1. **[Create or sign in to your account](/login)** (if you haven't already)\n` +
+      `2. Visit the product page and click **"Notify Me When Available"**\n` +
+      `3. ✅ You'll receive a WhatsApp/email notification the moment it's restocked!\n\n` +
+      `**Prefer instant updates?** 💬 **[WhatsApp us](${STORE_WHATSAPP_LINK})** with the product name and we'll notify you personally when it's available.\n\n` +
+      `Which product are you waiting for? I can check current stock right now! 📦`,
+  };
+}
+
+// ─── Upsell / Combo Recommendations ─────────────────────────────────────────
+
+export function buildUpsellComboResponse(): BuiltResponse {
+  return {
+    reply:
+      `🎁 **Best Value Water Combos & Bundles:**\n\n` +
+      `Here are our most popular combinations customers love:\n\n` +
+      `**🏆 Family Hydration Bundle:**\n` +
+      `- 2x Voltic 500ml x 15 (${ghc(90.00)}) + 1x Verna 15L Jar (${ghc(30.00)}) = **${ghc(120.00)}**\n\n` +
+      `**💪 Office Starter Pack:**\n` +
+      `- 1x Bel-Aqua 750ml x 15 (${ghc(42.00)}) + 1x Awake 750ml x 16 (${ghc(45.00)}) = **${ghc(87.00)}**\n\n` +
+      `**🏋️ Gym & Fitness Pack:**\n` +
+      `- 2x Slem Fit 500ml x 16 (${ghc(76.00)}) + 1x Verna 500ml x 15 (${ghc(40.00)}) = **${ghc(116.00)}**\n\n` +
+      `💡 *Combine orders to maximize delivery value!*\n\n` +
+      `Say **"add [product] to cart"** for any of these, or let me build a custom bundle for you! 🛒`,
+  };
+}
+
+// ─── Multiple Delivery Addresses ─────────────────────────────────────────────
+
+export function buildMultipleAddressesResponse(): BuiltResponse {
+  return {
+    reply:
+      `📍 **Delivering to Multiple Addresses:**\n\n` +
+      `Currently, each order can only be delivered to **one address**.\n\n` +
+      `**To deliver to two different locations:**\n` +
+      `1. 🛒 **Place Order 1** with the first address\n` +
+      `2. 🛒 **Place Order 2** with the second address\n` +
+      `3. 💬 **[WhatsApp us](${STORE_WHATSAPP_LINK})** — we may be able to combine both into a single delivery trip if they're in the same area!\n\n` +
+      `📱 Contact: **${STORE_PHONE_DISPLAY}** for custom multi-address arrangements.`,
+  };
 }

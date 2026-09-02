@@ -42,20 +42,51 @@ interface Message {
 }
 
 const QUICK_SUGGESTION_CHIPS = [
+  // ── Shopping ──────────────────────────────────────────────────────────────
   { label: "💧 Voltic 500ml price", query: "What is the price of two packs of 500ml Voltic?" },
-  { label: "🚚 Delivery to Tamale / Accra", query: "What is the delivery fee and do you deliver to Tamale?" },
   { label: "⭐ Best sellers", query: "Can you give me the best selling products?" },
-  { label: "💳 Pay with MoMo", query: "Can I pay with MoMo and what payment methods do you accept?" },
   { label: "💰 Budget GH₵50", query: "I have a budget of 50 cedis what can I purchase?" },
-  { label: "🌙 Turn on Dark Mode", query: "Can you help me turn on dark mode?" },
-  { label: "📞 Speak to Manager", query: "I need to speak to the manager/agent/owner" },
-  { label: "🛡️ Clean & fresh water?", query: "Is your water clean, pure, and fresh?" },
-  { label: "✨ Why Kay's Packs?", query: "Why should I buy from you?" },
+  { label: "⚖️ Voltic vs Bel-Aqua", query: "Compare Voltic 500ml and Bel-Aqua 500ml" },
+  { label: "⚖️ Verna vs Slem Fit", query: "Compare Verna and Slem Fit" },
+  { label: "🎁 Best combo deal", query: "What are your best value combo bundles?" },
+  { label: "📦 Min. order size?", query: "What is the minimum order? Can I buy just 1 pack?" },
+  // ── Delivery ──────────────────────────────────────────────────────────────
+  { label: "🚚 Delivery to Tamale", query: "What is the delivery fee and do you deliver to Tamale?" },
+  { label: "⏰ When will it arrive?", query: "How long does delivery take?" },
+  { label: "🚨 Urgent delivery now", query: "I need water delivered urgently right now!" },
+  { label: "🏭 Warehouse pickup", query: "Can I pick up my order myself from your warehouse?" },
+  { label: "📍 Change delivery address", query: "I need to change the delivery address for my order" },
+  // ── Orders ────────────────────────────────────────────────────────────────
+  { label: "📦 Track my order", query: "Where is my order?" },
+  { label: "🛑 Cancel my order", query: "I want to cancel my order" },
+  { label: "🔄 Reorder my last pack", query: "I want to order the same thing as my last order" },
+  { label: "✏️ Modify my order", query: "I want to change or modify my existing order" },
+  { label: "🧾 Get my receipt", query: "I need my order receipt or invoice" },
+  // ── Payments ──────────────────────────────────────────────────────────────
+  { label: "💳 Pay with MoMo", query: "Can I pay with MoMo and what payment methods do you accept?" },
+  { label: "⚠️ Payment not working", query: "My MoMo payment was deducted but order not confirmed" },
+  { label: "🏷️ Use promo code", query: "How do I apply a promo or discount code?" },
+  { label: "💎 My loyalty points", query: "How many loyalty points do I have and how do I use them?" },
+  { label: "💰 Request refund", query: "I want a refund for my order" },
+  // ── Product Knowledge ─────────────────────────────────────────────────────
   { label: "👶 Best water for babies", query: "Which water is best for babies and infant formula?" },
+  { label: "💪 Gym / alkaline water", query: "Which water is best for gym and sports recovery?" },
+  { label: "🔬 Mineral content info", query: "What type of water is best for low sodium diet?" },
+  { label: "📦 Single bottles / packs?", query: "Can I buy single bottles or do I need to buy a full pack?" },
   { label: "🏢 15L Dispenser refill", query: "How does dispenser water refill and bottle exchange work?" },
+  // ── Customer Service ──────────────────────────────────────────────────────
+  { label: "😟 Report a complaint", query: "I received a damaged or wrong product" },
+  { label: "🏢 Corporate / bulk order", query: "I want to supply my office or business with water" },
+  { label: "🎁 Send water as a gift", query: "I want to send water to someone as a gift" },
+  { label: "📱 Social media pages", query: "What are your social media pages?" },
+  { label: "🔐 Login / account help", query: "I can't log in to my account, forgot my password" },
   { label: "📦 Bulk & Event orders", query: "Do you offer wholesale and bulk discounts for events?" },
   { label: "📝 Create account", query: "How do I create an account?" },
-  { label: "📦 Track order", query: "Where is my order?" },
+  // ── Store Info ────────────────────────────────────────────────────────────
+  { label: "✨ Why Kay's Packs?", query: "Why should I buy from you?" },
+  { label: "🛡️ Clean & fresh water?", query: "Is your water clean, pure, and fresh?" },
+  { label: "🌙 Dark Mode", query: "Can you help me turn on dark mode?" },
+  { label: "📞 Speak to Manager", query: "I need to speak to the manager/agent/owner" },
 ];
 
 export function CustomerChatWidget() {

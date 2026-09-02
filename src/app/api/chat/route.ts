@@ -355,6 +355,28 @@ function resolveToolCalls(
     case "STORE_INFO":
       return [{ name: "getStoreInfo", args: {} }];
 
+    case "COMPARE_PRODUCTS":
+      return [
+        {
+          name: "compareProducts",
+          args: {
+            productA: entities.brand || "",
+            productB: entities.secondBrand || "",
+          },
+        },
+      ];
+
+    case "CANCEL_ORDER":
+      return [
+        {
+          name: "cancelOrder",
+          args: { orderNumber: entities.orderNumber || undefined },
+        },
+      ];
+
+    case "REPEAT_ORDER":
+      return [{ name: "getRepeatOrderItems", args: {} }];
+
     default:
       return [];
   }
@@ -413,6 +435,15 @@ function buildToolResponse(
         return RB.buildPaymentInfoResponse(result);
       }
       return RB.buildStoreInfoResponse(result);
+
+    case "compareProducts":
+      return RB.buildCompareProductsResponse(result);
+
+    case "cancelOrder":
+      return RB.buildCancelOrderResponse(result);
+
+    case "getRepeatOrderItems":
+      return RB.buildRepeatOrderResponse(result);
 
     default:
       return RB.buildUnknownResponse();
